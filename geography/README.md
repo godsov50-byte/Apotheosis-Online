@@ -33,7 +33,9 @@ Each cell record includes:
 | `area` | Exact spherical area in steradians and km² using mean Earth radius |
 | `neighbors` | Four edge neighbors, vertex-only neighbors, and all touching neighbors; edge order follows S2 face-space down/right/up/left, not compass directions |
 
-The registry checks that cells have four distinct edge neighbors, that all edge neighbors appear in the full touching-neighbor set, and that each subdivision has four unique children whose areas conserve the parent area. The app also verifies that the 24 Level 1 cells cover 4π steradians.\n\nThe exported document includes a schema version, coordinate and area model metadata, the currently visible frontier, and all records explored in the current browser session.
+The registry checks that cells have four distinct edge neighbors, that all edge neighbors appear in the full touching-neighbor set, and that each subdivision has four unique children whose areas conserve the parent area. The app also verifies that the 24 Level 1 cells cover 4π steradians.
+
+The exported document includes a schema version, coordinate and area model metadata, the currently visible frontier, and all records explored in the current browser session.
 
 ## Important geographic rules
 
