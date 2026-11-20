@@ -32,7 +32,7 @@ The Houston metropolitan reference area and the incorporated City of Houston bou
 - Canonical interchange coordinates: WGS 84 longitude/latitude (EPSG:4326).
 - S2 cell indexing consumes geographic coordinates; S2 IDs remain fixed-width hexadecimal strings and must never be coerced into JavaScript Number.
 - Preserve every source dataset's native CRS and source identifier in provenance metadata.
-- Use an appropriate local projected CRS for distance, area, engineering-like geometry operations, and indoor/building measurements. The City of Houston COH Limits service reports spatial reference WKID 102740 / EPSG:2277 (US survey feet); transform explicitly rather than treating its coordinates as longitude/latitude.
+- Use an appropriate local projected CRS for distance, area, engineering-like geometry operations, and indoor/building measurements. The City of Houston COH Limits service reports spatial reference WKID 102740 / EPSG:2278 (NAD83 / Texas South Central, US survey feet); transform explicitly rather than treating its coordinates as longitude/latitude.
 - Keep vertical datum, elevation units, and vertical accuracy explicit. Do not mix ellipsoidal height, orthometric elevation, and arbitrary local floor height.
 - A city centroid or representative point is only a locator, never a substitute for the city's boundary polygon.
 
@@ -65,7 +65,7 @@ A generalized cartographic state outline may be used for the globe's overview re
    - Layer 0: `COH_Limits`
    - Service description says the boundary was digitized from legal descriptions maintained by City Planning and Development GIS.
    - It distinguishes Full Service, Limited Service, and Pending polygons. Pending areas are under review and are not current city limits. Preserve these distinctions; do not union all three into one undifferentiated city polygon.
-   - Service spatial reference: WKID 102740 / EPSG:2277, US survey feet.
+   - Service spatial reference: WKID 102740 / EPSG:2278, US survey feet.
 3. Harris County GIS boundary services: https://www.gis.hctx.net/arcgis/rest/services/CoH/CoH_Boundaries/MapServer
 4. Houston Public Works GeoHub for municipal infrastructure datasets: https://geohub.houstontx.gov/
 5. OpenStreetMap for complementary road, path, and building coverage: https://www.openstreetmap.org/
@@ -164,3 +164,12 @@ Keep source snapshots or immutable import manifests so later corrections can be 
 - The metropolitan reference-area definition is intentionally unresolved.
 - Road, parcel, address, building, and indoor datasets still require source selection, licensing/terms review, retrieval, normalization, and QA.
 - GPS is an outdoor positioning signal, not a reliable room-level indoor positioning system. Indoor location requires separate positioning inputs or authored navigation context.
+
+
+## 12. Source metadata correction (2026-11-20)
+
+A fresh review of the City of Houston ArcGIS service metadata confirms the service spatial reference is WKID 102740 (EPSG:2278), not EPSG:2277. EPSG:2278 is NAD83 / Texas South Central (US survey feet). Any prior references to EPSG:2277 for this city-limits service are superseded.
+
+The service metadata describes the city-limit service types as Full Service, Limited Service, and Pending. A separate public view layer exposes the values FULL and LIMITED and was last edited in May 2025. Treat that view as a corroborating layer, not as proof that Pending records are absent from the authoritative source. Inspect the current source layer's actual fields and returned values during acquisition before filtering.
+
+The U.S. Census Bureau's 2026 TIGER/Line release is now available; its legal boundaries and names are stated as of January 1, 2026, with release date October 14, 2026. Use the 2026 vintage for the state boundary baseline unless a documented reason requires a different vintage.
