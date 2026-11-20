@@ -61,8 +61,8 @@ A generalized cartographic state outline may be used for the globe's overview re
 ### Houston
 
 1. City of Houston GIS Open Data: https://houston-mycity.opendata.arcgis.com/
-2. City of Houston COHGIS limits FeatureServer: https://services.arcgis.com/su8ic9KbA7PYVxPS/ArcGIS/rest/services/COH_Limits/FeatureServer
-   - Layer 0: `COH_Limits`
+2. Harris County GIS City of Houston boundary layer: https://www.gis.hctx.net/arcgis/rest/services/CoH/CoH_Boundaries/MapServer/2
+   - Layer 2: `COH_City_Limit`
    - Service description says the boundary was digitized from legal descriptions maintained by City Planning and Development GIS.
    - It distinguishes Full Service, Limited Service, and Pending polygons. Pending areas are under review and are not current city limits. Preserve these distinctions; do not union all three into one undifferentiated city polygon.
    - Service spatial reference: WKID 102740 / EPSG:2278, US survey feet.
@@ -172,4 +172,4 @@ A fresh review of the City of Houston ArcGIS service metadata confirms the servi
 
 The service metadata describes the city-limit service types as Full Service, Limited Service, and Pending. A separate public view layer exposes the values FULL and LIMITED and was last edited in May 2025. Treat that view as a corroborating layer, not as proof that Pending records are absent from the authoritative source. Inspect the current source layer's actual fields and returned values during acquisition before filtering.
 
-The U.S. Census Bureau's 2026 TIGER/Line release is now available; its legal boundaries and names are stated as of January 1, 2026, with release date October 14, 2026. Use the 2026 vintage for the state boundary baseline unless a documented reason requires a different vintage.
+The U.S. Census Bureau's 2024 TIGER/Line release is now available; its legal boundaries and names are stated as of January 1, 2024, with release date September 25, 2024. Use the 2024 vintage for the state boundary baseline. The purpose is a stable baseline, not real-time administrative change tracking.
