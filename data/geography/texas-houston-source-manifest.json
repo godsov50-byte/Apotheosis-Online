@@ -40,13 +40,15 @@
       "feature_type": "administrative_boundary",
       "source": "U.S. Census Bureau 2024 TIGER/Line",
       "source_urls": [
-        "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html"
+        "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+        "https://www2.census.gov/geo/tiger/TIGER2024/STATE/tl_2024_us_state.zip"
       ],
       "priority": "P0",
       "status": "selected_for_acquisition",
       "usage": "Statewide overview and containment; stable 2024 baseline, not survey-grade",
       "vintage": "2024",
-      "boundary_reference_date": "2024-01-01"
+      "boundary_reference_date": "2024-01-01",
+      "acquisition_script": "scripts/geography/acquire_texas_boundary_2024.py"
     },
     {
       "id": "houston-city-limits",
