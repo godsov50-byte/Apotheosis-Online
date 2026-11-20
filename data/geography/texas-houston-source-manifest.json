@@ -254,6 +254,26 @@
       "service_type": "cached map tiles",
       "display_zoom_level": 7,
       "note": "Qualitative shaded-relief visualization derived from a mixture of NOAA, USGS, GEBCO, BOEM and academic survey inputs. It does not provide absolute depth values. Use NOAA NCEI Coastal Relief Model or source bathymetry grids with vertical datum and source lineage for canonical depth data."
+    },
+    {
+      "id": "upper-gulf-coast-wbd-huc6",
+      "scope": "Upper Texas Gulf Coast and adjacent Texas river basins",
+      "feature_type": "major_hydrologic_basins",
+      "source": "USGS Watershed Boundary Dataset (WBD), 6-digit hydrologic units",
+      "source_urls": [
+        "https://hydro.nationalmap.gov/arcgis/rest/services/wbd/FeatureServer/3",
+        "https://www.usgs.gov/national-hydrography/access-national-hydrography-products"
+      ],
+      "priority": "P1",
+      "status": "browser_visualization_layer_added_geometry_not_yet_imported",
+      "service_layer": 3,
+      "spatial_extent": {
+        "west": -99,
+        "south": 25.2,
+        "east": -92.5,
+        "north": 34.5
+      },
+      "note": "HUC-6 basin polygons intersecting the study envelope. Returned polygons represent full hydrologic units; neighboring coastal basins are kept distinct from the Trinity–San Jacinto Estuary."
     }
   ],
   "provenance_required": [
