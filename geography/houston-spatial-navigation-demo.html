@@ -102,12 +102,14 @@ button{background:#223441;color:var(--text);border:1px solid #405665;border-radi
   addressLayer.on('click',e=>chooseLocation(e.layer.feature,e.layer));
   addressLayer.on('requesterror',()=>{$('locationResults').textContent='Address points could not be loaded from City GIS.';});
  }
+ $('locationQuery').addEventListener('keydown',e=>{if(e.key==='Enter')$('locationSearch').click();});
+ $('locationEntry').addEventListener('keydown',e=>{if(e.key==='Escape')$('leaveLocation').click();});
  $('locationSearch').onclick=()=>{
   const q=$('locationQuery').value.trim();if(q.length<4){$('locationResults').textContent='Enter at least four characters of an address.';return;}
   $('locationSearch').disabled=true;$('locationResults').textContent='Searching official City of Houston address points…';
   const safe=q.toUpperCase().replace(/'/g,"''");
   L.esri.query({url:addressUrl}).where("STATUS='COH' AND FULLADDRESS LIKE '%"+safe.replace(/[%_]/g,'')+"%'").fields(['OBJECTID','ADDR_ID','FULLADDRESS','STATUS','STREET_NUM','STREET_NAME','STREET_TYPE','CITY','ZIPCODE','Latitude','Longitude']).limit(10).run((err,fc)=>{
-   $('locationSearch').disabled=false;searchResultLayers.forEach(x=>map.removeLayer(x));searchResultLayers=[];
+   $('locationSearch').disabled=false;searchResultLayers.forEach(x=>map.removeLayer(x));searchResultLayers=[];selectedLocation=null;$('selectedLocationName').textContent='None';$('selectedLocationCoords').textContent='—';$('enterLocation').disabled=true;$('showLocation').disabled=true;
    if(err||!fc||!fc.features||!fc.features.length){$('locationResults').textContent='No matching official address points found. Try a street number and name.';return;}
    fc.features.forEach(addAddressFeature);
    $('locationResults').textContent=fc.features.length+' address result(s). Tap a yellow point, then choose Select location.';
@@ -123,7 +125,7 @@ button{background:#223441;color:var(--text);border:1px solid #405665;border-radi
   $('entryDescription').textContent='The Envoy has entered the location context for '+(p.FULLADDRESS||'this address')+'. You are no longer viewing only the road network.';
   $('locationEntry').style.display='block';$('status').textContent='Entered location context: '+(p.FULLADDRESS||'selected address')+'.';
  };
- $('leaveLocation').onclick=()=>{$('locationEntry').style.display='none';$('status').textContent='Returned to exterior map view.';};
+ $('leaveLocation').onclick=()=>{$('locationEntry').style.display='none';$('status').textContent='Returned to exterior map view.';map.invalidateSize();};
  $('showLocation').onclick=()=>{if(selectedLocation){$('locationEntry').style.display='none';map.setView([selectedLocation.lat,selectedLocation.lng],18);selectedLocation.marker.openPopup();}};
 
  function rad(x){return x*Math.PI/180}
