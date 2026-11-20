@@ -96,6 +96,10 @@
           ]
         },
         "execution_status": {
+          "type": [
+            "string",
+            "null"
+          ],
           "enum": [
             "pending",
             "validating",
@@ -105,7 +109,8 @@
             "committed",
             "interrupted",
             "failed",
-            "cancelled"
+            "cancelled",
+            null
           ]
         },
         "outcome": {
