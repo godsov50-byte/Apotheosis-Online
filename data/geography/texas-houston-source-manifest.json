@@ -274,6 +274,31 @@
         "north": 34.5
       },
       "note": "HUC-6 basin polygons intersecting the study envelope. Returned polygons represent full hydrologic units; neighboring coastal basins are kept distinct from the Trinity–San Jacinto Estuary."
+    },
+    {
+      "id": "upper-gulf-coast-usfws-national-wetlands-inventory",
+      "scope": "Upper Texas Gulf Coast regional study extent",
+      "feature_type": "wetland_polygons",
+      "source": "U.S. Fish and Wildlife Service National Wetlands Inventory (NWI) REST Map Service",
+      "source_urls": [
+        "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer",
+        "https://www.fws.gov/program/national-wetlands-inventory/web-mapping-services"
+      ],
+      "priority": "P1",
+      "status": "browser_visualization_layer_added_geometry_not_yet_imported",
+      "service_layer": 0,
+      "spatial_extent": {
+        "west": -99,
+        "south": 25.2,
+        "east": -92.5,
+        "north": 34.5
+      },
+      "included_classes": [
+        "Estuarine and Marine Wetland",
+        "Freshwater Emergent Wetland",
+        "Freshwater Forested/Shrub Wetland"
+      ],
+      "note": "NWI wetland polygons are outlined in the globe and styled by broad wetland class. FWS updates its web mapping services biannually. NWI has known mapping-scale and imagery-detection limitations; it is not a complete ecological inventory or legal wetland jurisdiction determination."
     }
   ],
   "provenance_required": [
@@ -302,6 +327,7 @@
     "no_automatic_overwrite_of_authored_or_committed_ao_state": true,
     "watershed_extent_not_city_extent": true,
     "hydrography_connectivity_requires_flowline_attributes": true,
-    "bathymetry_visualization_not_depth_authority": true
+    "bathymetry_visualization_not_depth_authority": true,
+    "wetland_inventory_is_not_complete_or_regulatory": true
   }
 }
