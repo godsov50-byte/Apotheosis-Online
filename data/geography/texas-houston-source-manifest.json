@@ -29,8 +29,8 @@
     "interchange_crs": "EPSG:4326",
     "s2_input": "WGS84_latitude_longitude",
     "preserve_source_crs": true,
-    "projected_measurement_crs": "EPSG:2277",
-    "projected_crs_note": "Use only for suitable Houston-area planar measurements; retain source-native coordinates and explicit transforms.",
+    "projected_measurement_crs": "EPSG:2278",
+    "projected_crs_note": "Houston COH Limits service spatial reference WKID 102740 / EPSG:2278 (NAD83 / Texas South Central, US survey feet). Retain source-native coordinates and explicit transforms.",
     "vertical_reference": "must_be_declared_per_dataset"
   },
   "datasets": [
@@ -38,14 +38,15 @@
       "id": "tx-state-boundary",
       "scope": "Texas",
       "feature_type": "administrative_boundary",
-      "source": "TxGIO / U.S. Census TIGER-Line",
+      "source": "U.S. Census Bureau 2026 TIGER/Line",
       "source_urls": [
-        "https://www.tnris.org/",
         "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html"
       ],
       "priority": "P0",
       "status": "to_acquire",
-      "usage": "statewide overview and containment; choose a suitable authoritative boundary release"
+      "usage": "statewide overview and containment; choose a suitable authoritative boundary release",
+      "vintage": "2026",
+      "boundary_reference_date": "2026-01-01"
     },
     {
       "id": "houston-city-limits",
@@ -56,15 +57,30 @@
         "https://services.arcgis.com/su8ic9KbA7PYVxPS/ArcGIS/rest/services/COH_Limits/FeatureServer"
       ],
       "service_layer": 0,
-      "source_crs": "WKID:102740 / EPSG:2277",
+      "source_crs": "WKID:102740 / EPSG:2278",
       "priority": "P0",
-      "status": "to_acquire",
+      "status": "metadata_verified_geometry_not_yet_imported",
       "required_classification": [
         "Full Service",
         "Limited Service",
         "Pending"
       ],
-      "filter_rule": "Do not classify Pending as current city limits; preserve Full Service and Limited Service separately."
+      "filter_rule": "Do not classify Pending as current city limits; preserve Full Service and Limited Service separately.",
+      "metadata_reviewed_at": "2026-11-20",
+      "verified_fields": [
+        "SERVICE_TY",
+        "DESCRIPTIO",
+        "ENTITY_NAM",
+        "EFF_DATE",
+        "LEGAL_DOC",
+        "COUNCIL_AP"
+      ],
+      "verified_service_types": [
+        "Full Service",
+        "Limited Service",
+        "Pending"
+      ],
+      "note": "Separate public view layer exposes FULL and LIMITED only; query source layer and inspect live values before filtering."
     },
     {
       "id": "houston-road-network",
