@@ -25,12 +25,13 @@ button{background:#223441;color:var(--text);border:1px solid #405665;border-radi
 <div class="panel"><h2>Envoy position</h2><div class="buttons"><button class="primary" id="gps">Use device GPS</button><button id="reset">Reset to City Hall</button></div><div class="kv"><span>Latitude</span><b id="lat">29.760193</b></div><div class="kv"><span>Longitude</span><b id="lon">-95.369361</b></div><div class="kv"><span>Accuracy</span><b id="accuracy">Address anchor</b></div><div class="kv"><span>Coordinate system</span><b>WGS84 · EPSG:4326</b></div></div>
 <div class="panel"><h2>Destination</h2><div class="kv"><span>Address</span><b>6801 Bacher St, Houston</b></div><div class="kv"><span>Latitude</span><b>29.824681</b></div><div class="kv"><span>Longitude</span><b>-95.277697</b></div><div class="buttons"><button class="primary" id="route">Calculate driving route</button><button id="clear">Clear route</button></div></div>
 <div class="panel"><h2>Spatial measurements</h2><div class="kv"><span>Direct distance</span><b id="distance">—</b></div><div class="kv"><span>Bearing</span><b id="bearing">—</b></div><div class="kv"><span>Route distance</span><b id="routeDistance">—</b></div><div class="kv"><span>Estimated drive time</span><b id="routeTime">—</b></div><div class="kv"><span>Map zoom</span><b id="zoom">—</b></div></div>
-<div class="panel"><h2>Map layers</h2><div class="buttons"><button id="streets" class="primary">Street map on</button><button id="grid">Grid off</button></div><p class="notice">The grid is a visual reference only. It does not constrain movement or replace the underlying coordinate system.</p></div>
+<div class="panel"><h2>Map layers</h2><div class="buttons"><button id="streets" class="primary">Basemap on</button><button id="roads" class="primary">Houston roads on</button><button id="grid">Grid off</button></div><p class="notice">The grid is a visual reference only. It does not constrain movement or replace the underlying coordinate system.</p></div>
 <div class="panel"><h2>System status</h2><div id="status">Ready. Envoy placed at Houston City Hall address point.</div></div>
 <div class="notice">City address anchors: City of Houston GIS COH_ADDRESS_INFO layer. Route: OSRM public routing service using OpenStreetMap road data. Device GPS requires browser permission and HTTPS. This is a spatial prototype, not a live AO Kernel / WorldHeart connection. No character movement is committed to AO.</div>
 </aside>
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/esri-leaflet@3.0.15/dist/esri-leaflet.js"></script>
 <script>
 (()=> {
  const start=[29.760193,-95.369361], dest=[29.824681,-95.277697];
@@ -41,6 +42,35 @@ button{background:#223441;color:var(--text);border:1px solid #405665;border-radi
  let envoy=L.marker(start,{draggable:true,icon:envoyIcon}).addTo(map).bindPopup('Envoy · simulated position');
  L.marker(dest,{icon:destIcon}).addTo(map).bindPopup('Destination · 6801 Bacher St, Houston, TX 77028');
  let routeLayer=null,gridLayer=null;
+ const roadUrl='https://services.arcgis.com/NummVBqZSIJKUeVR/ArcGIS/rest/services/COH_RoadCenterline/FeatureServer/0';
+ let roadLayer=null;
+ if(L.esri && L.esri.featureLayer){
+  roadLayer=L.esri.featureLayer({
+   url:roadUrl,
+   where:"munileft='HOUSTON' OR muniright='HOUSTON'",
+   fields:['OBJECTID','GlobalID','centerlineid','fullname','roadclass','onewaydir','lanes','speed','funcclass','source','munileft','muniright'],
+   simplifyFactor:0.5,
+   precision:5,
+   style:f=>{
+    const c=(f.properties.roadclass||'').toUpperCase();
+    const color=['FREEWAY','HIGHWAY','TOLLWAY','HOV'].includes(c)?'#f3ad58':
+      ['MAJOR','MINOR'].includes(c)?'#79c9ed':
+      ['RAMP','FRONTAGE'].includes(c)?'#b79be8':
+      ['ALLEY','PRIVATE','ACCESS'].includes(c)?'#637783':'#9eb0bb';
+    return {color,weight:['FREEWAY','HIGHWAY','TOLLWAY'].includes(c)?3.2:1.8,opacity:0.88};
+   },
+   attribution:'City of Houston GIS · COH RoadCenterline'
+  }).addTo(map);
+  roadLayer.bindPopup(layer=>{
+   const p=layer.feature.properties||{};
+   const esc=v=>String(v??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+   return '<b>'+esc(p.fullname||'Unnamed road')+'</b><br>Class: '+esc(p.roadclass)+'<br>One-way source code: '+esc(p.onewaydir)+'<br>Lanes (source): '+esc(p.lanes)+'<br>Speed (source): '+esc(p.speed)+'<br>Municipality L/R: '+esc(p.munileft)+' / '+esc(p.muniright)+'<br>Source ID: '+esc(p.GlobalID||p.centerlineid);
+  });
+  roadLayer.on('load',()=>{$('status').textContent='Official Houston road centerlines loaded for the current map extent.';});
+  roadLayer.on('requesterror',e=>{$('status').textContent='Houston road overlay unavailable: '+(e.message||'service request failed');});
+ } else {
+  $('status').textContent='Road overlay library did not load; basemap remains available.';
+ }
  const $=id=>document.getElementById(id);
  function rad(x){return x*Math.PI/180}
  function measure(a,b){
@@ -70,7 +100,8 @@ button{background:#223441;color:var(--text);border:1px solid #405665;border-radi
   $('routeDistance').textContent=(r.distance/1000).toFixed(2)+' km';$('routeTime').textContent=Math.round(r.duration/60)+' min';$('status').textContent='Route drawn on the map. This is a suggested OSM-based route, not Kernel-authorized movement.';
  }catch(e){$('status').textContent='Route could not be calculated: '+e.message;}finally{$('route').disabled=false;}};
  $('clear').onclick=()=>{if(routeLayer){map.removeLayer(routeLayer);routeLayer=null;}$('routeDistance').textContent='—';$('routeTime').textContent='—';$('status').textContent='Route cleared.';};
- $('streets').onclick=()=>{if(map.hasLayer(osm)){map.removeLayer(osm);$('streets').textContent='Street map off';$('streets').classList.remove('primary');}else{osm.addTo(map);$('streets').textContent='Street map on';$('streets').classList.add('primary');}};
+ $('streets').onclick=()=>{if(map.hasLayer(osm)){map.removeLayer(osm);$('streets').textContent='Basemap off';$('streets').classList.remove('primary');}else{osm.addTo(map);$('streets').textContent='Basemap on';$('streets').classList.add('primary');}};
+ $('roads').onclick=()=>{if(!roadLayer){$('status').textContent='Houston road layer did not initialize. Check internet access.';return;}if(map.hasLayer(roadLayer)){map.removeLayer(roadLayer);$('roads').textContent='Houston roads off';$('roads').classList.remove('primary');}else{roadLayer.addTo(map);$('roads').textContent='Houston roads on';$('roads').classList.add('primary');}};
  $('grid').onclick=()=>{if(gridLayer){map.removeLayer(gridLayer);gridLayer=null;$('grid').textContent='Grid off';$('grid').classList.remove('primary');return;}const bounds=map.getBounds(),step=.002;let lines=[];for(let lat=Math.floor(bounds.getSouth()/step)*step;lat<bounds.getNorth();lat+=step)lines.push([[lat,bounds.getWest()],[lat,bounds.getEast()]]);for(let lon=Math.floor(bounds.getWest()/step)*step;lon<bounds.getEast();lon+=step)lines.push([[bounds.getSouth(),lon],[bounds.getNorth(),lon]]);gridLayer=L.polyline(lines,{color:'#16a3ff',weight:1,opacity:.35,dashArray:'4 6',interactive:false}).addTo(map);$('grid').textContent='Grid on';$('grid').classList.add('primary');};
 })();
 </script>
