@@ -21,7 +21,7 @@ LAYER_URL = (
 EXPECTED_WKID = 102740
 EXPECTED_LATEST_WKID = 2278
 PAGE_SIZE = 1000
-ALLOWED_SERVICE_TYPES = {"FULL", "LIMITED", "PENDING"}
+ALLOWED_SERVICE_TYPES = {\n    "FULL", "LIMITED", "PENDING",\n    "FULL SERVICE", "LIMITED SERVICE",\n}
 
 
 def get_json(url: str, params: dict[str, str] | None = None) -> dict:
@@ -130,11 +130,12 @@ def main() -> None:
     if not features:
         raise SystemExit("The service returned zero features; no output GeoJSON written.")
 
-    types = sorted({
-        str((feature.get("properties") or {}).get("SERVICE_TY", "")).strip().upper()
+    raw_types = sorted({
+        str((feature.get("properties") or {}).get("SERVICE_TY", "")).strip()
         for feature in features
     })
-    unknown = sorted(set(types) - ALLOWED_SERVICE_TYPES)
+    normalized_types = sorted({value.upper() for value in raw_types})
+    unknown = sorted(set(normalized_types) - ALLOWED_SERVICE_TYPES)
     if unknown:
         raise SystemExit(f"Unrecognized SERVICE_TY values {unknown}; inspect source before classifying.")
 
@@ -144,7 +145,7 @@ def main() -> None:
         "source_latest_wkid": latest_wkid,
         "output_crs": "EPSG:4326",
         "retrieved_at": datetime.now(timezone.utc).isoformat(),
-        "service_types_observed": types,
+        "service_types_observed": raw_types,\n        "service_types_normalized": normalized_types,
         "feature_count": len(features),
         "object_id_min": min(seen_object_ids),
         "object_id_max": max(seen_object_ids),
