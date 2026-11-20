@@ -60,6 +60,10 @@ export function createGeographicRegistry(s2, options = {}) {
     const children = level < 30 ? s2.cellid.children(id) : [];
     const edgeNeighbors = [...new Set(s2.cellid.edgeNeighbors(id))];
     const allNeighbors = [...new Set(s2.cellid.allNeighbors(id, level))];
+    if (edgeNeighbors.length !== 4) throw new Error("S2 cell must have four distinct edge neighbors: " + hexId(id));
+    if (edgeNeighbors.some(neighborId => !allNeighbors.includes(neighborId))) {
+      throw new Error("S2 all-neighbor set is missing an edge neighbor: " + hexId(id));
+    }
     const edgeSet = new Set(edgeNeighbors);
     const vertexOnlyNeighbors = allNeighbors.filter(neighborId => !edgeSet.has(neighborId));
 
@@ -130,8 +134,20 @@ export function createGeographicRegistry(s2, options = {}) {
     const parent = register(parentId);
     if (parent.level >= 30) return [];
     const childIds = s2.cellid.children(parentId);
+    if (childIds.length !== 4 || new Set(childIds).size !== 4) {
+      throw new Error("A non-leaf S2 cell must have four unique children: " + parent.cellId);
+    }
+    const childRecords = childIds.map(register);
+    if (childRecords.some(child => child.parentCellId !== parent.cellId)) {
+      throw new Error("S2 parent/child identity mismatch: " + parent.cellId);
+    }
+    const parentArea = s2.Cell.fromCellID(parentId).exactArea();
+    const childArea = childIds.reduce((sum, childId) => sum + s2.Cell.fromCellID(childId).exactArea(), 0);
+    if (Math.abs(parentArea - childArea) > Math.max(1e-12, parentArea * 1e-10)) {
+      throw new Error("S2 child areas do not conserve parent area: " + parent.cellId);
+    }
     parent.childCellIds = childIds.map(hexId);
-    return childIds.map(register);
+    return childRecords;
   }
 
   function get(id) {
