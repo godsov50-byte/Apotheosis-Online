@@ -235,3 +235,15 @@ The browser overlays are not canonical AO geography. They do not write to the AO
 - Texas Water Development Board, Trinity–San Jacinto Estuary: https://www.twdb.texas.gov/surfacewater/bays/major_estuaries/trinity_san_jacinto/
 - NOAA NCEI Coastal Relief Model: https://www.ncei.noaa.gov/products/coastal-relief-model
 - Gulf bathymetry shaded-relief service: https://tiles.arcgis.com/tiles/qr14biwnHA6Vis6l/arcgis/rest/services/Shaded_Relief_Visualization_of_Gulf_of_Mexico_Bathymetry/MapServer
+
+
+### Wetlands and coastal habitat layer
+
+The globe includes an optional USFWS National Wetlands Inventory (NWI) polygon-boundary overlay for:
+- Estuarine and Marine Wetland;
+- Freshwater Emergent Wetland;
+- Freshwater Forested/Shrub Wetland.
+
+Wetland boundaries are outlined and styled by broad class; they are not rendered as filled habitat polygons. The source is the USFWS NWI REST Map Service, which the Service says is updated biannually. NWI is a mapped inventory with scale and aerial-imagery detection limitations; it is not a complete ecological inventory and must not be used alone for regulatory wetland determinations. Retain project metadata, imagery dates, mapping scale, and source vintage when importing these features into the canonical registry.
+
+Source: https://www.fws.gov/program/national-wetlands-inventory/web-mapping-services
