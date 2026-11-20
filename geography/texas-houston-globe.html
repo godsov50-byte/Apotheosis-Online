@@ -208,11 +208,11 @@ async function loadGulfBathymetry(){
 }
 async function loadNaturalGeography(){
  const tasks=[
- (async()=>{try{const d=await fetchArcGISCollection("https://hydro.nationalmap.gov/arcgis/rest/services/wbd/FeatureServer/3","1=1","HUC6,NAME,AREASQKM,STATES","HUC6",1800);if(!d.features.length)throw Error("No HUC-6 basins");
+ (async()=>{try{const d=await fetchArcGISCollection("https://hydro.nationalmap.gov/arcgis/rest/services/wbd/FeatureServer/3","1=1","huc6,name,areasqkm,states","huc6",1800);if(!d.features.length)throw Error("No HUC-6 basins");
   layerGroups.basins=addGeoJSONLines(d,()=>hydroMaterials.basin,"basins");layerGroups.basins.visible=layerVisibility.basins;geographyLayers.basins=layerGroups.basins;
   document.querySelector("#basinStatus").textContent=d.features.length+" major basins";
  }catch(e){document.querySelector("#basinStatus").textContent="Unavailable";console.warn("WBD HUC-6:",e);}})(),
- (async()=>{try{const d=await fetchArcGISCollection("https://hydro.nationalmap.gov/arcgis/rest/services/wbd/FeatureServer/4","1=1","HUC8,NAME,AREASQKM,STATES","HUC8",3600);if(!d.features.length)throw Error("No HUC-8 polygons");
+ (async()=>{try{const d=await fetchArcGISCollection("https://hydro.nationalmap.gov/arcgis/rest/services/wbd/FeatureServer/4","1=1","huc8,name,areasqkm,states","huc8",3600);if(!d.features.length)throw Error("No HUC-8 polygons");
   layerGroups.watersheds=addGeoJSONLines(d,()=>hydroMaterials.watershed,"watersheds");layerGroups.watersheds.visible=layerVisibility.watersheds;geographyLayers.watersheds=layerGroups.watersheds;
   document.querySelector("#watershedStatus").textContent=d.features.length+" HUC-8 units"+(d.exceededTransferLimit?" · capped":"");
  }catch(e){document.querySelector("#watershedStatus").textContent="Unavailable";console.warn("WBD:",e);}})(),
