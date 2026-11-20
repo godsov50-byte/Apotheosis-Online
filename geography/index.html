@@ -126,14 +126,13 @@ function buildCell(id){
   const face=s2.cellid.face(id),isSelected=selected===id;
   const material=new THREE.MeshBasicMaterial({color:isSelected?0xf0c77d:palette[face],transparent:true,opacity:isSelected?.31:.13,side:THREE.DoubleSide,depthWrite:false});
   const mesh=new THREE.Mesh(geometry,material);mesh.userData={cellId:id};
-  const linePositions=points.map(p=>p.toArray());
   const lineGeometry=new THREE.BufferGeometry().setFromPoints([...points,points[0]]);
   const line=new THREE.Line(lineGeometry,new THREE.LineBasicMaterial({color:isSelected?0xffd78d:0x9dd9dc,transparent:true,opacity:isSelected?1:.82}));
   const group=new THREE.Group();group.add(mesh,line);group.userData={cellId:id,cell};
   return group;
 }
 function redraw(){
-  while(cellGroup.children.length){const o=cellGroup.children.pop();o.traverse(x=>{x.geometry?.dispose();if(x.material){if(Array.isArray(x.material))x.material.forEach(m=>m.dispose());else x.material.dispose();}});}
+  while(cellGroup.children.length){const o=cellGroup.children[0];cellGroup.remove(o);o.traverse(x=>{x.geometry?.dispose();if(x.material){if(Array.isArray(x.material))x.material.forEach(m=>m.dispose());else x.material.dispose();}});}
   for(const [key,cell] of visible){const g=buildCell(cell.id);cellGroup.add(g);}
   document.querySelector('#visibleCount').textContent=visible.size;
   document.querySelector('#gridStatus').textContent=visible.size+' cells visible';
