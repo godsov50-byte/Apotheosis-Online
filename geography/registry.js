@@ -94,6 +94,8 @@ export function createGeographicRegistry(s2, options = {}) {
       boundary: {
         type: "S2Cell",
         edgeModel: "minor great-circle arcs",
+        edgeOrder: ["face-down", "face-right", "face-up", "face-left"],
+        longitudeRule: "normalized to [-180, 180]; split antimeridian crossings when building GeoJSON",
         vertices,
         sampledRingLatLng: sampledRing,
         edgeSampleCount: edgeSamples
