@@ -247,3 +247,25 @@ The globe includes an optional USFWS National Wetlands Inventory (NWI) polygon-b
 Wetland boundaries are outlined and styled by broad class; they are not rendered as filled habitat polygons. The source is the USFWS NWI REST Map Service, which the Service says is updated biannually. NWI is a mapped inventory with scale and aerial-imagery detection limitations; it is not a complete ecological inventory and must not be used alone for regulatory wetland determinations. Retain project metadata, imagery dates, mapping scale, and source vintage when importing these features into the canonical registry.
 
 Source: https://www.fws.gov/program/national-wetlands-inventory/web-mapping-services
+
+## 14. Geographic positioning and pedestrian travel preview
+
+The current implementation priority is to identify locations, determine their geographic positions, and estimate walking travel time between them. Advanced hydrologic, ecological, erosion, and bathymetric simulation is not required for this stage.
+
+### Immediate navigation requirements
+
+- Every place or geographic feature receives a stable AO identity and a geographic position or geometry appropriate to its type.
+- A point is a locator; a road, path, city, building, river, or region retains its actual geometry.
+- Pedestrian routing follows walkable streets, sidewalks, paths, crossings, bridges, and permitted connections. It must not assume that straight-line distance is a traversable route.
+- Report route distance separately from straight-line distance.
+- Estimate travel time from route distance and a baseline walking speed initially; later Kernel movement can modify speed using the character's capabilities, condition, terrain, and other relevant factors.
+- If no valid pedestrian route exists, report that rather than inventing a route or falling back silently to straight-line distance.
+- Preserve routing source, data vintage, route geometry, distance, duration, and calculation timestamp.
+
+### Current browser preview
+
+The downloadable globe now includes a coordinate-based pedestrian route preview using the FOSSGIS OSRM foot profile over OpenStreetMap data. It draws the returned route and reports route distance and the service's estimated walking duration. The route service requires internet access, has a published one-request-per-second usage limit, logs route requests, and is intended only for light, non-commercial use. It is a prototype dependency, not AO's production routing authority.
+
+The preview currently accepts longitude/latitude coordinate pairs. It does not yet provide place-name search, a saved place directory, or an AO-owned pedestrian network. No route is stored in the Kernel or WorldHeart. The returned time is an external baseline estimate, not an individual character's authoritative movement time.
+
+Source and usage policy: https://routing.openstreetmap.de/about.html
