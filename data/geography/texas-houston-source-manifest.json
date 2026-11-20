@@ -38,25 +38,27 @@
       "id": "tx-state-boundary",
       "scope": "Texas",
       "feature_type": "administrative_boundary",
-      "source": "U.S. Census Bureau 2026 TIGER/Line",
+      "source": "U.S. Census Bureau 2024 TIGER/Line",
       "source_urls": [
         "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html"
       ],
       "priority": "P0",
-      "status": "to_acquire",
-      "usage": "statewide overview and containment; choose a suitable authoritative boundary release",
-      "vintage": "2026",
-      "boundary_reference_date": "2026-01-01"
+      "status": "selected_for_acquisition",
+      "usage": "Statewide overview and containment; stable 2024 baseline, not survey-grade",
+      "vintage": "2024",
+      "boundary_reference_date": "2024-01-01"
     },
     {
       "id": "houston-city-limits",
       "scope": "Houston",
       "feature_type": "administrative_boundary",
-      "source": "City of Houston COHGIS",
+      "source": "Harris County GIS CoH_Boundaries MapServer, COH_City_Limit layer",
       "source_urls": [
+        "https://www.gis.hctx.net/arcgis/rest/services/CoH/CoH_Boundaries/MapServer/2",
+        "https://www.arcgis.com/home/item.html?id=2707cf506dce4879a9312ed0d66d2eb5",
         "https://services.arcgis.com/su8ic9KbA7PYVxPS/ArcGIS/rest/services/COH_Limits/FeatureServer"
       ],
-      "service_layer": 0,
+      "service_layer": 2,
       "source_crs": "WKID:102740 / EPSG:2278",
       "priority": "P0",
       "status": "metadata_verified_geometry_not_yet_imported",
@@ -80,7 +82,8 @@
         "Limited Service",
         "Pending"
       ],
-      "note": "Separate public view layer exposes FULL and LIMITED only; query source layer and inspect live values before filtering."
+      "note": "Harris County GIS MapServer layer 2 advertises JSON and GeoJSON and exposes SERVICE_TY. A separate City of Houston public feature layer is explicitly labelled Version 2024 (item updated 2024-11-20); use it as a historical cross-check, not as an assumption that the MapServer has the same vintage.",
+      "source_vintage": "Not declared in MapServer metadata; preserve retrieval timestamp and use the public 2024 City of Houston layer as a historical cross-check"
     },
     {
       "id": "houston-road-network",
@@ -152,6 +155,19 @@
       "priority": "P3",
       "status": "not_available_until_sourced",
       "rule": "Never infer floor plans or rooms from exterior footprints."
+    },
+    {
+      "id": "houston-city-limits-2024-crosscheck",
+      "scope": "Houston",
+      "feature_type": "administrative_boundary_reference",
+      "source": "City of Houston COH CITY LIMITS public layer, Version 2024",
+      "source_urls": [
+        "https://www.arcgis.com/home/item.html?id=2707cf506dce4879a9312ed0d66d2eb5"
+      ],
+      "priority": "P0",
+      "status": "reference_only_geometry_not_acquired",
+      "vintage": "2024",
+      "note": "Public-only layer item updated 2024-11-20; general-reference accuracy/completeness disclaimer applies."
     }
   ],
   "provenance_required": [
