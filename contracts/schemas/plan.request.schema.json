@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apotheosis.online/contracts/v1/plan.request.schema.json",
+  "title": "AO Plan Request",
+  "allOf": [
+    {
+      "$ref": "common.schema.json#/$defs/requestEnvelope"
+    }
+  ],
+  "properties": {
+    "request_type": {
+      "const": "plan"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "objective"
+      ],
+      "properties": {
+        "objective": {
+          "type": "string",
+          "minLength": 1
+        },
+        "constraints": {
+          "type": "object"
+        },
+        "context_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

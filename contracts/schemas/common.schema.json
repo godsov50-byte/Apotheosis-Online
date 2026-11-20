@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apotheosis.online/contracts/v1/common.schema.json",
+  "title": "AO Kernel-AI Common Definitions",
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "requestEnvelope": {
+      "type": "object",
+      "required": [
+        "contract_version",
+        "request_id",
+        "request_type",
+        "payload"
+      ],
+      "properties": {
+        "contract_version": {
+          "const": "1.0"
+        },
+        "request_id": {
+          "$ref": "#/$defs/id"
+        },
+        "conversation_id": {
+          "$ref": "#/$defs/id"
+        },
+        "session_id": {
+          "$ref": "#/$defs/id"
+        },
+        "actor_id": {
+          "$ref": "#/$defs/id"
+        },
+        "sovereign_id": {
+          "$ref": "#/$defs/id"
+        },
+        "request_type": {
+          "enum": [
+            "perception",
+            "action",
+            "plan",
+            "status",
+            "clarification"
+          ]
+        },
+        "submitted_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "expected_world_revision": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "payload": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    "responseEnvelope": {
+      "type": "object",
+      "required": [
+        "contract_version",
+        "request_id",
+        "response_id",
+        "request_status",
+        "outcome",
+        "world_revision",
+        "result",
+        "events",
+        "history_record_ids"
+      ],
+      "properties": {
+        "contract_version": {
+          "const": "1.0"
+        },
+        "request_id": {
+          "$ref": "#/$defs/id"
+        },
+        "response_id": {
+          "$ref": "#/$defs/id"
+        },
+        "request_status": {
+          "enum": [
+            "received",
+            "accepted",
+            "rejected",
+            "needs_clarification",
+            "completed"
+          ]
+        },
+        "execution_status": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "pending",
+            "validating",
+            "ready",
+            "running",
+            "partially_completed",
+            "committed",
+            "interrupted",
+            "failed",
+            "cancelled",
+            null
+          ]
+        },
+        "outcome": {
+          "enum": [
+            "none",
+            "committed",
+            "partial",
+            "interrupted",
+            "rejected",
+            "failed",
+            "cancelled"
+          ]
+        },
+        "execution_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "world_revision": {
+          "type": "string"
+        },
+        "result": {
+          "type": "object"
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "history_record_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "clarification": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "error": {
+          "type": [
+            "object",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
