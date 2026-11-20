@@ -1,24 +1,27 @@
 # Sarrat — The Grand Meridian (3D prototype)
 
-This folder contains the first browser-playable 3D blockout for Apotheosis Online.
+A browser-playable first-person 3D environment blockout for Apotheosis Online.
 
 ## Run
-Open `index.html` through a local static web server (for example, `python -m http.server 8000` from this directory), then visit `http://localhost:8000`. A modern browser and internet connection are required because Three.js is loaded from jsDelivr.
+Serve this folder with a local static web server (for example, run `python -m http.server 8000` from this directory) and open `http://localhost:8000`. A modern browser and internet connection are required because Three.js is loaded from jsDelivr.
 
 ## Controls
-- Desktop: click **Enter the Street**, WASD to move, mouse to look, E to inspect the hall, Esc to release pointer lock.
-- Touch: left virtual pad to move, drag the right side to look, tap to inspect when near the entrance.
+- Desktop: click **Enter the Street**, WASD to move, mouse to look, E to open/close the entrance doors or inspect the hall, Esc to release pointer lock.
+- Touch: left virtual pad to move, drag the right side to look, tap near the entrance to open/close the doors.
 
-## Current scope
-- Procedural 3D street/plaza, hall façade, entrance stairs, windows, banners, market stalls, lanterns, purple trees, skyline, moon and rain.
-- First-person local movement, basic plaza bounds, a simple obstacle check, position readout and proximity inspection prompt.
-- The generated concept image is a visual target; the scene is constructed from 3D primitives rather than a flat image.
+## Built in this pass
+- Procedural 3D street/plaza, façade, stairs, lit windows, banners, market stalls, lanterns, purple trees, skyline, moonlight, wet-look patches and animated rain.
+- A split front structure with an actual central passage, openable double-door leaf, and a walk-in ceremonial hall.
+- Interior nave with columns, gold trim, chandeliers, side chapel recesses, sconces and a raised rear gallery.
+- First-person local movement, a simple local boundary/doorway collision check, position readout, and proximity inspection.
+- Desktop and basic touch movement/look controls.
 
 ## Explicit limitations
-This is a visual/gameplay prototype only. It does **not** yet connect to the AO Kernel, WorldHeart, Supabase, authoritative continuous-space collision, durable event history, NPC simulation, or a walkable building interior. Position is local to the browser session and resets on reload. The hall inspection is descriptive only; it does not commit a world action.
+This is a local visual/gameplay prototype. It is **not** connected to the AO Kernel, WorldHeart, Supabase, authoritative continuous-space collision, durable event history, NPC simulation, or an authoritative building-interior state. Position and door state reset on reload. Geometry and collision are blockout quality; the raised gallery is visual and not traversable. No browser runtime or device test was run as part of this GitHub edit.
 
 ## Next build steps
-1. Replace primitive blockout pieces with authored modular meshes/materials matching the approved visual reference.
-2. Implement robust capsule collision, stairs/ramp traversal, interaction raycasts and door/interior transition geometry.
-3. Add an AO spatial scene manifest with continuous coordinates and chunk boundaries.
-4. Route movement and interactions through Kernel validation and append-only committed events before claiming persistent world behavior.
+1. Run on desktop and phone, then fix real-device movement, camera and rendering issues.
+2. Replace primitive blockout geometry with modular authored assets and a proper collision mesh/capsule controller.
+3. Make the interior navigable in full, including stair traversal and upper gallery.
+4. Define the location's spatial manifest and continuous coordinates.
+5. Route movement and interactions through Kernel validation and append-only committed events before claiming persistent world behavior.
