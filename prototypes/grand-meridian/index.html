@@ -137,6 +137,40 @@ for(const side of [-1,1]){
   stairRuns.push({x:sx,minX:sx-2.25,maxX:sx+2.25,startZ,endZ:startZ-count*run,run,rise,count});
 }
 
+// Interactive hall furnishings and exhibits. These are local prototype objects, not Kernel entities.
+const interactables=[];
+function addInteractable(label,description,x,y,z,mesh,action){
+  interactables.push({label,description,x,y,z,mesh,action});
+}
+function displayCase(x,z,label,description){
+  box(2.3,.35,1.5,darkStone,x,.65,z);
+  box(2.05,1.35,1.25,mat(0x4b3a39,.22,.5),x,1.45,z);
+  const relic=sphere(.38,gold,x,1.55,z);relic.scale.set(1,.75,1);
+  const marker=box(1.65,.75,.12,trim,x,1.55,z+.82);
+  addInteractable(label,description,x,1.5,z,relic,()=>say(description));
+}
+displayCase(-7,-39,"The Meridian Seal","A brass seal depicting nine converging paths. Its inscription reads: “A road is a promise made visible.”");
+displayCase(7,-39,"The Founder's Ledger","A glass-covered ledger records the names of builders, patrons and travelers who passed through Sarrat.");
+displayCase(-7,-49,"The Rain Vessel","A dark ceramic vessel gathers rainwater from an unseen source. Its surface ripples although the hall is still.");
+displayCase(7,-49,"The Star Map","A suspended map marks constellations above Sarrat, including several stars absent from the night sky.");
+// Reading stands and benches make the nave feel inhabited and provide inspectable furnishings.
+for(const side of [-1,1]){
+  const x=side*10;
+  box(2.8,.55,1.15,wood,x,.65,-34);
+  box(2.8,.16,1.2,trim,x,1.0,-34);
+  addInteractable("Carved reading bench","A long bench of dark wood, polished smooth by generations of visitors.",x,1,-34,null,()=>say("A small brass plate reads: “Rest before you choose your road.”"));
+}
+// Wall lamps can be lit or extinguished independently.
+const interactiveLamps=[];
+for(const side of [-1,1])for(const z of [-37,-45,-53]){
+  const lamp=light(side*14.2,4.1,z);
+  interactiveLamps.push({lamp,on:true,x:side*14.2,y:4.1,z});
+  addInteractable("Wall sconce","An amber wall sconce. Its flame is held inside a glass capsule.",side*14.2,4.1,z,null,()=>{
+    const item=interactiveLamps.find(v=>v.lamp===lamp);
+    item.on=!item.on;lamp.intensity=item.on?38:0;
+    say(item.on?"The sconce blooms with warm light.":"The sconce dims to darkness.");
+  });
+}
 // Purple hanging banners
 for(let x of [-9,0,9]){box(2.2,6,.14,purple,x,13,-25.1);box(2.2,.18,.18,gold,x,16,-25.02);const emblem=sphere(.42,gold,x,13,-24.95);emblem.scale.set(1,.65,.12)}
 // Market stalls left and right
@@ -198,20 +232,30 @@ document.getElementById('enter').onclick=()=>{start.style.display='none';if(matc
 document.addEventListener('pointerlockchange',()=>locked=document.pointerLockElement===renderer.domElement);
 document.addEventListener('mousemove',e=>{if(locked){yaw-=e.movementX*.0022;pitch=Math.max(-1.1,Math.min(1.1,pitch-e.movementY*.0022))}});
 const keys={};addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='KeyE')inspect()});addEventListener('keyup',e=>keys[e.code]=false);
+function nearestInteractable(){
+ let best=null,bestD=5.2;
+ for(const item of interactables){
+   const d=Math.hypot(camera.position.x-item.x,camera.position.y-item.y,camera.position.z-item.z);
+   if(d<bestD){best=item;bestD=d}
+ }
+ const doorD=camera.position.distanceTo(new THREE.Vector3(0,1,-24.5));
+ if(doorD<8 && (!best || doorD<bestD))return {label:doorOpen?"Close the Grand Meridian doors":"Open the Grand Meridian doors",door:true,d:doorD};
+ return best?{...best,d:bestD}:null;
+}
 function inspect(){
- const d=camera.position.distanceTo(new THREE.Vector3(0,1,-24.5));
- if(d<8){
+ const target=nearestInteractable();
+ if(!target){say("Move closer to a door, display or furnishing to interact.");return}
+ if(target.door){
    doorOpen=!doorOpen;
    doorPivot.rotation.y=doorOpen?Math.PI/2:0;
-   say(doorOpen?'The heavy doors swing inward. The Grand Meridian is open.':'The doors close with a deep wooden thud.');
- } else if(camera.position.z < -29 && camera.position.z > -58){
-   say('THE GRAND MERIDIAN — A ceremonial hall of marble columns, goldwork, hanging lights and a raised gallery. The far gallery is visible, but its upper level is not accessible in this prototype.');
- } else say('Approach the great entrance to open the doors.');
+   say(doorOpen?"The heavy doors swing inward. The Grand Meridian is open.":"The doors close with a deep wooden thud.");
+ } else if(target.action)target.action();
+ else say(target.description||target.label);
 }
 const touch=document.getElementById('touch'),stick=document.getElementById('stick');let joyId=null,joy={x:0,y:0};
 touch.addEventListener('pointerdown',e=>{joyId=e.pointerId;touch.setPointerCapture(joyId);joyMove(e)});touch.addEventListener('pointermove',e=>{if(e.pointerId===joyId)joyMove(e)});function joyMove(e){const r=touch.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),len=Math.max(1,Math.hypot(dx,dy)),k=Math.min(1,42/len);joy.x=dx/r.width*2*k;joy.y=dy/r.height*2*k;stick.style.transform='translate('+dx*k+'px,'+dy*k+'px)'}function joyEnd(){joyId=null;joy.x=joy.y=0;stick.style.transform=''}touch.addEventListener('pointerup',joyEnd);touch.addEventListener('pointercancel',joyEnd);
 let lookId=null,last={x:0,y:0};addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&e.clientX>innerWidth*.42){lookId=e.pointerId;last={x:e.clientX,y:e.clientY}}});addEventListener('pointermove',e=>{if(e.pointerId===lookId){yaw-=(e.clientX-last.x)*.006;pitch=Math.max(-1.1,Math.min(1.1,pitch-(e.clientY-last.y)*.005));last={x:e.clientX,y:e.clientY}}});addEventListener('pointerup',e=>{if(e.pointerId===lookId)lookId=null});
-addEventListener('click',e=>{if(e.pointerType==='touch'&&camera.position.distanceTo(new THREE.Vector3(0,0,-24))<12)inspect()});
+addEventListener('click',e=>{if(e.pointerType==='touch'&&start.style.display==='none')inspect()});
 const clock=new THREE.Clock();
 function frame(){requestAnimationFrame(frame);const dt=Math.min(clock.getDelta(),.04);let f=(keys.KeyW?1:0)-(keys.KeyS?1:0)+(-joy.y),s=(keys.KeyD?1:0)-(keys.KeyA?1:0)+(joy.x);const len=Math.hypot(f,s)||1;f/=len;s/=len;const speed=7.2;const dx=(Math.sin(yaw)*f+Math.cos(yaw)*s)*speed*dt,dz=(-Math.cos(yaw)*f+Math.sin(yaw)*s)*speed*dt;const nx=camera.position.x+dx,nz=camera.position.z+dz;
  // Resolve each axis independently so the player can slide along walls and columns.
@@ -219,9 +263,9 @@ function frame(){requestAnimationFrame(frame);const dt=Math.min(clock.getDelta()
  if(!collides(camera.position.x,nz))camera.position.z=nz;
 const floorY=stairHeight(camera.position.x,camera.position.z);
  camera.position.y=floorY+2.0+Math.sin(performance.now()*.004)*.035;camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=pitch;
-const near=camera.position.distanceTo(new THREE.Vector3(0,1,-24.5))<8;
-prompt.textContent=near?(doorOpen?'[ E ] Close the Grand Meridian doors':'[ E ] Open the Grand Meridian doors'):(camera.position.z < -29 && camera.position.z > -58?'[ E ] Inspect the Grand Hall':'');
-prompt.style.opacity=(near||(camera.position.z < -29 && camera.position.z > -58))?1:0;document.getElementById('position').textContent=camera.position.x.toFixed(1)+', 0.0, '+camera.position.z.toFixed(1);
+const target=nearestInteractable();
+prompt.textContent=target?'[ E ] '+(target.door?target.label:target.label):'';
+prompt.style.opacity=target?1:0;document.getElementById('position').textContent=camera.position.x.toFixed(1)+', 0.0, '+camera.position.z.toFixed(1);
 const p=rain.geometry.attributes.position;for(let i=0;i<rainN;i++){p.array[i*3+1]-=dt*19;if(p.array[i*3+1]<0)p.array[i*3+1]=35}p.needsUpdate=true;renderer.render(scene,camera)}
 frame();addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script>
