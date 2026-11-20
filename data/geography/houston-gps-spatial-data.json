@@ -1,0 +1,237 @@
+{
+  "schema_version": "1.0.0",
+  "project": "Apotheosis Online",
+  "dataset_id": "ao-earth-houston-gps-spatial",
+  "status": "source_catalog_defined_geometry_not_downloaded",
+  "scope": {
+    "place": "Houston",
+    "admin_area": "City of Houston, Texas, United States",
+    "country_code": "US",
+    "subdivision_code": "US-TX",
+    "city_boundary_is_authoritative_extent": true,
+    "include_etj_as_separate_geometry": true,
+    "include_harris_county_context": true,
+    "representative_point": {
+      "latitude": 29.7604,
+      "longitude": -95.3698,
+      "purpose": "map_center_only",
+      "not_user_location": true
+    }
+  },
+  "coordinate_policy": {
+    "canonical_crs": "EPSG:4326",
+    "datum": "WGS84",
+    "coordinate_order_in_ao_records": ["longitude", "latitude"],
+    "coordinate_order_in_geojson": ["longitude", "latitude"],
+    "preserve_source_geometry": true,
+    "preserve_source_crs": true,
+    "preserve_source_feature_id": true,
+    "preserve_source_attributes": true,
+    "transform_projected_sources_to_canonical": true,
+    "local_measurement_crs": "EPSG:2278",
+    "local_measurement_crs_name": "NAD83 / Texas South Central (US survey feet)",
+    "vertical_reference": "unknown_until_declared_by_source",
+    "rules": [
+      "Never interpret projected State Plane coordinates as longitude/latitude.",
+      "Never discard the source geometry when generating canonical WGS84 geometry.",
+      "Do not silently mix city limits, ETJ, postal city, and county boundaries.",
+      "Do not infer a building entrance, floor, room, or indoor position from a building footprint.",
+      "A representative point is not a legal boundary or a user's live GPS position."
+    ]
+  },
+  "feature_model": {
+    "required_fields": [
+      "ao_feature_id",
+      "feature_type",
+      "name",
+      "geometry_type",
+      "geometry_wgs84",
+      "source_dataset_id",
+      "source_feature_id",
+      "source_crs",
+      "source_vintage",
+      "retrieved_at",
+      "accuracy_or_scale",
+      "confidence",
+      "status"
+    ],
+    "geometry_types": ["Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon"],
+    "feature_types": [
+      "administrative_boundary",
+      "address_point",
+      "street_intersection",
+      "road_centerline",
+      "road_segment",
+      "path",
+      "railway",
+      "bridge",
+      "tunnel",
+      "building_footprint",
+      "parcel",
+      "park",
+      "waterway",
+      "waterbody",
+      "landmark",
+      "terrain_elevation"
+    ],
+    "identity_rule": "AO IDs are stable internal identifiers. Source IDs are retained as provenance and are not assumed permanent unless the source guarantees stability."
+  },
+  "datasets": [
+    {
+      "id": "houston-city-limits",
+      "feature_type": "administrative_boundary",
+      "priority": 0,
+      "source_name": "Harris County GIS - City of Houston Boundaries",
+      "service_url": "https://www.gis.hctx.net/arcgis/rest/services/CoH/CoH_Boundaries/MapServer/2",
+      "layer_id": 2,
+      "geometry": "Polygon",
+      "source_crs": "WKID:102740 / EPSG:2278",
+      "key_fields": ["SERVICE_TY", "DESCRIPTIO", "ENTITY_NAM", "EFF_DATE", "LEGAL_DOC"],
+      "classification": ["Full Service", "Limited Service", "Pending"],
+      "filter_policy": "Keep Full Service, Limited Service, and Pending separate. Pending is not current city limits.",
+      "status": "metadata_verified_geometry_not_downloaded"
+    },
+    {
+      "id": "houston-etj",
+      "feature_type": "administrative_boundary",
+      "priority": 1,
+      "source_name": "City of Houston ETJ",
+      "service_url": "https://services.arcgis.com/su8ic9KbA7PYVxPS/ArcGIS/rest/services/Houston_ETJ/FeatureServer/0",
+      "geometry": "Polygon",
+      "source_crs": "EPSG:4326",
+      "status": "metadata_verified_geometry_not_downloaded",
+      "note": "ETJ is a separate jurisdictional geography, not part of the incorporated city boundary."
+    },
+    {
+      "id": "houston-address-points",
+      "feature_type": "address_point",
+      "priority": 0,
+      "source_name": "City of Houston COH Site Addresses",
+      "service_url": "https://services.arcgis.com/NummVBqZSIJKUeVR/ArcGIS/rest/services/COH_SiteAddresses/FeatureServer/0",
+      "geometry": "Point",
+      "source_crs": "service-native; inspect layer metadata before extraction",
+      "key_fields": ["ADDR_ID", "STATUS", "STREET_NUM", "FRACTION", "PREFIX", "STREET_NAME", "SUFFIX", "STREET_TYPE", "CITY", "ZIPCODE"],
+      "quality_notes": [
+        "The City describes this as its most complete and official address repository.",
+        "The City also states that the compiled dataset requires ongoing cleanup.",
+        "Abandoned, preliminary, vacant, reverse-geocode, and other nonstandard statuses must be preserved, not silently treated as ordinary occupied addresses."
+      ],
+      "status": "metadata_verified_geometry_not_downloaded"
+    },
+    {
+      "id": "houston-address-info",
+      "feature_type": "address_point",
+      "priority": 1,
+      "source_name": "City of Houston HOUSTON_CITYINFO COH_ADDRESS_INFO",
+      "service_url": "https://mycity2.houstontx.gov/gisweb01/rest/services/EGIS/HOUSTON_CITYINFO/MapServer/0",
+      "layer_id": 0,
+      "geometry": "Point",
+      "source_crs": "service-native WKID:102100 / EPSG:3857",
+      "key_fields": ["ADDR_ID", "STATUS", "STREET_NUM", "STREET_NAME", "STREET_TYPE", "CITY", "ZIPCODE", "X_COORD", "Y_COORD", "HoustonETJ"],
+      "status": "metadata_verified_geometry_not_downloaded",
+      "note": "Enriched master address layer; compare with COH_SiteAddresses and deduplicate using source identifiers and normalized address, retaining source provenance."
+    },
+    {
+      "id": "houston-street-intersections",
+      "feature_type": "street_intersection",
+      "priority": 0,
+      "source_name": "City of Houston HOUSTON_CITYINFO COH_STREET_INTERSECTIONS",
+      "service_url": "https://mycity2.houstontx.gov/gisweb01/rest/services/EGIS/HOUSTON_CITYINFO/MapServer/3",
+      "layer_id": 3,
+      "geometry": "Point",
+      "source_crs": "service-native WKID:102100 / EPSG:3857",
+      "status": "metadata_verified_geometry_not_downloaded",
+      "quality_notes": [
+        "City metadata says this layer is updated annually; the metadata search result reports an update on 2026-10-08.",
+        "The City warns it has no permanent unique ID. Do not use OBJECTID or PlusCode as a permanent AO feature identifier.",
+        "Reconcile intersections against road centerline topology before using them as graph nodes."
+      ]
+    },
+    {
+      "id": "houston-road-centerlines",
+      "feature_type": "road_centerline",
+      "priority": 0,
+      "source_name": "City of Houston Planning and Development / Public Works GIS",
+      "discovery_portal": "https://houston-mycity.opendata.arcgis.com/",
+      "public_works_portal": "https://geohub.houstontx.gov/",
+      "fallback_source": "OpenStreetMap regional extract",
+      "fallback_url": "https://download.geofabrik.de/north-america/us/texas.html",
+      "geometry": "LineString or MultiLineString",
+      "source_crs": "inspect per source",
+      "required_attributes": ["source_id", "street_name", "road_class", "oneway", "access", "bridge", "tunnel", "layer_or_level", "surface"],
+      "status": "official_layer_endpoint_not_yet_confirmed",
+      "note": "Do not substitute intersection points for street centerlines. OSM fallback must retain ODbL attribution and dataset date."
+    },
+    {
+      "id": "houston-parcels",
+      "feature_type": "parcel",
+      "priority": 1,
+      "source_name": "Harris County Appraisal District Public Land Parcels",
+      "service_url": "https://services.arcgis.com/su8ic9KbA7PYVxPS/ArcGIS/rest/services/Public_Land_Parcels/FeatureServer/0",
+      "geometry": "Polygon",
+      "source_crs": "WKID:102740 / EPSG:2278",
+      "source_vintage": "2026-07-01",
+      "status": "metadata_verified_geometry_not_downloaded",
+      "note": "Parcel boundaries are property geography, not building footprints and not city limits."
+    },
+    {
+      "id": "houston-building-footprints",
+      "feature_type": "building_footprint",
+      "priority": 1,
+      "source_name": "Microsoft Texas Building Footprints",
+      "service_url": "https://services.arcgis.com/lqRTrQp2HrfnJt8U/ArcGIS/rest/services/Texas_BuildingFootprints/FeatureServer/0",
+      "geometry": "Polygon",
+      "source_crs": "EPSG:4326",
+      "source_vintage": "underlying imagery 2019-2020",
+      "license": "Open Data Commons Open Database License (ODbL)",
+      "status": "metadata_verified_geometry_not_downloaded",
+      "quality_notes": [
+        "Statewide coverage; spatially filter to the Houston study boundary plus a documented buffer.",
+        "Footprints do not provide verified entrances, floors, or interior geometry.",
+        "Record the 2019-2020 imagery vintage; do not imply current building status."
+      ]
+    },
+    {
+      "id": "houston-building-footprints-hgac",
+      "feature_type": "building_footprint",
+      "priority": 2,
+      "source_name": "Houston-Galveston Area Council LiDAR-derived building footprints",
+      "service_url": "https://services.arcgis.com/NummVBqZSIJKUeVR/arcgis/rest/services/Damage_Assessment_by_Building_Foot_Prints/FeatureServer/0",
+      "geometry": "Polygon",
+      "source_crs": "WKID:102740 / EPSG:2278",
+      "source_vintage": "2018 LiDAR; Harris County delivery 2019-06-24",
+      "status": "metadata_verified_limited_coverage_geometry_not_downloaded",
+      "quality_notes": [
+        "Derived from LiDAR classifications and may contain false or missing buildings.",
+        "The published service extent is limited; confirm feature coverage before treating it as citywide."
+      ]
+    }
+  ],
+  "acquisition_policy": {
+    "clip_extent": "City of Houston legal boundary plus separately recorded buffer for edge continuity",
+    "output_format": ["GeoJSON", "GeoParquet"],
+    "canonical_geometry": "WGS84 EPSG:4326",
+    "retain_native_source_copy": true,
+    "record_retrieval_timestamp": true,
+    "record_source_vintage_and_license": true,
+    "validate": [
+      "geometry validity",
+      "coordinate range and axis order",
+      "source feature counts",
+      "duplicate source identifiers",
+      "missing geometries",
+      "city-boundary clipping and edge coverage",
+      "address point-to-street proximity",
+      "road network connectivity and grade separation",
+      "building footprint overlap and duplicate coverage"
+    ],
+    "do_not_infer": [
+      "live user GPS location",
+      "building entrances",
+      "indoor floor plans",
+      "room geometry",
+      "walkability or travel times",
+      "current occupancy"
+    ]
+  }
+}
