@@ -170,6 +170,90 @@
       "status": "reference_only_geometry_not_acquired",
       "vintage": "2024",
       "note": "Public-only layer item updated 2024-11-20; general-reference accuracy/completeness disclaimer applies."
+    },
+    {
+      "id": "upper-gulf-coast-wbd-huc8",
+      "scope": "Upper Texas Gulf Coast regional study extent",
+      "feature_type": "hydrologic_subbasins",
+      "source": "USGS Watershed Boundary Dataset (WBD), 8-digit hydrologic units",
+      "source_urls": [
+        "https://hydro.nationalmap.gov/arcgis/rest/services/wbd/FeatureServer/4",
+        "https://www.usgs.gov/national-hydrography/access-national-hydrography-products"
+      ],
+      "priority": "P1",
+      "status": "browser_visualization_layer_added_geometry_not_yet_imported",
+      "service_layer": 4,
+      "spatial_extent": {
+        "west": -99,
+        "south": 25.2,
+        "east": -92.5,
+        "north": 34.5
+      },
+      "note": "Regional HUC-8 polygons intersecting the study envelope. The envelope is a display/query extent, not a claim that the Galveston Bay watershed is bounded by these coordinates. Full hydrologic unit polygons may extend beyond the view."
+    },
+    {
+      "id": "upper-gulf-coast-3dhp-flowlines",
+      "scope": "Upper Texas Gulf Coast regional study extent",
+      "feature_type": "hydrography_flowlines",
+      "source": "USGS 3D Hydrography Program (3DHP_all), Flowline layer",
+      "source_urls": [
+        "https://hydro.nationalmap.gov/arcgis/rest/services/3DHP_all/FeatureServer/50",
+        "https://www.usgs.gov/3d-hydrography-program/access-3dhp-data-products"
+      ],
+      "priority": "P1",
+      "status": "browser_visualization_layer_added_geometry_not_yet_imported",
+      "service_layer": 50,
+      "spatial_extent": {
+        "west": -99,
+        "south": 25.2,
+        "east": -92.5,
+        "north": 34.5
+      },
+      "included_feature_types": [
+        "River",
+        "Canal",
+        "Drainageway"
+      ],
+      "excluded_feature_types": [
+        "Surface Connector",
+        "Waterbody Connector",
+        "Elevation Breaching Connector",
+        "Hydro Unenforced Connector"
+      ],
+      "note": "USGS describes 3DHP as a national network of flowlines, hydrolocations and waterbodies, with EDH where available and legacy NHD supplementation where EDH is not yet collected. Flow direction and stream-order attributes are requested where present."
+    },
+    {
+      "id": "upper-gulf-coast-3dhp-waterbodies",
+      "scope": "Upper Texas Gulf Coast regional study extent",
+      "feature_type": "waterbody_polygons",
+      "source": "USGS 3D Hydrography Program (3DHP_all), Waterbody layer",
+      "source_urls": [
+        "https://hydro.nationalmap.gov/arcgis/rest/services/3DHP_all/FeatureServer/60"
+      ],
+      "priority": "P1",
+      "status": "browser_visualization_layer_added_geometry_not_yet_imported",
+      "service_layer": 60,
+      "included_feature_types": [
+        "River",
+        "Ocean or Great Lake"
+      ],
+      "note": "Only polygon boundary segments intersecting the regional display envelope are drawn. This is a hydrography visualization, not a legally surveyed shoreline or a tidal-datum coastline."
+    },
+    {
+      "id": "upper-gulf-coast-bathymetry-relief",
+      "scope": "Upper Texas Gulf Coast and adjacent Gulf of Mexico",
+      "feature_type": "bathymetric_shaded_relief",
+      "source": "Gulf of Mexico Shaded Relief Visualization / GCOOS derived bathymetry tile service",
+      "source_urls": [
+        "https://tiles.arcgis.com/tiles/qr14biwnHA6Vis6l/arcgis/rest/services/Shaded_Relief_Visualization_of_Gulf_of_Mexico_Bathymetry/MapServer",
+        "https://gcoos5.geos.tamu.edu/erddap/index.html",
+        "https://www.ncei.noaa.gov/products/coastal-relief-model"
+      ],
+      "priority": "P1",
+      "status": "browser_visualization_layer_added_geometry_not_yet_imported",
+      "service_type": "cached map tiles",
+      "display_zoom_level": 7,
+      "note": "Qualitative shaded-relief visualization derived from a mixture of NOAA, USGS, GEBCO, BOEM and academic survey inputs. It does not provide absolute depth values. Use NOAA NCEI Coastal Relief Model or source bathymetry grids with vertical datum and source lineage for canonical depth data."
     }
   ],
   "provenance_required": [
@@ -195,6 +279,9 @@
     "road_grade_separation_aware": true,
     "building_entrance_must_be_validated": true,
     "interior_geometry_requires_source_or_labelled_estimate": true,
-    "no_automatic_overwrite_of_authored_or_committed_ao_state": true
+    "no_automatic_overwrite_of_authored_or_committed_ao_state": true,
+    "watershed_extent_not_city_extent": true,
+    "hydrography_connectivity_requires_flowline_attributes": true,
+    "bathymetry_visualization_not_depth_authority": true
   }
 }
