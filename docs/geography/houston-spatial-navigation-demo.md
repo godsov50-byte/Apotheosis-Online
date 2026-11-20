@@ -11,6 +11,7 @@ Open `geography/houston-spatial-navigation-demo.html` in a modern browser. An in
 - **Basemap:** OpenStreetMap raster tiles; attribution is displayed on the map.
 - **City Hall address anchor:** City of Houston GIS `COH_ADDRESS_INFO` layer 0, address `901 BAGBY ST`, ZIP 77002. Point coordinates used: latitude 29.760193, longitude -95.369361.
 - **Destination address anchor:** same official GIS layer, `6801 BACHER ST`, ZIP 77028. Point coordinates used: latitude 29.824681, longitude -95.277697.
+- **Address locations:** City of Houston GIS `COH_ADDRESS_INFO` layer 0. Address points are drawn as yellow markers at close zoom; the location search queries official address records and places matching points on the map.
 - **Route:** public OSRM routing endpoint, based on OpenStreetMap road-network data. Route geometry is requested dynamically and drawn on the same map.
 - **Coordinate reference:** displayed coordinates are WGS84 geographic coordinates (EPSG:4326), latitude/longitude.
 
@@ -29,6 +30,7 @@ https://router.project-osrm.org/
 - Drag the blue Envoy marker or click the map to set its position.
 - Optionally request device GPS. Browser permission is required; no GPS coordinate is uploaded to AO by this prototype.
 - Inspect live latitude/longitude, direct geodesic distance, and bearing to the fixed destination.
+- Search for a Houston address, select an address point on the map, inspect its coordinates, and enter its location context. Return to the exterior map at any time.
 - Request a driving route and view its geometry, distance, and estimated duration.
 - Toggle a coarse visual grid. The grid is only an overlay; it does not constrain continuous movement.
 
@@ -36,4 +38,4 @@ https://router.project-osrm.org/
 
 This is a client-side spatial demonstration, not a connected AO Kernel or WorldHeart implementation. It does not commit movement, simulate collisions, validate access, or update persistent world state. The public OSRM demo service is best-effort and may impose usage limits. The Envoy marker starts at an official Houston GIS address point, but becomes simulated when moved manually; it becomes a device GPS reading only after the user grants permission. The destination is another official address point.
 
-The map uses real street-map tiles. It does not infer building interiors, entrances, floorplans, or room-level position from a street address. The optional grid is not an S2 cell visualization and is not a movement lattice.
+The map uses real street-map tiles and official address points. Entering a selected address opens its location context in the prototype; it does not yet display a verified building footprint, entrance, interior floorplan, or room-level navigation. Those require additional building and interior geometry sources. An address point is not treated as proof of a building entrance. The optional grid is not an S2 cell visualization and is not a movement lattice.
