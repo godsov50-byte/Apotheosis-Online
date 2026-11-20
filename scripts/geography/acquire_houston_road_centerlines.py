@@ -216,7 +216,7 @@ def main() -> int:
         "scope": {
             "jurisdiction": "Houston on either side of each road segment",
             "includes_city_boundary_connectors": True,
-            "excludes_segments with neither side identified as Houston": True,
+            "excludes_segments_with_neither_side_identified_as_houston": True,
         },
         "acquired_at_utc": acquired_at,
         "feature_count": len(features),
