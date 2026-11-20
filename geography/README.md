@@ -28,12 +28,13 @@ The globe's lines are source geometry rendered on the sphere; they are not paint
 
 The globe now adds optional browser-rendered layers for the regional natural system around Houston:
 
+- **Major basins:** USGS Watershed Boundary Dataset HUC-6 basin polygons intersecting the upper-coast study envelope.
 - **Watersheds:** USGS Watershed Boundary Dataset HUC-8 subbasins intersecting the upper-coast study envelope. HUC units are hydrologic boundaries, not city/county boundaries. The view envelope is a query window, not the watershed's actual outer boundary.
 - **Flowlines:** USGS 3D Hydrography Program Flowline layer, showing River, Canal, and Drainageway feature classes. The requested flow direction and stream-order attributes are retained in the service response; connectors are not drawn as ordinary rivers.
 - **Waterbody edges:** USGS 3DHP river and ocean/waterbody polygon edges clipped visually to the regional extent. These are hydrography features, not a legal or tidal-datum shoreline.
 - **Gulf bathymetry:** a low-zoom shaded-relief tile mosaic from the Gulf of Mexico visualization service, sourced from a mixture of public NOAA, USGS, GEBCO, BOEM, and academic bathymetric inputs. It is qualitative relief only, not absolute depth.
 
-Use the **Galveston Bay** and **Upper Gulf Coast** focus controls and the layer checkboxes to inspect the new geography. All layers load from public services at runtime and therefore require internet access. They are visual overlays only: no source geometry has been downloaded into the canonical AO geography registry, and no AO Kernel/WorldHeart state is modified.
+Use the **Galveston Bay** and **Upper Gulf Coast** focus controls and the independent layer checkboxes (major basins, subbasins, flowlines, waterbody edges, bathymetry) to inspect the new geography. All layers load from public services at runtime and therefore require internet access. They are visual overlays only: no source geometry has been downloaded into the canonical AO geography registry, and no AO Kernel/WorldHeart state is modified.
 
 ### Important geographic interpretation
 
@@ -45,3 +46,6 @@ Sources:
 - Texas Water Development Board, Trinity–San Jacinto Estuary: https://www.twdb.texas.gov/surfacewater/bays/major_estuaries/trinity_san_jacinto/
 - NOAA NCEI Coastal Relief Model: https://www.ncei.noaa.gov/products/coastal-relief-model
 - Gulf bathymetry shaded-relief service: https://tiles.arcgis.com/tiles/qr14biwnHA6Vis6l/arcgis/rest/services/Shaded_Relief_Visualization_of_Gulf_of_Mexico_Bathymetry/MapServer
+
+
+Latest upper Gulf Coast globe branch: https://github.com/godsov50-byte/Apotheosis-Online/raw/refs/heads/feature/upper-gulf-coast-geography/geography/texas-houston-globe.html
