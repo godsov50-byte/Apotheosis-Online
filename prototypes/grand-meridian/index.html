@@ -115,10 +115,27 @@ for(const side of [-1,1])for(const z of [-36,-48]){
   box(2.5,3.7,.18,glass,side*15.15,3,z);
   light(side*13.7,4,z);
 }
-// A raised balcony/gallery at the far end.
+// A raised balcony/gallery at the far end, with paired climbable stair runs.
 box(25,.5,5,stone,0,6.3,-57);
 for(let x=-12;x<=12;x+=2)box(.12,1.2,.12,gold,x,7,-55.1);
 box(1,1,5,trim,-13,6.9,-57);box(1,1,5,trim,13,6.9,-57);
+const stairRuns=[];
+for(const side of [-1,1]){
+  const sx=side*8.6, count=13, startZ=-48.8, run=.62, rise=.47;
+  for(let i=0;i<count;i++){
+    const z=startZ-(i+.5)*run, y=.25+(i+.5)*rise;
+    box(4.4,rise,.78, i%2?marble:stone,sx,y,z);
+    box(4.55,.12,.84,trim,sx,y+rise/2-.04,z);
+  }
+  // Low balustrades make the stair path legible without closing its approach.
+  for(const edge of [-1,1]){
+    for(let i=0;i<count;i++){
+      const z=startZ-(i+.5)*run, y=.45+(i+.5)*rise;
+      box(.18,.75,.22,trim,sx+edge*2.25,y,z);
+    }
+  }
+  stairRuns.push({x:sx,minX:sx-2.25,maxX:sx+2.25,startZ,endZ:startZ-count*run,run,rise,count});
+}
 
 // Purple hanging banners
 for(let x of [-9,0,9]){box(2.2,6,.14,purple,x,13,-25.1);box(2.2,.18,.18,gold,x,16,-25.02);const emblem=sphere(.42,gold,x,13,-24.95);emblem.scale.set(1,.65,.12)}
@@ -149,11 +166,26 @@ const obstacles=[
  ...[-13,-9,-5,5,9,13].flatMap(x=>[-31,-39,-47,-55].map(z=>({x,z,r:.82}))),
  ...[-20,20,-15,15].flatMap(x=>[-2,-15].map(z=>({x,z,r:1.15})))
 ];
+function stairHeight(x,z){
+ for(const s of stairRuns){
+   if(x>=s.minX && x<=s.maxX && z<=s.startZ && z>=s.endZ){
+     const step=Math.max(0,Math.min(s.count,Math.floor((s.startZ-z)/s.run)));
+     return step*s.rise;
+   }
+ }
+ // The upper gallery is a walkable raised surface once reached by either stair.
+ if(z<=-54.5 && z>=-59.5 && Math.abs(x)<=12.25)return 6.1;
+ return 0;
+}
 function collides(x,z){
  if(Math.abs(x)>29||z>22||z<-76)return true;
  // Hall side walls and rear wall.
  if(z < -28 && (x < -14.2 || x > 14.2))return true;
  if(z < -58 && z > -60)return true;
+ // Keep the raised gallery reachable only from its two stair openings.
+ const onGallery=z<=-54.5&&z>=-59.5&&Math.abs(x)<=12.25;
+ const onStair=stairRuns.some(s=>x>=s.minX&&x<=s.maxX&&z<=s.startZ&&z>=s.endZ);
+ if(z < -54.5 && !onGallery && !onStair && stairHeight(camera.position.x,camera.position.z)<5.5)return true;
  // The central doorway is passable only while its hinged door is open.
  if(!doorOpen && x> -2.7 && x<2.7 && z< -25.9 && z>-27.0)return true;
  for(const o of obstacles)if(Math.hypot(x-o.x,z-o.z)<bodyRadius+o.r)return true;
@@ -185,7 +217,8 @@ function frame(){requestAnimationFrame(frame);const dt=Math.min(clock.getDelta()
  // Resolve each axis independently so the player can slide along walls and columns.
  if(!collides(nx,camera.position.z))camera.position.x=nx;
  if(!collides(camera.position.x,nz))camera.position.z=nz;
-camera.position.y=2.0+Math.sin(performance.now()*.004)*.035;camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=pitch;
+const floorY=stairHeight(camera.position.x,camera.position.z);
+ camera.position.y=floorY+2.0+Math.sin(performance.now()*.004)*.035;camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=pitch;
 const near=camera.position.distanceTo(new THREE.Vector3(0,1,-24.5))<8;
 prompt.textContent=near?(doorOpen?'[ E ] Close the Grand Meridian doors':'[ E ] Open the Grand Meridian doors'):(camera.position.z < -29 && camera.position.z > -58?'[ E ] Inspect the Grand Hall':'');
 prompt.style.opacity=(near||(camera.position.z < -29 && camera.position.z > -58))?1:0;document.getElementById('position').textContent=camera.position.x.toFixed(1)+', 0.0, '+camera.position.z.toFixed(1);
