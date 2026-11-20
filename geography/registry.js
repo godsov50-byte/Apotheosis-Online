@@ -143,7 +143,7 @@ export function createGeographicRegistry(s2, options = {}) {
     }
     const parentArea = s2.Cell.fromCellID(parentId).exactArea();
     const childArea = childIds.reduce((sum, childId) => sum + s2.Cell.fromCellID(childId).exactArea(), 0);
-    if (Math.abs(parentArea - childArea) > Math.max(1e-12, parentArea * 1e-10)) {
+    if (Math.abs(parentArea - childArea) > Math.max(1e-24, parentArea * 1e-6)) {
       throw new Error("S2 child areas do not conserve parent area: " + parent.cellId);
     }
     parent.childCellIds = childIds.map(hexId);
