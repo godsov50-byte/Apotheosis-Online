@@ -14,7 +14,9 @@ Serve this folder with a local static web server (for example, run `python -m ht
 - A split front structure with an actual central passage, openable double-door leaf, and a walk-in ceremonial hall.
 - Interior nave with columns, gold trim, chandeliers, side chapel recesses, sconces and a raised rear gallery.
 - Paired staircases with locally computed elevation, allowing the player to climb to and walk across the upper gallery.
-- First-person local movement, local body-clearance checks around stalls, trees and columns, with wall sliding and a doorway gate, position readout, and proximity inspection.
+- First-person local movement, local body-clearance checks around stalls, trees and columns, with wall sliding and a doorway gate, position readout, and proximity interaction.
+- Four inspectable exhibit cases (Meridian Seal, Founder's Ledger, Rain Vessel and Star Map), reading benches, and six independently toggleable wall sconces. Approach an object and press E; on touch devices, tap to interact when the start overlay is dismissed.
+- A proximity prompt selects the nearest eligible object or entrance door; exhibit text and lamp state changes are local to the current browser session.
 - Desktop and basic touch movement/look controls.
 
 ## Explicit limitations
