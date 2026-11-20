@@ -16,15 +16,17 @@ Serve this folder with a local static web server (for example, run `python -m ht
 - Paired staircases with locally computed elevation, allowing the player to climb to and walk across the upper gallery.
 - First-person local movement, local body-clearance checks around stalls, trees and columns, with wall sliding and a doorway gate, position readout, and proximity interaction.
 - Four inspectable exhibit cases (Meridian Seal, Founder's Ledger, Rain Vessel and Star Map), reading benches, and six independently toggleable wall sconces. Approach an object and press E; on touch devices, tap to interact when the start overlay is dismissed.
-- A proximity prompt selects the nearest eligible object or entrance door; exhibit text and lamp state changes are local to the current browser session.
+- A proximity prompt selects the nearest eligible object or entrance door. Signed-in door, exhibit and sconce interactions are submitted to the isolated Grand Meridian experimental API, validated against the authenticated Envoy and server-tracked position, and appended to the experimental event ledger.
+- Supabase Auth sign-in/sign-up is available in the start panel. First authenticated use provisions a provisional **Grand Meridian Visitor** Envoy at the plaza spawn; no Tier or attributes are assigned.
+- Scene state is hydrated from `exp_entities`; door and individual sconce state reconstruct from saved state after reload. The API also accepts rate-limited position updates for range validation.
 - Desktop and basic touch movement/look controls.
 
 ## Explicit limitations
-This is a local visual/gameplay prototype. It is **not** connected to the AO Kernel, WorldHeart, Supabase, authoritative continuous-space collision, durable event history, NPC simulation, or an authoritative building-interior state. Position and door state reset on reload. Geometry and collision are blockout quality: the controller uses approximate circular clearances rather than a true capsule/mesh solver; the stair elevation and gallery walk surface are approximate blockout navigation, not a true capsule/mesh solver. No browser runtime or device test was run as part of this GitHub edit.
+This remains an isolated experiment, not the main AO Kernel or WorldHeart. The browser scene now connects to the separate `ao-grand-meridian-experiment` Supabase project through the `grand-meridian-api` Edge Function. Authenticated door, exhibit and sconce actions are server-validated and ledgered; the scene reloads those persisted states. Position updates are server rate-limited and used for interaction-range checks, but collision geometry is still enforced only by the local browser controller. This is not yet authoritative spatial movement or a full AO Kernel. The provisional Visitor Envoy is an experimental test identity with no Tier or attributes. Geometry and collision remain blockout quality: approximate circular clearances, not a true capsule/mesh solver. No real browser or mobile device test has been completed.
 
 ## Next build steps
-1. Run on desktop and phone, then fix real-device movement, camera and rendering issues.
+1. Run the connected experiment in a browser; test account confirmation, sign-in, scene reconstruction and action rejection cases.
 2. Replace primitive blockout geometry with modular authored assets and a proper collision mesh/capsule controller.
-3. Make the interior navigable in full, including stair traversal and upper gallery.
-4. Define the location's spatial manifest and continuous coordinates.
-5. Route movement and interactions through Kernel validation and append-only committed events before claiming persistent world behavior.
+3. Move collision and traversal validation into the experimental Kernel before calling movement authoritative.
+4. Make the interior navigable in full, including stair traversal and upper gallery.
+5. Expand the spatial manifest and event-driven reconstruction only after test coverage is in place.
