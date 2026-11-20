@@ -299,6 +299,32 @@
         "Freshwater Forested/Shrub Wetland"
       ],
       "note": "NWI wetland polygons are outlined in the globe and styled by broad wetland class. FWS updates its web mapping services biannually. NWI has known mapping-scale and imagery-detection limitations; it is not a complete ecological inventory or legal wetland jurisdiction determination."
+    },
+    {
+      "id": "upper-gulf-coast-pedestrian-routing-preview",
+      "scope": "Upper Texas Gulf Coast; route requests use entered geographic coordinates",
+      "feature_type": "pedestrian_route_service",
+      "source": "FOSSGIS OSRM foot routing service using OpenStreetMap data",
+      "source_urls": [
+        "https://routing.openstreetmap.de/about.html",
+        "https://www.openstreetmap.org/"
+      ],
+      "priority": "P0",
+      "status": "browser_preview_added_not_canonical_route_graph",
+      "service_endpoint": "https://routing.openstreetmap.de/routed-foot/route/v1/driving/",
+      "profile": "FOSSGIS foot profile",
+      "output": [
+        "route_geometry",
+        "distance_meters",
+        "estimated_duration_seconds"
+      ],
+      "usage": "Lightweight interactive route preview only; public service usage is limited to at most one request per second and is not suitable as AO production infrastructure.",
+      "limitations": [
+        "OpenStreetMap coverage and access tags vary by location.",
+        "Route estimates are external service outputs, not Kernel-resolved character travel times.",
+        "No AO location directory or canonical pedestrian graph has been imported.",
+        "Current UI accepts coordinate pairs; place-name search and saved locations are not yet implemented."
+      ]
     }
   ],
   "provenance_required": [
