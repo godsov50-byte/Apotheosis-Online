@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://esm.sh; style-src 'self' 'unsafe-inline'; connect-src 'self' https://hixbtiuibtyiqrtacver.supabase.co; img-src 'self' data:; base-uri 'self'; form-action 'self'">
+  <title>AO WorldHeart — Access approval</title>
+  <style>
+    :root{color-scheme:dark;--bg:#090812;--panel:#171326;--line:#3c3156;--gold:#e6c77b;--muted:#b8aecb;--ink:#f7f1ff;--purple:#8c67d8;--danger:#d77e8b}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% 0%,#2a1d42 0%,var(--bg) 62%);color:var(--ink);font:16px/1.55 system-ui,-apple-system,Segoe UI,sans-serif;display:grid;place-items:center;padding:24px}
+    main{width:min(100%,560px);background:linear-gradient(160deg,#1c1730,var(--panel));border:1px solid var(--line);border-radius:22px;padding:clamp(22px,5vw,38px);box-shadow:0 28px 90px #0008}
+    .eyebrow{color:var(--gold);letter-spacing:.16em;text-transform:uppercase;font-size:.72rem;font-weight:700}
+    h1{font-size:clamp(1.8rem,5vw,2.5rem);line-height:1.1;margin:.65rem 0 1rem}
+    p{color:var(--muted)}.rule{height:1px;background:var(--line);margin:24px 0}
+    label{display:block;font-size:.85rem;color:var(--muted);margin:14px 0 6px}
+    input{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:10px;background:#0d0a17;color:var(--ink);font:inherit}
+    button{border:0;border-radius:11px;padding:12px 16px;font:inherit;font-weight:700;cursor:pointer}
+    button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--gold);color:#21182b}.secondary{background:#34274d;color:var(--ink);border:1px solid #594777}.deny{background:transparent;color:#f0aab2;border:1px solid #80505b}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.actions button{flex:1}
+    .row{display:flex;gap:10px;flex-wrap:wrap}.row button{flex:1}
+    .notice{padding:12px 14px;border-radius:10px;background:#100d1b;border:1px solid var(--line);font-size:.9rem;color:var(--muted);margin-top:16px}
+    .status{min-height:1.5em;color:var(--gold);font-size:.9rem;margin-top:12px;overflow-wrap:anywhere}
+    .error{color:#f0aab2}.details{padding:16px;border:1px solid var(--line);border-radius:12px;background:#100d1b;margin-top:18px}
+    .details strong{color:var(--gold)}.details p{margin:.45rem 0;overflow-wrap:anywhere}
+    ul{color:var(--muted);padding-left:20px}.small{font-size:.82rem}.hidden{display:none!important}
+    a{color:var(--gold)}
+  </style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">Apotheosis Online · Experimental Access</div>
+  <h1>Connect AO WorldHeart</h1>
+  <p>This page signs you into the Grand Meridian experimental account and asks whether to authorize ChatGPT to use the AO runtime tools.</p>
+
+  <section id="auth">
+    <div class="rule"></div>
+    <h2 id="auth-title">Sign in</h2>
+    <p class="small">Your credentials are submitted directly to Supabase Auth for this experimental project. Do not send your password in ChatGPT.</p>
+    <label for="email">Email</label>
+    <input id="email" type="email" autocomplete="email" required>
+    <label for="password">Password</label>
+    <input id="password" type="password" autocomplete="current-password" required>
+    <div class="actions">
+      <button class="primary" id="sign-in">Sign in</button>
+      <button class="secondary" id="sign-up">Create account</button>
+    </div>
+    <div id="auth-status" class="status" role="status" aria-live="polite"></div>
+  </section>
+
+  <section id="consent" class="hidden">
+    <div class="rule"></div>
+    <h2>Approve connection?</h2>
+    <div class="details">
+      <p><strong>Application:</strong> <span id="client-name">AO WorldHeart</span></p>
+      <p><strong>Redirect:</strong> <span id="redirect-uri">ChatGPT</span></p>
+      <p><strong>Requested OAuth scopes:</strong> <span id="scopes">openid email profile</span></p>
+    </div>
+    <p>Approving allows this ChatGPT integration to use the following tools in the Grand Meridian experiment:</p>
+    <ul>
+      <li>Read the experimental scene, entities, Envoy position, and recent event history.</li>
+      <li>Create or retrieve your provisional Visitor Envoy.</li>
+      <li>Submit bounded, speed-checked movement intents.</li>
+      <li>Open or close the entrance, inspect exhibits, and toggle approved sconces.</li>
+    </ul>
+    <div class="notice">This grant is limited to the Grand Meridian experimental service. It does not connect ChatGPT to the main AO project. Movement currently lacks server-side wall, obstacle, stair, and capsule collision checks.</div>
+    <div class="actions">
+      <button class="primary" id="approve">Approve access</button>
+      <button class="deny" id="deny">Deny</button>
+    </div>
+    <div class="status" id="consent-status" role="status" aria-live="polite"></div>
+  </section>
+
+  <section id="signed-in" class="hidden">
+    <div class="rule"></div>
+    <p id="account-label"></p>
+    <button class="secondary" id="sign-out">Sign out</button>
+  </section>
+</main>
+<script type="module">
+  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+  const SUPABASE_URL = "https://hixbtiuibtyiqrtacver.supabase.co";
+  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_PdvHsSpEuDuzM06QeXS12Q_18-_DwaQ";
+  const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+  });
+
+  const authorizationId = new URLSearchParams(window.location.search).get("authorization_id");
+  const $ = (id) => document.getElementById(id);
+  const authSection = $("auth");
+  const consentSection = $("consent");
+  const signedInSection = $("signed-in");
+  let consentReady = false;
+
+  function setStatus(id, message, isError = false) {
+    const el = $(id);
+    el.textContent = message;
+    el.classList.toggle("error", isError);
+  }
+
+  function setBusy(buttonIds, busy) {
+    for (const id of buttonIds) $(id).disabled = busy;
+  }
+
+  async function loadConsent() {
+    if (!authorizationId) {
+      setStatus("auth-status", "No authorization request was provided. Start the connection from ChatGPT.", true);
+      return;
+    }
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError || !userData.user) {
+      authSection.classList.remove("hidden");
+      consentSection.classList.add("hidden");
+      signedInSection.classList.add("hidden");
+      return;
+    }
+
+    authSection.classList.add("hidden");
+    signedInSection.classList.remove("hidden");
+    $("account-label").textContent = "Signed in as " + (userData.user.email || "your experimental account");
+
+    const { data, error } = await supabase.auth.oauth.getAuthorizationDetails(authorizationId);
+    if (error || !data) {
+      setStatus("consent-status", error?.message || "This authorization request could not be loaded.", true);
+      consentSection.classList.remove("hidden");
+      return;
+    }
+    if (!("authorization_id" in data)) {
+      window.location.assign(data.redirect_url);
+      return;
+    }
+
+    $("client-name").textContent = data.client?.name || "AO WorldHeart";
+    $("redirect-uri").textContent = data.redirect_uri || "ChatGPT";
+    $("scopes").textContent = data.scope || "No additional OAuth scopes";
+    consentReady = true;
+    consentSection.classList.remove("hidden");
+  }
+
+  async function signIn() {
+    const email = $("email").value.trim();
+    const password = $("password").value;
+    if (!email || !password) return setStatus("auth-status", "Enter your email and password.", true);
+    setBusy(["sign-in","sign-up"], true);
+    setStatus("auth-status", "Signing in…");
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    setBusy(["sign-in","sign-up"], false);
+    if (error) return setStatus("auth-status", error.message, true);
+    setStatus("auth-status", "Signed in. Loading the authorization request…");
+    await loadConsent();
+  }
+
+  async function signUp() {
+    const email = $("email").value.trim();
+    const password = $("password").value;
+    if (!email || !password) return setStatus("auth-status", "Enter your email and choose a password.", true);
+    if (password.length < 8) return setStatus("auth-status", "Use a password with at least 8 characters.", true);
+    setBusy(["sign-in","sign-up"], true);
+    setStatus("auth-status", "Creating your experimental account…");
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: window.location.href }
+    });
+    setBusy(["sign-in","sign-up"], false);
+    if (error) return setStatus("auth-status", error.message, true);
+    if (!data.session) {
+      return setStatus("auth-status", "Account created. Check your email to confirm it, then return to this authorization link and sign in.");
+    }
+    await loadConsent();
+  }
+
+  async function decide(approve) {
+    if (!consentReady || !authorizationId) return;
+    setBusy(["approve","deny"], true);
+    setStatus("consent-status", approve ? "Approving connection…" : "Denying connection…");
+    const response = approve
+      ? await supabase.auth.oauth.approveAuthorization(authorizationId, { skipBrowserRedirect: true })
+      : await supabase.auth.oauth.denyAuthorization(authorizationId, { skipBrowserRedirect: true });
+    setBusy(["approve","deny"], false);
+    if (response.error || !response.data?.redirect_url) {
+      return setStatus("consent-status", response.error?.message || "The authorization decision failed.", true);
+    }
+    window.location.assign(response.data.redirect_url);
+  }
+
+  $("sign-in").addEventListener("click", signIn);
+  $("sign-up").addEventListener("click", signUp);
+  $("approve").addEventListener("click", () => decide(true));
+  $("deny").addEventListener("click", () => decide(false));
+  $("sign-out").addEventListener("click", async () => {
+    await supabase.auth.signOut();
+    window.location.reload();
+  });
+
+  loadConsent().catch((error) => setStatus("auth-status", error?.message || "Could not initialize sign-in.", true));
+</script>
+</body>
+</html>
