@@ -1,0 +1,127 @@
+{
+  "schema_version": "1.0.0",
+  "dataset_id": "ao-earth-houston-road-network",
+  "status": "source_verified_acquisition_pipeline_committed_snapshot_not_yet_imported",
+  "geographic_scope": {
+    "jurisdiction": "City of Houston, Texas",
+    "selection_rule": "munileft = 'HOUSTON' OR muniright = 'HOUSTON'",
+    "includes_boundary_connectors": true,
+    "etj_only_segments": false,
+    "source_contains_wider_city_and_etj_coverage": true
+  },
+  "sources": {
+    "road_centerlines": {
+      "provider": "City of Houston GIS / COHGIS",
+      "service": "COH_RoadCenterline",
+      "layer_id": 0,
+      "url": "https://services.arcgis.com/NummVBqZSIJKUeVR/ArcGIS/rest/services/COH_RoadCenterline/FeatureServer/0",
+      "description": "City and ETJ road centerlines; maintained with road additions, removals, street-name and block-range changes.",
+      "geometry_type": "esriGeometryPolyline",
+      "source_crs": "EPSG:2278",
+      "source_units": "US survey feet",
+      "canonical_crs": "EPSG:4326",
+      "geojson_coordinate_order": [
+        "longitude",
+        "latitude"
+      ],
+      "source_object_id": "OBJECTID",
+      "source_global_id": "GlobalID",
+      "source_business_id": "centerlineid",
+      "source_data_last_edit_utc": "2026-09-25T18:08:41.727Z",
+      "observed_source_counts": {
+        "entire_layer": 235807,
+        "city_side_either_side": 83760,
+        "city_on_both_sides_only": 83544,
+        "boundary_or_cross_jurisdiction_connectors": 216,
+        "checked_utc": "2026-11-20"
+      },
+      "key_attributes": [
+        "fullname",
+        "roadclass",
+        "onewaydir",
+        "lanes",
+        "speed",
+        "funcclass",
+        "source",
+        "munileft",
+        "muniright",
+        "fromleft",
+        "fromright",
+        "toleft",
+        "toright",
+        "parityleft",
+        "parityright",
+        "zipleft",
+        "zipright"
+      ],
+      "caveat": "The source describes itself as maintained and most up-to-date for Houston and its ETJ, but disclaims warranty of accuracy/completeness for specific applications."
+    },
+    "intersection_nodes": {
+      "provider": "City of Houston GIS",
+      "service": "HPC/LandbaseAndRoads_hpc",
+      "layer_id": 10,
+      "url": "https://geogimsms.houstontx.gov/arcgis/rest/services/HPC/LandbaseAndRoads_hpc/MapServer/10",
+      "geometry_type": "esriGeometryPoint",
+      "source_crs": "EPSG:2278",
+      "key_attributes": [
+        "OBJECTID",
+        "NODEID",
+        "ORI_NODEID",
+        "NODE_TYPE",
+        "STREET1",
+        "STREET2",
+        "STREET3",
+        "STREET4",
+        "JURISDICTION",
+        "DATE_MODIFIED"
+      ],
+      "use": "Reference intersection and special node layer; do not assume its identifiers directly match COH_RoadCenterline without a verified crosswalk."
+    },
+    "network_links": {
+      "provider": "City of Houston GIS",
+      "service": "HPC/LandbaseAndRoads_hpc",
+      "layer_id": 12,
+      "url": "https://geogimsms.houstontx.gov/arcgis/rest/services/HPC/LandbaseAndRoads_hpc/MapServer/12",
+      "geometry_type": "esriGeometryPolyline",
+      "source_crs": "EPSG:2278",
+      "key_attributes": [
+        "OBJECTID",
+        "NAME",
+        "ST_TYPE",
+        "ROAD_CLASS",
+        "LINKID",
+        "LINK_TYPE",
+        "JURISDICTI",
+        "ORI_LINKID",
+        "DATE_MODIF"
+      ],
+      "use": "Supplemental city network-link reference; keep separate from centerlines until link-to-centerline correspondence and routing semantics are verified."
+    }
+  },
+  "spatial_model": {
+    "road_segments": "Continuous polyline geometry; no grid snapping.",
+    "road_intersections": "Explicit node entities where validated.",
+    "topology": "Build/validate edge-node incidence, crossing connectivity, and grade separation before enabling Kernel pathfinding.",
+    "directionality": "Preserve onewaydir raw values; decode only after source-domain validation.",
+    "speed_and_lanes": "Preserve source values and types; do not infer operational limits from unvalidated values.",
+    "stable_identity": "AO-owned deterministic ID derived from source GlobalID; retain OBJECTID and centerlineid as source identifiers.",
+    "provenance": "Every imported feature retains source URL, layer, source IDs, source edit timestamp, acquisition timestamp, source CRS, transformation, and snapshot hash."
+  },
+  "acquisition": {
+    "script": "scripts/geography/acquire_houston_road_centerlines.py",
+    "command": "python scripts/geography/acquire_houston_road_centerlines.py --output-dir build/houston-road-network",
+    "output": [
+      "roads.geojson",
+      "manifest.json"
+    ],
+    "method": "Capture stable source OBJECTID set, download in bounded batches, transform server output to EPSG:4326, validate geometry and IDs, compare source edit timestamp before/after, write atomically.",
+    "current_state": "Pipeline committed; no full road geometry snapshot downloaded or committed yet."
+  },
+  "usage_limits": [
+    "Road centerlines are not lane-level driving geometry.",
+    "Centerlines alone do not establish sidewalk or pedestrian access.",
+    "One-way, access, turn restrictions, bridges, tunnels, and grade-separated crossings need validated network semantics.",
+    "Official Nodes and Links are supplemental datasets and are not yet crosswalked to centerline IDs.",
+    "Do not treat road graph routing as physical Envoy movement; the Kernel remains the authority for movement resolution."
+  ]
+}
