@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apotheosis.online/contracts/v1/perception.request.schema.json",
+  "title": "AO Perception Request",
+  "allOf": [
+    {
+      "$ref": "common.schema.json#/$defs/requestEnvelope"
+    }
+  ],
+  "properties": {
+    "request_type": {
+      "const": "perception"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "mode"
+      ],
+      "properties": {
+        "mode": {
+          "enum": [
+            "look",
+            "inspect",
+            "listen",
+            "smell",
+            "touch",
+            "investigate",
+            "sense",
+            "observe_environment"
+          ]
+        },
+        "target_id": {
+          "type": "string"
+        },
+        "focus": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "actor_id"
+  ]
+}

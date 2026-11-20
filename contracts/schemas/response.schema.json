@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apotheosis.online/contracts/v1/response.schema.json",
+  "title": "AO Kernel Response",
+  "$ref": "common.schema.json#/$defs/responseEnvelope"
+}

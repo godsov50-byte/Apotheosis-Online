@@ -1,0 +1,13 @@
+{
+  "name": "ao-kernel-ai-contract-mock",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Deterministic mock Kernel for the AO Kernel-AI Interface Contract v1",
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

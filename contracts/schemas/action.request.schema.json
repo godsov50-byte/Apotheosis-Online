@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apotheosis.online/contracts/v1/action.request.schema.json",
+  "title": "AO Action Request",
+  "allOf": [
+    {
+      "$ref": "common.schema.json#/$defs/requestEnvelope"
+    }
+  ],
+  "properties": {
+    "request_type": {
+      "const": "action"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "domain",
+        "verb"
+      ],
+      "properties": {
+        "domain": {
+          "enum": [
+            "movement",
+            "interaction",
+            "communication",
+            "combat",
+            "construction",
+            "crafting",
+            "trade",
+            "equipment",
+            "technique",
+            "development",
+            "exploration",
+            "social"
+          ]
+        },
+        "verb": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_id": {
+          "type": "string"
+        },
+        "parameters": {
+          "type": "object"
+        },
+        "idempotency_key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "duration_mode": {
+          "enum": [
+            "immediate",
+            "continuous",
+            "long_running"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "actor_id"
+  ]
+}
