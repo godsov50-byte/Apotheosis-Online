@@ -28,11 +28,15 @@ button{border:1px solid #d6a84e;background:linear-gradient(#5b3c21,#241a19);colo
 #touch{display:none;position:fixed;bottom:24px;left:22px;width:128px;height:128px;border:1px solid #d6b36a66;border-radius:50%;background:#090b1699;touch-action:none;z-index:4}
 #stick{position:absolute;left:40px;top:40px;width:46px;height:46px;border-radius:50%;background:#d5ad6477;border:1px solid #f4d58d}
 #lookhint{display:none;position:fixed;right:20px;bottom:30px;color:#f2d59a88;font:11px system-ui;z-index:4}
+#auth{margin:16px auto 8px;display:flex;flex-wrap:wrap;justify-content:center;gap:7px;max-width:360px}
+#auth input{min-width:0;width:145px;padding:9px;background:#100e19;border:1px solid #8b7048;color:#f4e8d1}
+#auth button{padding:9px 12px;font-size:11px}
+#authStatus{font:11px/1.4 system-ui;color:#d6c39f;min-height:16px}
 @media(pointer:coarse){#touch{display:block}#lookhint{display:block}#help{top:auto;bottom:165px;font-size:10px}}
 </style>
 </head>
 <body>
-<div id="start"><div class="card panel"><h1>SARRAT</h1><div style="color:#d6a84e;letter-spacing:.2em;font-size:11px">THE GRAND MERIDIAN</div><p>A first playable 3D environment prototype for Apotheosis Online.<br>Stand in the rain-washed plaza and approach the Meridian Hall.</p><p><b>Desktop:</b> WASD to move · Mouse to look · E open/close doors or inspect · Esc to release mouse<br><b>Touch:</b> Left pad to move · Drag right side to look · Tap Inspect nearby</p><button id="enter">ENTER THE STREET</button></div></div>
+<div id="start"><div class="card panel"><h1>SARRAT</h1><div style="color:#d6a84e;letter-spacing:.2em;font-size:11px">THE GRAND MERIDIAN</div><p>A first playable 3D environment prototype for Apotheosis Online.<br>Stand in the rain-washed plaza and approach the Meridian Hall.</p><p><b>Desktop:</b> WASD to move · Mouse to look · E open/close doors or inspect · Esc to release mouse<br><b>Touch:</b> Left pad to move · Drag right side to look · Tap Inspect nearby</p><div id="auth"><input id="authEmail" type="email" autocomplete="email" placeholder="Email"><input id="authPassword" type="password" autocomplete="current-password" placeholder="Password"><button id="signIn">SIGN IN</button><button id="signUp">CREATE EXPERIMENT ACCOUNT</button></div><div id="authStatus">Sign in to persist Envoy position and interactions. You can explore without signing in.</div><button id="enter">ENTER THE STREET</button></div></div>
 <div id="hud">
  <div id="brand" class="panel">✦ &nbsp; APOTHEOSIS ONLINE <span style="font-size:10px;color:#d6a84e"> / FARSIDE</span></div>
  <div id="place" class="panel"><strong>SARRAT</strong><span>The Grand Meridian<br>Safe Zone · Evening Rain</span></div>
@@ -45,6 +49,21 @@ button{border:1px solid #d6a84e;background:linear-gradient(#5b3c21,#241a19);colo
 <div id="touch"><div id="stick"></div></div><div id="lookhint">DRAG TO LOOK · TAP INSPECT WHEN NEAR</div>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+const SUPABASE_URL='https://hixbtiuibtyiqrtacver.supabase.co';
+const SUPABASE_KEY='sb_publishable_PdvHsSpEuDuzM06QeXS12Q_18-_DwaQ';
+const supabase=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
+const API_URL=SUPABASE_URL+'/functions/v1/grand-meridian-api';
+let authSession=null, serverActor=null, lastPositionSync=0, positionSyncBusy=false;
+async function apiRequest(body=null){
+ const headers={'apikey':SUPABASE_KEY};
+ if(authSession?.access_token)headers.Authorization='Bearer '+authSession.access_token;
+ const options=body?{method:'POST',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify(body)}:{headers};
+ const response=await fetch(API_URL,options);
+ const result=await response.json().catch(()=>({error:'INVALID_SERVER_RESPONSE'}));
+ if(!response.ok)throw new Error(result.error||'SERVER_REQUEST_FAILED');
+ return result;
+}
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x101426);scene.fog=new THREE.FogExp2(0x101426,.012);
 const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.1,450);camera.position.set(0,2,12);
 const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;document.body.appendChild(renderer.domElement);
@@ -139,20 +158,20 @@ for(const side of [-1,1]){
 
 // Interactive hall furnishings and exhibits. These are local prototype objects, not Kernel entities.
 const interactables=[];
-function addInteractable(label,description,x,y,z,mesh,action){
-  interactables.push({label,description,x,y,z,mesh,action});
+function addInteractable(label,description,x,y,z,mesh,action,serverAction=null,targetKey=null,payload={}){
+  interactables.push({label,description,x,y,z,mesh,action,serverAction,targetKey,payload});
 }
-function displayCase(x,z,label,description){
+function displayCase(x,z,label,description,targetKey){
   box(2.3,.35,1.5,darkStone,x,.65,z);
   box(2.05,1.35,1.25,mat(0x4b3a39,.22,.5),x,1.45,z);
   const relic=sphere(.38,gold,x,1.55,z);relic.scale.set(1,.75,1);
   const marker=box(1.65,.75,.12,trim,x,1.55,z+.82);
-  addInteractable(label,description,x,1.5,z,relic,()=>say(description));
+  addInteractable(label,description,x,1.5,z,relic,()=>say(description),'inspect_exhibit',targetKey);
 }
-displayCase(-7,-39,"The Meridian Seal","A brass seal depicting nine converging paths. Its inscription reads: “A road is a promise made visible.”");
-displayCase(7,-39,"The Founder's Ledger","A glass-covered ledger records the names of builders, patrons and travelers who passed through Sarrat.");
-displayCase(-7,-49,"The Rain Vessel","A dark ceramic vessel gathers rainwater from an unseen source. Its surface ripples although the hall is still.");
-displayCase(7,-49,"The Star Map","A suspended map marks constellations above Sarrat, including several stars absent from the night sky.");
+displayCase(-7,-39,"The Meridian Seal","A brass seal depicting nine converging paths. Its inscription reads: “A road is a promise made visible.”","exhibit-meridian-seal");
+displayCase(7,-39,"The Founder's Ledger","A glass-covered ledger records the names of builders, patrons and travelers who passed through Sarrat.","exhibit-founders-ledger");
+displayCase(-7,-49,"The Rain Vessel","A dark ceramic vessel gathers rainwater from an unseen source. Its surface ripples although the hall is still.","exhibit-rain-vessel");
+displayCase(7,-49,"The Star Map","A suspended map marks constellations above Sarrat, including several stars absent from the night sky.","exhibit-star-map");
 // Reading stands and benches make the nave feel inhabited and provide inspectable furnishings.
 for(const side of [-1,1]){
   const x=side*10;
@@ -169,7 +188,7 @@ for(const side of [-1,1])for(const z of [-37,-45,-53]){
     const item=interactiveLamps.find(v=>v.lamp===lamp);
     item.on=!item.on;lamp.intensity=item.on?38:0;
     say(item.on?"The sconce blooms with warm light.":"The sconce dims to darkness.");
-  });
+  },"toggle_sconce","nave-wall-sconces",{lamp_x:side*14.2,lamp_z:z});
 }
 // Purple hanging banners
 for(let x of [-9,0,9]){box(2.2,6,.14,purple,x,13,-25.1);box(2.2,.18,.18,gold,x,16,-25.02);const emblem=sphere(.42,gold,x,13,-24.95);emblem.scale.set(1,.65,.12)}
@@ -228,7 +247,62 @@ function collides(x,z){
 let yaw=0,pitch=0,locked=false,move={x:0,z:0},toastTimer;
 const start=document.getElementById('start'),prompt=document.getElementById('prompt'),toast=document.getElementById('toast');
 function say(t){toast.textContent=t;toast.style.opacity=1;clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.style.opacity=0,3000)}
+function lampKey(x,z){return x.toFixed(1).replace('.','_')+'_'+z.toFixed(1).replace('.','_')}
+function applyServerScene(data){
+ serverActor=data.actor||null;
+ if(serverActor?.position){camera.position.x=serverActor.position.x;camera.position.z=serverActor.position.z;}
+ const doorEntity=data.entities?.find(e=>e.entity_key==='grand-meridian-hinged-doors');
+ if(doorEntity){doorOpen=!!doorEntity.current_state.open;doorPivot.rotation.y=doorOpen?Math.PI/2:0;}
+ const sconces=data.entities?.find(e=>e.entity_key==='nave-wall-sconces');
+ if(sconces){for(const item of interactiveLamps){const key=lampKey(item.x,item.z);item.on=typeof sconces.current_state.sconce_states?.[key]==='boolean'?sconces.current_state.sconce_states[key]:!!sconces.current_state.all_lit;item.lamp.intensity=item.on?38:0;}}
+ document.getElementById('authStatus').textContent=serverActor?'Signed in · '+serverActor.display_name+' · position and interactions sync to the experiment.':'Not signed in · exploration is local only.';
+}
+async function refreshServerScene(){
+ try{const data=await apiRequest();applyServerScene(data);return data;}
+ catch(e){say('World connection: '+e.message);return null;}
+}
+async function commitInteraction(action,targetKey,payload={}){
+ if(!authSession){say('Sign in above to commit this interaction to the experiment.');return;}
+ try{
+  const result=await apiRequest({type:'interact',action,target_key:targetKey,payload,idempotency_key:crypto.randomUUID()});
+  applyServerScene(result.scene);
+  if(action==='inspect_exhibit'){
+   const entity=result.scene.entities.find(e=>e.entity_key===targetKey);
+   say(entity?.properties?.inscription||entity?.properties?.description||'The exhibit is recorded in the experimental world.');
+  }else if(action==='toggle_sconce'){say('The sconce state has been committed to the experimental world.');}
+  else{say(action==='open_door'?'The doors open. The change is committed.':'The doors close. The change is committed.');}
+ }catch(e){say('Kernel rejected interaction: '+e.message);}
+}
+async function syncPosition(){
+ if(!authSession||positionSyncBusy||Date.now()-lastPositionSync<350)return;
+ positionSyncBusy=true;lastPositionSync=Date.now();
+ try{
+  const result=await apiRequest({type:'move',x:camera.position.x,z:camera.position.z});
+  if(serverActor)serverActor.position={...result.position};
+ }catch(e){
+  if(e.message==='MOVEMENT_RATE_EXCEEDED'&&serverActor?.position){camera.position.x=serverActor.position.x;camera.position.z=serverActor.position.z;}
+ }finally{positionSyncBusy=false;}
+}
+document.getElementById('signIn').onclick=async()=>{
+ const email=document.getElementById('authEmail').value.trim(),password=document.getElementById('authPassword').value;
+ const status=document.getElementById('authStatus');status.textContent='Signing in…';
+ const {data,error}=await supabase.auth.signInWithPassword({email,password});
+ if(error){status.textContent=error.message;return;}
+ authSession=data.session;await refreshServerScene();
+};
+document.getElementById('signUp').onclick=async()=>{
+ const email=document.getElementById('authEmail').value.trim(),password=document.getElementById('authPassword').value;
+ const status=document.getElementById('authStatus');
+ if(password.length<8){status.textContent='Use a password with at least 8 characters.';return;}
+ status.textContent='Creating experiment account…';
+ const {data,error}=await supabase.auth.signUp({email,password});
+ if(error){status.textContent=error.message;return;}
+ if(data.session){authSession=data.session;await refreshServerScene();}
+ else status.textContent='Account created. Check your email to confirm, then sign in.';
+};
+supabase.auth.onAuthStateChange((_event,session)=>{authSession=session;if(session)setTimeout(()=>refreshServerScene(),0);});
 document.getElementById('enter').onclick=()=>{start.style.display='none';if(matchMedia('(pointer:fine)').matches)renderer.domElement.requestPointerLock?.();say('You enter Sarrat. The Grand Meridian stands before you.')};
+refreshServerScene();
 document.addEventListener('pointerlockchange',()=>locked=document.pointerLockElement===renderer.domElement);
 document.addEventListener('mousemove',e=>{if(locked){yaw-=e.movementX*.0022;pitch=Math.max(-1.1,Math.min(1.1,pitch-e.movementY*.0022))}});
 const keys={};addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='KeyE')inspect()});addEventListener('keyup',e=>keys[e.code]=false);
@@ -242,14 +316,12 @@ function nearestInteractable(){
  if(doorD<8 && (!best || doorD<bestD))return {label:doorOpen?"Close the Grand Meridian doors":"Open the Grand Meridian doors",door:true,d:doorD};
  return best?{...best,d:bestD}:null;
 }
-function inspect(){
+async function inspect(){
  const target=nearestInteractable();
  if(!target){say("Move closer to a door, display or furnishing to interact.");return}
- if(target.door){
-   doorOpen=!doorOpen;
-   doorPivot.rotation.y=doorOpen?Math.PI/2:0;
-   say(doorOpen?"The heavy doors swing inward. The Grand Meridian is open.":"The doors close with a deep wooden thud.");
- } else if(target.action)target.action();
+ if(target.door){await commitInteraction(doorOpen?'close_door':'open_door','grand-meridian-hinged-doors');}
+ else if(target.serverAction){await commitInteraction(target.serverAction,target.targetKey,target.payload);}
+ else if(target.action)target.action();
  else say(target.description||target.label);
 }
 const touch=document.getElementById('touch'),stick=document.getElementById('stick');let joyId=null,joy={x:0,y:0};
@@ -266,6 +338,7 @@ const floorY=stairHeight(camera.position.x,camera.position.z);
 const target=nearestInteractable();
 prompt.textContent=target?'[ E ] '+(target.door?target.label:target.label):'';
 prompt.style.opacity=target?1:0;document.getElementById('position').textContent=camera.position.x.toFixed(1)+', 0.0, '+camera.position.z.toFixed(1);
+syncPosition();
 const p=rain.geometry.attributes.position;for(let i=0;i<rainN;i++){p.array[i*3+1]-=dt*19;if(p.array[i*3+1]<0)p.array[i*3+1]=35}p.needsUpdate=true;renderer.render(scene,camera)}
 frame();addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script>
