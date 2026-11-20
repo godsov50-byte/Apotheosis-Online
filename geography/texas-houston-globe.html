@@ -33,7 +33,7 @@ button{background:#173448;border:1px solid #376078;color:#edf8fb;padding:10px 12
 <body>
 <div id="app">
 <header>
-  <div class="brand"><div class="mark">AO</div><div><h1>AO Earth · Texas & Houston</h1><p>2024 GEOGRAPHY BASELINE · TEXAS / HOUSTON</p></div></div>
+  <div class="brand"><div class="mark">AO</div><div><h1>AO Earth · Geography & Walking Routes</h1><p>GEOGRAPHIC POSITIONING · PEDESTRIAN ROUTING PREVIEW</p></div></div>
   <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap"><button id="focusTexas">Texas</button><button id="focusHouston">Houston</button><button id="focusBay">Galveston Bay</button><button id="focusGulf">Upper Gulf Coast</button><button id="showEarth">Whole Earth</button><span class="muted" id="gridStatus">Loading geographic layers…</span></div>
 </header>
 <main id="stage"><canvas id="globe"></canvas><div id="loading">INITIALIZING EARTH GRID</div><div class="hint">Drag to rotate · Scroll or pinch to zoom · Select a cell</div></main>
@@ -47,9 +47,15 @@ button{background:#173448;border:1px solid #376078;color:#edf8fb;padding:10px 12
     <div class="statrow"><span>Parent face</span><strong>Six S2 faces</strong></div>
   </div>
   <div class="actions"><button id="subdivide" disabled>Open 4 children</button><button id="reset">Reset globe</button></div>
-  <div class="eyebrow">Administrative geography</div><div class="statrow"><span>Texas boundary</span><strong id="texasStatus">Loading…</strong></div><div class="statrow"><span>Houston limits</span><strong id="houstonStatus">Loading…</strong></div><div class="statrow"><span>Boundary vintage</span><strong>Texas 2024</strong></div><div class="eyebrow" style="margin-top:16px">Natural geography</div><div class="statrow"><span>HUC-6 major basins</span><strong id="basinStatus">Waiting…</strong></div><div class="statrow"><span>HUC-8 subbasins</span><strong id="watershedStatus">Waiting…</strong></div><div class="statrow"><span>Rivers / bayous / canals</span><strong id="flowStatus">Waiting…</strong></div><div class="statrow"><span>Waterbody edges</span><strong id="waterbodyStatus">Waiting…</strong></div><div class="statrow"><span>Wetlands</span><strong id="wetlandStatus">Waiting…</strong></div><div class="statrow"><span>Gulf seafloor relief</span><strong id="bathyStatus">Waiting…</strong></div><div class="eyebrow" style="margin-top:16px">Layer visibility</div><label class="layerToggle"><input type="checkbox" id="toggleBasins" checked> Major river basins</label><label class="layerToggle"><input type="checkbox" id="toggleWatersheds" checked> Watershed subbasins</label><label class="layerToggle"><input type="checkbox" id="toggleFlowlines" checked> Rivers, bayous, canals</label><label class="layerToggle"><input type="checkbox" id="toggleWaterbodies" checked> Waterbody / coastal edges</label><label class="layerToggle"><input type="checkbox" id="toggleWetlands" checked> Coastal and inland wetlands</label><label class="layerToggle"><input type="checkbox" id="toggleBathymetry" checked> Gulf bathymetry relief</label><div class="eyebrow" style="margin-top:16px">Visible S2 cells</div>
+  <div class="eyebrow">Administrative geography</div><div class="statrow"><span>Texas boundary</span><strong id="texasStatus">Loading…</strong></div><div class="statrow"><span>Houston limits</span><strong id="houstonStatus">Loading…</strong></div><div class="statrow"><span>Boundary vintage</span><strong>Texas 2024</strong></div><div class="eyebrow" style="margin-top:16px">Natural geography</div><div class="statrow"><span>HUC-6 major basins</span><strong id="basinStatus">Waiting…</strong></div><div class="statrow"><span>HUC-8 subbasins</span><strong id="watershedStatus">Waiting…</strong></div><div class="statrow"><span>Rivers / bayous / canals</span><strong id="flowStatus">Waiting…</strong></div><div class="statrow"><span>Waterbody edges</span><strong id="waterbodyStatus">Waiting…</strong></div><div class="statrow"><span>Wetlands</span><strong id="wetlandStatus">Waiting…</strong></div><div class="statrow"><span>Gulf seafloor relief</span><strong id="bathyStatus">Waiting…</strong></div><div class="eyebrow" style="margin-top:16px">Layer visibility</div><label class="layerToggle"><input type="checkbox" id="toggleBasins" checked> Major river basins</label><label class="layerToggle"><input type="checkbox" id="toggleWatersheds" checked> Watershed subbasins</label><label class="layerToggle"><input type="checkbox" id="toggleFlowlines" checked> Rivers, bayous, canals</label><label class="layerToggle"><input type="checkbox" id="toggleWaterbodies" checked> Waterbody / coastal edges</label><label class="layerToggle"><input type="checkbox" id="toggleWetlands" checked> Coastal and inland wetlands</label><label class="layerToggle"><input type="checkbox" id="toggleBathymetry" checked> Gulf bathymetry relief</label><div class="eyebrow" style="margin-top:16px">Walking navigation · preview</div>
+  <p class="muted" style="font-size:11px">Enter two map positions to calculate a pedestrian route. Coordinates are longitude, latitude.</p>
+  <label class="layerToggle" style="display:block">From (lon, lat)<input id="walkFrom" value="-95.3698,29.7604" style="display:block;width:100%;margin-top:5px;background:#091824;color:#edf5fa;border:1px solid #376078;border-radius:6px;padding:9px"></label>
+  <label class="layerToggle" style="display:block">To (lon, lat)<input id="walkTo" value="-94.7977,29.3013" style="display:block;width:100%;margin-top:5px;background:#091824;color:#edf5fa;border:1px solid #376078;border-radius:6px;padding:9px"></label>
+  <button id="walkRoute" style="width:100%;margin-top:8px">Calculate walking route</button>
+  <div id="walkResult" class="notice" aria-live="polite">Choose two positions to see walking distance and estimated time.</div>
+  <div class="eyebrow" style="margin-top:16px">Visible S2 cells</div>
   <div id="cellList"></div>
-  <div class="notice">Geographic identities and cell boundaries are generated by S2. Texas uses the Census 2024 generalized state boundary; Houston uses the public City boundary reference view. Watershed subbasins use USGS WBD HUC-8; flowlines and waterbody edges use USGS 3DHP. Gulf relief is a qualitative GCOOS shaded-relief tile layer, not a source of absolute depth values. These are regional visualization layers, not yet imported canonical AO geography. Internet access is required.</div>
+  <div class="notice">Geographic identities and cell boundaries are generated by S2. Texas uses the Census 2024 generalized state boundary; Houston uses the public City boundary reference view. Watershed subbasins use USGS WBD HUC-8; flowlines and waterbody edges use USGS 3DHP. Gulf relief is a qualitative GCOOS shaded-relief tile layer, not a source of absolute depth values. These are regional visualization layers, not yet imported canonical AO geography. Walking routes use the public FOSSGIS OSRM foot profile over OpenStreetMap data; public demo usage is rate-limited and not suitable for production. Route results are estimates and require internet access.</div>
 </aside>
 </div>
 <script type="module">
@@ -246,6 +252,41 @@ async function loadNaturalGeography(){
  ];await Promise.all(tasks);
 }
 
+let walkingRouteGroup=null;
+function parseLonLat(value){
+ const parts=value.split(",").map(v=>Number(v.trim()));
+ if(parts.length!==2||!parts.every(Number.isFinite)||parts[0]<-180||parts[0]>180||parts[1]<-85||parts[1]>85)throw Error("Enter valid longitude, latitude values.");
+ return parts;
+}
+function drawWalkingRoute(coords){
+ if(walkingRouteGroup){globeRoot.remove(walkingRouteGroup);walkingRouteGroup.traverse(o=>{if(o.geometry)o.geometry.dispose();});}
+ walkingRouteGroup=new THREE.Group();
+ const points=coords.map(([lon,lat])=>latLonVector(lon,lat,1.016));
+ const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),new THREE.LineBasicMaterial({color:0xffd36e,linewidth:3}));
+ walkingRouteGroup.add(line);
+ for(const [lon,lat] of [coords[0],coords[coords.length-1]]){
+  const marker=new THREE.Mesh(new THREE.SphereGeometry(.006,12,8),new THREE.MeshBasicMaterial({color:0xffe2a1}));
+  marker.position.copy(latLonVector(lon,lat,1.019));walkingRouteGroup.add(marker);
+ }
+ globeRoot.add(walkingRouteGroup);
+}
+document.querySelector("#walkRoute").addEventListener("click",async()=>{
+ const button=document.querySelector("#walkRoute"),result=document.querySelector("#walkResult");
+ try{
+  const from=parseLonLat(document.querySelector("#walkFrom").value),to=parseLonLat(document.querySelector("#walkTo").value);
+  button.disabled=true;result.textContent="Finding a pedestrian route…";
+  const url="https://routing.openstreetmap.de/routed-foot/route/v1/driving/"+from.join(",")+";"+to.join(",")+"?overview=full&geometries=geojson&steps=false&alternatives=false";
+  const response=await fetch(url);if(!response.ok)throw Error("Walking route service returned HTTP "+response.status);
+  const data=await response.json();if(data.code!=="Ok"||!data.routes?.length)throw Error("No pedestrian route was found between those positions.");
+  const route=data.routes[0];if(!route.geometry?.coordinates?.length)throw Error("The route service returned no route geometry.");
+  drawWalkingRoute(route.geometry.coordinates);
+  const km=route.distance/1000,minutes=Math.round(route.duration/60);
+  const duration=minutes>=60?Math.floor(minutes/60)+" hr "+(minutes%60)+" min":minutes+" min";
+  result.textContent=km.toFixed(2)+" km · "+duration+" estimated walking time (OpenStreetMap pedestrian routing).";
+  focusLatLon((from[0]+to[0])/2,(from[1]+to[1])/2,Math.max(1.55,Math.min(2.4,1.55+km/80)));
+ }catch(error){result.textContent=error.message;console.warn("Walking route:",error);}
+ finally{button.disabled=false;}
+});
 async function loadGeography(){
   const txUrl="https://tigerweb.geo.census.gov/arcgis/rest/services/Generalized_ACS2024/State_County/MapServer/4/query?where=GEOID%3D%2748%27&outFields=GEOID%2CNAME&returnGeometry=true&outSR=4326&f=geojson";
   const houstonUrl="https://services.arcgis.com/NummVBqZSIJKUeVR/ArcGIS/rest/services/COH_City_Limit_view/FeatureServer/0/query?where=1%3D1&outFields=OBJECTID_1%2CSERVICE_TY&returnGeometry=true&outSR=4326&f=geojson";
