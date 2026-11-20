@@ -8,16 +8,24 @@ Run from the repository root:
 python scripts/geography/acquire_houston_city_limits.py
 ```
 
-The script downloads the City of Houston COH_Limits FeatureServer layer 0,
-checks the source WKID and required fields, pages through all features,
-requests GeoJSON in EPSG:4326, records the actual service-type values, and
-writes an acquisition report.
+The script downloads Harris County GIS `CoH_Boundaries` MapServer layer 2
+(`COH_City_Limit`). The service advertises GeoJSON and exposes the
+`SERVICE_TY` classification. The script checks the source CRS and required
+fields, pages through features, requests EPSG:4326 output, preserves raw and
+normalized service-type values, and writes source metadata plus an acquisition
+report.
 
 Outputs are written under `data/geography/imports/houston-city-limits/`.
-That directory is a local acquisition target and should not be committed
-without reviewing the dataset size, source terms, geometry validity, and
-provenance. No Supabase or production database is modified.
+This is a local acquisition target. Review dataset size, source terms,
+geometry validity, topology, and provenance before committing or ingesting it.
+The script does not write to Supabase or the AO geographic registry.
 
-Source metadata was reviewed on 2026-11-20. The service reports WKID 102740
-(EPSG:2278). The script stops if the service CRS changes so that coordinates
-cannot be silently misinterpreted.
+The selected Texas state boundary baseline is Census 2024 TIGER/Line. Census
+states that its legal boundaries and names are as of January 1, 2024. The
+Houston MapServer does not declare a source vintage in its reviewed metadata;
+the acquisition report therefore records the retrieval timestamp and labels
+the vintage as not declared rather than assuming it is current or 2024.
+
+A separate City of Houston public-only layer is labelled Version 2024 and
+updated November 20, 2024. It is retained as a historical cross-check, not
+silently merged into the primary source.
