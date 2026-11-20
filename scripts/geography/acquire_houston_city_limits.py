@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""Acquire the City of Houston COH_Limits layer as WGS84 GeoJSON.
+"""Acquire the Houston city-limit polygons as WGS84 GeoJSON.
 
-This downloads source data only. It does not write to Supabase or the AO
-geographic registry. Review the output and source terms before ingestion.
+Source: Harris County GIS CoH_Boundaries MapServer, layer 2
+(COH_City_Limit). This is a source-data download only; it does not write to
+Supabase or the AO geographic registry. Review provenance, terms, and geometry
+before ingestion.
 """
 from __future__ import annotations
 
@@ -14,22 +16,18 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
-LAYER_URL = (
-    "https://services.arcgis.com/su8ic9KbA7PYVxPS/ArcGIS/rest/services/"
-    "COH_Limits/FeatureServer/0"
-)
+LAYER_URL = "https://www.gis.hctx.net/arcgis/rest/services/CoH/CoH_Boundaries/MapServer/2"
 EXPECTED_WKID = 102740
 EXPECTED_LATEST_WKID = 2278
 PAGE_SIZE = 1000
-ALLOWED_SERVICE_TYPES = {\n    "FULL", "LIMITED", "PENDING",\n    "FULL SERVICE", "LIMITED SERVICE",\n}
+ALLOWED_SERVICE_TYPES = {"FULL", "LIMITED", "PENDING", "FULL SERVICE", "LIMITED SERVICE"}
 
 
 def get_json(url: str, params: dict[str, str] | None = None) -> dict:
     if params:
-        url = url + ("&" if "?" in url else "?") + urllib.parse.urlencode(params)
+        url += ("&" if "?" in url else "?") + urllib.parse.urlencode(params)
     request = urllib.request.Request(
-        url,
-        headers={"User-Agent": "ApotheosisOnline-GeographyResearch/1.0"},
+        url, headers={"User-Agent": "ApotheosisOnline-GeographyResearch/1.0"}
     )
     with urllib.request.urlopen(request, timeout=90) as response:
         payload = json.load(response)
@@ -42,30 +40,22 @@ def get_json(url: str, params: dict[str, str] | None = None) -> dict:
 
 def validate_metadata(metadata: dict) -> tuple[int | None, int | None]:
     spatial_ref = metadata.get("extent", {}).get("spatialReference", {})
-    wkid = spatial_ref.get("wkid")
-    latest_wkid = spatial_ref.get("latestWkid")
-
-    # ArcGIS may identify this CRS as WKID 102740 with latestWkid 2278.
-    # Accept either recognized identifier, but preserve both in provenance.
-    if EXPECTED_WKID not in {wkid, latest_wkid} and EXPECTED_LATEST_WKID not in {wkid, latest_wkid}:
+    wkid, latest_wkid = spatial_ref.get("wkid"), spatial_ref.get("latestWkid")
+    identifiers = {wkid, latest_wkid}
+    if EXPECTED_WKID not in identifiers and EXPECTED_LATEST_WKID not in identifiers:
         raise SystemExit(
-            "Unexpected source CRS identifiers "
-            f"(wkid={wkid}, latestWkid={latest_wkid}); expected "
-            f"{EXPECTED_WKID} / {EXPECTED_LATEST_WKID}. Stop and review CRS."
+            f"Unexpected CRS (wkid={wkid}, latestWkid={latest_wkid}); "
+            f"expected {EXPECTED_WKID}/{EXPECTED_LATEST_WKID}."
         )
-
     fields = {field.get("name") for field in metadata.get("fields", [])}
     required = {"OBJECTID", "SERVICE_TY"}
     if not required.issubset(fields):
         raise SystemExit(f"Missing expected fields: {sorted(required - fields)}")
-
     formats = {item.strip().lower() for item in metadata.get("supportedQueryFormats", "").split(",")}
     if "geojson" not in formats:
-        raise SystemExit(f"GeoJSON queries are not advertised by source: {sorted(formats)}")
-
-    capabilities = metadata.get("advancedQueryCapabilities", {})
-    if capabilities.get("supportsPagination") is False:
-        raise SystemExit("Source does not advertise pagination; refusing a potentially truncated download.")
+        raise SystemExit(f"GeoJSON is not advertised by source: {sorted(formats)}")
+    if metadata.get("advancedQueryCapabilities", {}).get("supportsPagination") is False:
+        raise SystemExit("Source explicitly reports pagination unsupported; refusing a possibly truncated download.")
     return wkid, latest_wkid
 
 
@@ -83,7 +73,7 @@ def main() -> None:
     )
 
     features: list[dict] = []
-    seen_object_ids: set[int] = set()
+    seen_ids: set[int] = set()
     offset = 0
     while True:
         page = get_json(
@@ -101,26 +91,22 @@ def main() -> None:
         )
         batch = page.get("features")
         if not isinstance(batch, list):
-            raise SystemExit(f"ArcGIS query response has no feature array at offset {offset}.")
+            raise SystemExit(f"No feature array returned at offset {offset}.")
         if page.get("exceededTransferLimit") is True:
-            raise SystemExit(
-                f"ArcGIS reports exceededTransferLimit at offset {offset}; "
-                "refusing to write an incomplete dataset."
-            )
+            raise SystemExit(f"Transfer limit exceeded at offset {offset}; no output written.")
         if not batch:
             break
-
         for feature in batch:
             properties = feature.get("properties") or {}
             object_id = properties.get("OBJECTID")
             if object_id is None:
-                raise SystemExit("A returned feature is missing OBJECTID.")
+                raise SystemExit("A feature is missing OBJECTID.")
             object_id = int(object_id)
-            if object_id in seen_object_ids:
+            if object_id in seen_ids:
                 raise SystemExit(f"Duplicate OBJECTID {object_id}; pagination may be unstable.")
             if not feature.get("geometry"):
-                raise SystemExit(f"Feature OBJECTID {object_id} has no geometry.")
-            seen_object_ids.add(object_id)
+                raise SystemExit(f"Feature {object_id} has no geometry.")
+            seen_ids.add(object_id)
         features.extend(batch)
         offset += len(batch)
         if len(batch) < PAGE_SIZE:
@@ -128,7 +114,7 @@ def main() -> None:
         time.sleep(0.15)
 
     if not features:
-        raise SystemExit("The service returned zero features; no output GeoJSON written.")
+        raise SystemExit("The service returned zero features; no GeoJSON written.")
 
     raw_types = sorted({
         str((feature.get("properties") or {}).get("SERVICE_TY", "")).strip()
@@ -137,7 +123,7 @@ def main() -> None:
     normalized_types = sorted({value.upper() for value in raw_types})
     unknown = sorted(set(normalized_types) - ALLOWED_SERVICE_TYPES)
     if unknown:
-        raise SystemExit(f"Unrecognized SERVICE_TY values {unknown}; inspect source before classifying.")
+        raise SystemExit(f"Unknown SERVICE_TY values {unknown}; inspect before classifying.")
 
     source = {
         "url": LAYER_URL,
@@ -145,17 +131,14 @@ def main() -> None:
         "source_latest_wkid": latest_wkid,
         "output_crs": "EPSG:4326",
         "retrieved_at": datetime.now(timezone.utc).isoformat(),
-        "service_types_observed": raw_types,\n        "service_types_normalized": normalized_types,
+        "service_types_observed": raw_types,
+        "service_types_normalized": normalized_types,
         "feature_count": len(features),
-        "object_id_min": min(seen_object_ids),
-        "object_id_max": max(seen_object_ids),
+        "object_id_min": min(seen_ids),
+        "object_id_max": max(seen_ids),
+        "vintage": "not_declared_by_source_service",
     }
-    geojson = {
-        "type": "FeatureCollection",
-        "name": "COH_Limits",
-        "source": source,
-        "features": features,
-    }
+    geojson = {"type": "FeatureCollection", "name": "COH_City_Limit", "source": source, "features": features}
     (out / "houston-city-limits.geojson").write_text(
         json.dumps(geojson, separators=(",", ":")) + "\n", encoding="utf-8"
     )
