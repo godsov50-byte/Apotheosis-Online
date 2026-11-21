@@ -4,12 +4,15 @@ import { pipeline } from "npm:@supabase/middleware@1";
 import { withOAuthProtectedResource } from "npm:@supabase/server@^1.6.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod@^4.3.6";
+import { AO_UI_HTML } from "./ao-ui.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const PUBLIC_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SECRET_KEY")!;
 const WORLD_KEY = "grand-meridian-experiment";
 const RESOURCE_METADATA = "https://hixbtiuibtyiqrtacver.supabase.co/functions/v1/ao-chatgpt-mcp/oauth-protected-resource";
+const AO_UI_URI = "ui://ao/grand-meridian/v1.html";
+const AO_UI_MIME = "text/html;profile=mcp-app";
 
 const admin = createClient(SUPABASE_URL, SERVICE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
@@ -112,6 +115,9 @@ async function loadScene(userId: string) {
 function buildServer(userId: string | null) {
   const server = new McpServer({ name: "ao-grand-meridian", version: "0.1.1" });
   const auth = { securitySchemes: [{ type: "oauth2", scopes: ["openid", "email", "profile"] }] };
+  server.registerResource("AO Grand Meridian Game View", AO_UI_URI, { description: "Interactive spatial view for the Grand Meridian experimental world." }, async () => ({
+    contents: [{ uri: AO_UI_URI, mimeType: AO_UI_MIME, text: AO_UI_HTML }],
+  }));
 
   server.registerTool(
     "get_grand_meridian_scene",
@@ -120,7 +126,7 @@ function buildServer(userId: string | null) {
       description: "Read the current experimental scene, spatial entities, world revision, and the authenticated user's Envoy and position. This does not create an Envoy.",
       inputSchema: z.object({}),
       annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
-      _meta: auth,
+      _meta: { ...auth, ui: { resourceUri: AO_UI_URI }, "openai/outputTemplate": AO_UI_URI },
     },
     async () => {
       if (!userId) return authRequired();
@@ -136,7 +142,7 @@ function buildServer(userId: string | null) {
       description: "Create or retrieve the authenticated user's provisional experimental Visitor Envoy, then return the updated scene. This creates an experimental identity only; it assigns no Tier or attributes.",
       inputSchema: z.object({}),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
-      _meta: auth,
+      _meta: { ...auth, ui: { resourceUri: AO_UI_URI }, "openai/outputTemplate": AO_UI_URI },
     },
     async () => {
       if (!userId) return authRequired();
