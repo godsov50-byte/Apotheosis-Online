@@ -1,0 +1,18 @@
+name = "ao-shared-gateway"
+main = "src/index.js"
+compatibility_date = "2026-11-21"
+
+[vars]
+AO_ENVIRONMENT = "staging"
+AO_ALLOWED_ORIGINS = ""
+
+# Add these service bindings only after the corresponding authenticated
+# AO Kernel and WorldHeart services exist and implement the internal contract.
+#
+# [[services]]
+# binding = "AO_KERNEL"
+# service = "ao-kernel"
+#
+# [[services]]
+# binding = "AO_WORLDHEART"
+# service = "ao-worldheart"
