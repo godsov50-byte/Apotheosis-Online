@@ -161,7 +161,7 @@ function buildServer(userId: string | null) {
       description: "Submit an Envoy position intent in prototype world coordinates. The server checks world bounds and movement speed and records accepted position changes in the experimental ledger. IMPORTANT LIMITATION: server-side wall, obstacle, stair, elevation, and capsule collision validation is not implemented.",
       inputSchema: z.object({ x: z.number().finite().min(-29).max(29), z: z.number().finite().min(-76).max(22) }),
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
-      _meta: auth,
+      _meta: { ...auth, ui: { resourceUri: AO_UI_URI }, "openai/outputTemplate": AO_UI_URI },
     },
     async ({ x, z }) => {
       if (!userId) return authRequired();
@@ -185,7 +185,7 @@ function buildServer(userId: string | null) {
         payload: z.record(z.string(), z.unknown()).optional().default({}),
       }),
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
-      _meta: auth,
+      _meta: { ...auth, ui: { resourceUri: AO_UI_URI }, "openai/outputTemplate": AO_UI_URI },
     },
     async ({ action, target_key, idempotency_key, payload }) => {
       if (!userId) return authRequired();
