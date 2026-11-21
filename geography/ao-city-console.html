@@ -16,9 +16,9 @@
 <header><div><div class="eyebrow">APOTHEOSIS ONLINE · CITY EXPERIENCE</div><h1>City Console</h1><div class="hint">Text · GPS · Tactical / ASCII · Navigation · Narration</div></div><div class="row"><span class="statuspill" id="modepill">LOCAL PROTOTYPE</span><button id="resetDemo">Reset demo</button></div></header>
 <main class="shell">
 <section class="panel mapwrap">
- <div class="maphead"><div><strong id="maptitle">Geographic view</strong><div class="hint" id="mapsubtitle">Houston map context · select a point to inspect or author a place</div></div><div class="actions"><button id="gpsButton">Use device GPS</button><button id="centerButton">Center on Envoy</button></div></div>
+ <div class="maphead"><div><strong id="maptitle">Geographic view</strong><div class="hint" id="mapsubtitle">Houston map context · select a point to inspect or author a place</div></div><div class="actions"><button id="gpsButton">Use device GPS</button><button id="centerButton">Center on Envoy</button><button id="mapGridToggle">Show 25 m grid</button></div></div>
  <div id="map" aria-label="Geographic map"></div>
- <div class="mapfoot"><div class="legend"><span><i class="dot" style="background:#55b7f0"></i>Envoy</span><span><i class="dot" style="background:#e1bd68"></i>Admin-authored building</span><span><i class="dot" style="background:#75d3a4"></i>Entrance</span><span><i class="dot" style="background:#c69bff"></i>Destination preview</span></div><div id="mapstatus">Map tiles are a visual basemap; they are not AO-authoritative geometry.</div></div>
+ <div class="mapfoot"><div class="legend"><span><i class="dot" style="background:#55b7f0"></i>Envoy</span><span><i class="dot" style="background:#e1bd68"></i>Admin-authored building</span><span><i class="dot" style="background:#75d3a4"></i>Entrance</span><span><i class="dot" style="background:#c69bff"></i>Destination preview</span></div><div id="mapstatus">Map tiles are a visual basemap; grid cells are a fixed-origin spatial preview, not finalized AO coordinates.</div></div>
 </section>
 <aside class="stack">
  <nav class="tabs" aria-label="AO interfaces">
