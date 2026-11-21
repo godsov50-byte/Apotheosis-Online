@@ -232,31 +232,29 @@
         status("Zoom in to inspect imported features; this view covers too many registry tiles.");
         return;
       }
-      const db = await openDB();
-      const tx = db.transaction(["tileRefs", "features"], "readonly");
-      const refs = tx.objectStore("tileRefs").index("tile");
-      const features = tx.objectStore("features");
       const ids = new Set();
       for (const tile of tiles) {
+        const db = await openDB();
+        const tx = db.transaction("tileRefs", "readonly");
+        const request = tx.objectStore("tileRefs").index("tile").getAll(tile);
         const rows = await new Promise((resolve, reject) => {
-          const request = refs.getAll(tile);
           request.onsuccess = () => resolve(request.result);
           request.onerror = () => reject(request.error);
         });
         rows.forEach((row) => ids.add(row.featureId));
       }
-      const records = [];
+      const db = await openDB();
+      const tx = db.transaction("features", "readonly");
+      const store = tx.objectStore("features");
+      const requests = Array.from(ids, (id) => new Promise((resolve, reject) => {
+        const request = store.get(id);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      }));
+      const fetched = await Promise.all(requests);
       const view = map.getBounds();
       const viewBox = [view.getWest(), view.getSouth(), view.getEast(), view.getNorth()];
-      for (const id of ids) {
-        const record = await new Promise((resolve, reject) => {
-          const request = features.get(id);
-          request.onsuccess = () => resolve(request.result);
-          request.onerror = () => reject(request.error);
-        });
-        if (record && intersects(record.bbox, viewBox)) records.push(record);
-      }
-      await transactionDone(tx);
+      const records = fetched.filter((record) => record && intersects(record.bbox, viewBox));
       if (token !== refreshToken) return;
       records.sort((a, b) => a.kind.localeCompare(b.kind) || a.name.localeCompare(b.name));
       layer.clearLayers();
