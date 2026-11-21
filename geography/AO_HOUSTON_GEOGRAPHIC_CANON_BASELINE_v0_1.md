@@ -1,0 +1,159 @@
+# AO Houston Geographic Canon Baseline v0.1
+
+**Status:** Source-backed geographic reference facts locked; feature-level geometry remains evidence/provisional until a reproducible source snapshot is acquired, validated and registered.
+**Scope:** Houston test geography only. This document does not establish AO Texas borders, a complete Houston city-region boundary, world geography, historical canon, building interiors, ownership, occupancy or live-world state.
+**Authority:** Geographic source records are evidence. The AO Kernel remains authoritative for world state; WorldHeart persists approved state and append-only history. A GIS/GPS source does not directly write canon.
+
+## 1. Canon lock decision
+
+The following distinctions are locked:
+
+1. Preserve source geometry and source attributes without silently rewriting them.
+2. Preserve each dataset's publisher, layer, CRS, retrieval date, version/snapshot, licence/attribution, coverage and validation results.
+3. A source feature is **source-backed geographic evidence**, not automatically a verified AO fact about current physical conditions.
+4. Derived geometry, inferred intersections, graph connectivity, entrance connectors and inferred building attributes remain **candidate/provisional** until independently validated.
+5. Missing coverage is UNKNOWN. It must not be filled with invented roads, buildings, entrances, floors, elevations, sidewalks, rooms or access.
+6. Source corrections create versioned amendments; never silently overwrite the prior source snapshot or its history.
+7. GPS coordinates are observations/inputs. They are not proof of legal access, physical traversability, occupancy or world-state authority.
+
+## 2. Geographic reference facts
+
+### 2.1 City limits
+
+**Reference source:** City of Houston, COH_Limits FeatureServer, layer 0  
+https://services.arcgis.com/su8ic9KbA7PYVxPS/ArcGIS/rest/services/COH_Limits/FeatureServer/0
+
+The publisher describes the boundary as digitized from legal descriptions maintained by the City of Houston Planning and Development Department, with legality established through City Council approval. The layer distinguishes:
+- **Full Service:** full-purpose City limits.
+- **Limited Service:** limited-purpose City limits.
+- **Pending:** area under review, not current City limits.
+
+**Locked handling:** retain these categories as separate attributes. Pending polygons are not current municipal territory. Do not merge full-purpose, limited-purpose and pending areas into one undifferentiated boundary.
+
+This is a municipal reference layer, not the AO Houston region boundary by automatic equivalence. The AO test-region extent must be explicitly declared separately.
+
+### 2.2 Road centerlines
+
+**Reference source:** City of Houston COH_RoadCenterline FeatureServer, layer 0  
+https://services.arcgis.com/NummVBqZSIJKUeVR/ArcGIS/rest/services/COH_RoadCenterline/FeatureServer/0
+
+The publisher describes this as its road-centerline database for Houston and its ETJ, compiled from Greater Harris County 911 roads and private, access and proposed roads from StarMap, with updates informed by committee feedback, approved plats and permit records.
+
+The service metadata reports spatial reference **102740 / EPSG:2278 (Texas South Central, US survey feet)** and a maximum query record count of 2,000.
+
+Previously recorded extraction figures in the repository's working source manifest:
+- 83,760 road features, including 11 with null geometry.
+- A geometry-derived candidate graph of 84,267 edges and 63,923 nodes.
+- 607 connected components; largest component 58,010 nodes.
+- A separate audit identified 2,672 possible interior line crossings using a 2.0 m endpoint exclusion threshold.
+
+**Locked handling:** the source is a road-centerline reference, not road-surface geometry or a pedestrian navigation graph. The counts above are historical extraction/audit results, not a newly reproduced snapshot in this commit. Candidate graph intersections and connectivity are not confirmed legal or physical crossings. Private, access and proposed roads must retain their source classifications and must not be assumed publicly traversable.
+
+### 2.3 Building footprints
+
+**Reference source:** H-GAC / Harris County Flood Control District, Building Footprints 2018, MapServer layer 0  
+https://www.gis.hctx.net/arcgishcpid/rest/services/HCFCD/Building_Footprints_2018/MapServer/0
+
+Publisher metadata states that the polygons derive from 2018 LiDAR classifications/returns and warns that misclassification can produce erroneous footprints. The publisher also states that the data is informational, approximate, not an on-the-ground survey, and may not reflect actual ground conditions. Attribution to H-GAC is required.
+
+Previously inspected subset recorded in the repository's working manifest:
+- 523 features.
+- 486 distinct parcel references.
+- 0 invalid geometries in that inspected subset.
+- Approximate inspected coverage: 10.9 × 7.6 miles.
+- The inspected subset is partial, not citywide.
+
+**Locked handling:** this layer is approximate, dated 2018 source evidence. Its inspected subset statistics do not establish citywide coverage. A footprint does not establish current existence, building identity, floor count, height, use, entrance, interior, occupancy, ownership or accessibility. Parcel references attached to footprints are not a substitute for acquired and validated parcel polygons.
+
+### 2.4 Downtown 3D building footprints
+
+**Candidate source:** City/Harris 3D building footprint service  
+https://services6.arcgis.com/2yF1BNcZtu43QAOt/arcgis/rest/services/BldgDept3D_new_Jul282026/FeatureServer
+
+The repository's working manifest describes this as a small downtown-focused dataset with candidate height, address and parcel fields.
+
+**Status:** candidate source only. Its actual layer schema, date, coverage, vertical reference and licensing must be checked before use. It is not citywide coverage.
+
+### 2.5 Downtown tunnel network
+
+**Candidate source:** Downtown tunnel system item  
+https://www.arcgis.com/home/item.html?id=bcae89f9f17447a795bbba2f55d3650c
+
+The working manifest identifies possible tunnel businesses, access points, ingress/egress, paths, access restrictions and connected buildings.
+
+**Status:** candidate source only. Validate live layer schemas, feature coverage, access states, levels and connectivity before import. Do not assume every mapped tunnel or building connection is currently open.
+
+## 3. Layers not yet established
+
+The following are not locked as complete geographic truth because the current source inventory does not demonstrate adequate acquired and validated coverage:
+- Sidewalks, curb ramps, crossings and pedestrian access.
+- Road surfaces, lanes, turn restrictions and grade-separated topology.
+- Complete citywide building footprints and authoritative building identities.
+- Verified building entrances, floor counts, floor elevations, rooms and basements.
+- Terrain/elevation raster or point cloud with a known vertical datum.
+- Complete underground and tunnel connections.
+- Water boundaries, bridges, culverts and navigable airspace.
+- A complete parcel snapshot with licence, date, CRS and coverage validation.
+- Actual device GPS tracks or surveyed control points.
+
+## 4. Coordinate and spatial-addressing policy
+
+- Preserve raw source coordinates and the source CRS for every imported feature.
+- The road, H-GAC footprint and City limit sources above report **EPSG:2278** in their service metadata; do not reinterpret their numeric coordinates as latitude/longitude.
+- GPS input is WGS84 latitude/longitude (EPSG:4326) when supplied by a device or source. Store the raw observation, timestamp, accuracy estimate and source metadata when available.
+- A transformation into AO world coordinates must name the source CRS, target CRS, transformation pipeline/version, units and any vertical datum. Keep the raw source coordinates for audit.
+- The vertical datum is UNKNOWN unless explicitly supplied and validated. GPS altitude must not be treated as surveyed elevation.
+- The 1,024 m chunk / 64 m tile / 1 m cell defaults in the spatial-addressing prototype are engineering defaults only; they are **not locked canon**.
+- The Houston test origin, bounds and local equirectangular fixture in the spatial prototype are test data only; they are **not locked geographic canon**.
+- Do not establish a global AO coordinate projection from a single Houston-local approximation.
+
+## 5. Evidence and acceptance states
+
+Use these statuses independently for each source and each feature:
+- **Source-backed:** faithfully acquired from a named source snapshot; not necessarily verified on the ground.
+- **Validated geometry:** passed documented geometry/CRS/coverage checks.
+- **Cross-checked:** corroborated by an independent authoritative source or survey.
+- **Admin-confirmed:** a named authorized reviewer inspected and confirmed a specific fact or connection.
+- **Provisional / inferred:** derived or proposed; not canon.
+- **Unknown / unavailable:** evidence absent, incomplete, ambiguous or inaccessible.
+- **Superseded:** retained historically but replaced by a newer version.
+
+No status may be upgraded merely because a feature renders on the map or a route algorithm connects it.
+
+## 6. Acquisition gate before feature-level geographic canon
+
+A source snapshot is eligible for feature-level baseline acceptance only when its import manifest records:
+1. Publisher, dataset title, exact service/item/layer URL and layer ID.
+2. Retrieval timestamp and source snapshot/version or last-edit date.
+3. Licence/terms and required attribution.
+4. Source CRS, units and vertical datum where applicable.
+5. Explicit AO target extent and actual extracted coverage polygon.
+6. Successful pagination/completeness evidence, feature count, null/invalid/duplicate counts.
+7. Raw snapshot checksum and immutable stored source artifact.
+8. Transformation pipeline/version and validation report.
+9. Known omissions, caveats and reviewer/status.
+
+The current repository contains a working source manifest and source acquisition workflows, but the integrated-city-registry documentation states that source snapshots are not bundled and the manual acquisition workflow has not yet been run. Therefore this v0.1 lock records the source-backed reference framework and its known historical audit facts; it does not claim that the complete Houston feature dataset has been acquired or frozen.
+
+## 7. Relationship to AO spatial addressing
+
+The spatial-addressing resolver PR is a standalone prototype, not yet merged or connected to Kernel, WorldHeart, Supabase or the Houston builder. Its resolver and grid defaults are not promoted to canon by this document.
+
+When integrated:
+- The Kernel validates movement, access, collision, speed, permissions and transitions.
+- WorldHeart persists current derived spatial state and append-only committed history.
+- GIS/GPS sources populate evidence and candidate geometry; they do not bypass Kernel authority.
+- A room, battle instance, aerial layer or teleport destination must retain explicit links to its physical/source location and its own simulation context.
+- Missing chunks may be loaded or marked unavailable; unloading must never delete persistent state.
+
+## 8. Amendment rule
+
+Any change to a locked source fact, source classification or boundary interpretation must include the prior value, proposed value, source snapshots checked, coverage and temporal implications, affected spatial references, rationale, confidence and review status. Keep the prior record and source snapshot available for audit.
+
+---
+
+## External source references
+
+- City of Houston COH_Limits service metadata: https://services.arcgis.com/su8ic9KbA7PYVxPS/ArcGIS/rest/services/COH_Limits/FeatureServer
+- City of Houston COH_RoadCenterline service metadata: https://services.arcgis.com/NummVBqZSIJKUeVR/ArcGIS/rest/services/COH_RoadCenterline/FeatureServer
+- H-GAC / HCFCD 2018 building-footprint layer metadata: https://www.gis.hctx.net/arcgishcpid/rest/services/HCFCD/Building_Footprints_2018/MapServer/0
