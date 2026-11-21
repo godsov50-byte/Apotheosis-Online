@@ -2,6 +2,19 @@
 
 **Status:** proposed database contract on this branch. It is not deployed, populated, or connected to the live Kernel.
 
+## Accepted road geometry source
+
+The yellow road overlay in the Houston City Builder is the City of Houston COHGIS **COH_RoadCenterline** layer (FeatureServer layer 0). The yellow colour is only the builder's display style; the underlying feature is a road centerline with source geometry and attributes.
+
+- Source service: https://services.arcgis.com/NummVBqZSIJKUeVR/ArcGIS/rest/services/COH_RoadCenterline/FeatureServer/0
+- Source CRS: EPSG:2278 (NAD83 / Texas South Central, US survey feet).
+- Acquired interchange geometry: EPSG:4326 (WGS84), longitude/latitude order.
+- Source identity fields: OBJECTID, GlobalID, and centerlineid. Names and addresses are attributes/observations, not road identity or geometry.
+- The acquisition script is `scripts/geography/acquire_houston_road_centerlines.py`; it verifies ID/count completeness, paginates the source, preserves null geometries, and rejects a source edit timestamp change during acquisition.
+- A prior acquisition audit recorded 83,760 source records, 83,749 geometries, and 11 records with missing geometry for its stated Houston-jurisdiction query scope. These are source-snapshot audit counts, not a claim that all records are currently loaded into the Kernel or locked there. See [PR #46](https://github.com/godsov50-byte/Apotheosis-Online/pull/46) and [PR #49](https://github.com/godsov50-byte/Apotheosis-Online/pull/49) for the snapshot-lock and reproducible-hash work.
+
+For this implementation, the authoritative road line is the source centerline geometry, not the yellow pixels rendered on the map. The source coordinates are preserved as coordinates; styling, zoom-level simplification, display projection, or map rendering must never overwrite them. This record represents a centerline only—not road width, pavement boundary, lane geometry, sidewalk, curb, or a verified route.
+
 ## What this adds
 
 Migration `20261121000500_ao_houston_kernel_road_lock_registry.sql` adds the lock lifecycle on top of the source-backed street registry (migrations 00100–00400):
