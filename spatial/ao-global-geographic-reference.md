@@ -1,75 +1,107 @@
-# AO Global Geographic Reference & GPS Contract
+# AO Global Geographic Reference, GPS & Geographic Feature Bridge
 
-## Decision
+## Purpose
 
-AO uses **WGS84 / EPSG:4326** as its planet-wide geographic reference for latitude and longitude. GPS, GIS imports, surveyed coordinates, address points, and external map providers must normalize into this common reference before AO spatial resolution.
+AO uses **WGS84 / EPSG:4326** as its planet-wide geographic reference for latitude and longitude. GPS, GIS imports, surveyed coordinates, address points, and external map providers normalize into this common reference before AO spatial resolution.
 
-The global coordinate reference is not a single flat world grid. Earth-scale distances and distortions make that unsafe. AO keeps global geodetic coordinates and maps them into explicitly configured, bounded local metric frames for AO Regions. Large countries, continents, and other broad areas are covered by multiple AO spatial regions. Each local frame then uses the existing AO hierarchy:
+The global coordinate reference is not one flat metric plane. AO keeps global geodetic coordinates and resolves them through explicitly configured, bounded local metric frames for AO Regions. Large countries, continents and broad territories require multiple approved AO regions. Each region uses the existing hierarchy:
 
 **World → Region → Chunk → Tile → Cell → Position**
 
-The existing default spatial sizes remain 1024m chunks, 64m tiles, and 1m cells unless an approved world configuration says otherwise.
+Default dimensions remain 1,024 m chunks, 64 m tiles and 1 m cells unless an approved world configuration says otherwise.
 
-## Geographic coverage
+## Global coverage versus map-data coverage
 
-- The coordinate system is global: all valid WGS84 latitudes and longitudes are representable.
-- Coverage is not automatically the same as map-data availability. Basemap imagery, street centerlines, pedestrian paths, addresses, parcels, buildings, elevation, hydrography, and indoor maps each have their own source and coverage.
-- No country, state, city, continent, or test map is the boundary of the coordinate system.
-- The United States is a geographic coverage area within the global system. Houston is one test location only.
-- AO geographic region polygons/bounds and region IDs must be explicitly registered and reviewed. Do not invent an AO region ID from GPS.
-- Overlapping region bounds are rejected as ambiguous until the boundary/priority rule is explicitly resolved. Gaps are reported as uncovered, not silently assigned.
-- The current spatial resolver uses regional local metric frames. Keep each frame within its configured radius (default 250 km); divide large territories into multiple AO spatial regions rather than stretching one local projection across a continent.
+- Every valid WGS84 latitude/longitude can be represented by the reference system.
+- This does **not** mean every place already has road, path, address, parcel, building, elevation, hydrography or indoor-map data.
+- No country, state, city, continent or test map defines the coordinate system's boundary.
+- The United States is one geographic coverage area within the global system. Houston is a test location, not the system boundary.
+- AO region IDs and geographic bounds must come from an approved region registry. GPS must never invent a region ID.
+- Uncovered coordinates are rejected; overlapping region matches are rejected as ambiguous.
+- Keep each local metric frame within its configured radius (250 km by default). Divide large territories into multiple AO regions.
 
-## Canonical geographic observation
+No worldwide street/building dataset or final AO region registry is included in this change. Those are independent, provenance-tracked data acquisition and approval tasks.
 
-Every incoming coordinate observation preserves:
-- CRS and datum: EPSG:4326 / WGS84.
+## GPS and source observations
+
+Every observation retains:
+- CRS/datum: EPSG:4326 / WGS84.
 - Latitude and longitude.
-- Altitude, if supplied, otherwise null.
-- Vertical datum and vertical accuracy, if known.
+- Altitude, if supplied; otherwise null.
+- Vertical datum and vertical accuracy, when known.
 - Horizontal accuracy.
 - Observation timestamp.
-- Source type and optional source record identifier.
+- Source type and optional source record ID.
 
-Do not silently convert unknown altitude to a claim of sea-level elevation. The existing local resolver may use its zero reference plane for horizontal addressing, but the observation retains unknown vertical status.
+Unknown altitude remains unknown in the observation. A local zero reference plane may be used to index a horizontal position, but it is not evidence of sea-level elevation.
+
+The resolver also reports quality metadata:
+- Whether horizontal accuracy is unknown, cell-scale, or coarser than the configured cell size.
+- Whether the reported accuracy radius may reach the selected AO region boundary.
+
+These values describe measurement quality; they do not convert GPS into proof of an exact cell or a legal route.
 
 ## GPS authority and privacy
 
-- Device GPS is opt-in and requires explicit browser/device permission.
-- GPS is a measurement of a device, not an Envoy identity or canonical character position.
-- A GPS fix resolves to a **candidate** AO address. It cannot itself move an Envoy, spawn an entity, change a building, or commit a world event.
-- The Kernel validates intent, permissions, world rules, collision, navigation, and any required identity/consent before an authorized movement.
+- Device GPS is opt-in and requires explicit device/browser permission.
+- A GPS fix measures a device, not an Envoy identity or canonical character position.
+- GPS/GIS observations resolve only to `candidate-uncommitted` addresses.
+- A candidate cannot move an Envoy, spawn an entity, change a building, or commit WorldHeart state/history.
+- The Kernel validates intent, identity, permission, navigation, access, collision and world rules before any authorized movement.
 - WorldHeart persists current state and append-only committed events only after Kernel authorization.
-- Raw device coordinates must not be uploaded or retained by default. If a feature later needs location persistence, define purpose, consent, retention, and access rules separately.
-- A GPS reading with poor accuracy or a region-boundary ambiguity must be marked uncertain and cannot be treated as exact cell-level proof.
+- Raw device coordinates are not uploaded or retained by default. Any future persistence requires a separate purpose, consent, retention and access policy.
 
-## Map and source layers
+## Geographic feature bridge
 
-The geographic reference is provider-neutral. AO may combine, where licensing permits:
-- Global basemap tiles.
-- Country/state/administrative boundaries.
-- Road centerlines and road attributes.
-- Pedestrian sidewalks, paths, crossings, bridges, tunnels, and access restrictions.
-- Street intersections and routable network topology.
-- Address points, parcels, building footprints, entrances, floors, and indoor geometry.
-- Elevation, bathymetry, terrain, land cover, hydrography, and aerial imagery.
+`spatial/ao-geographic-feature-registry.mjs` connects the global resolver to source GeoJSON used by the street and entrance work:
 
-Every imported feature requires source, license/attribution, source ID, source version or retrieval date, geometry CRS, feature class, and confidence/quality metadata. Displaying a road line does not establish that pedestrians may legally or physically walk along it.
+- Road centerlines and pedestrian paths can be imported as source geometries.
+- Building footprints, entrance points, address points, intersections, crossings, bridges and tunnels retain their source properties and provenance.
+- Each geometry coordinate resolves through the same WGS84 → AO Region → Chunk → Tile → Cell address system.
+- Every feature requires source, license, source ID, source version or retrieval timestamp, feature class and confidence description.
+- Imported roads remain unverified topology candidates. The bridge does not create a routable graph or assert sidewalk/pedestrian access.
+- A feature spanning more than one AO region is flagged for explicit segmentation. It is not silently connected across region boundaries.
+- Feature candidates cannot move entities or commit world state.
 
-## Files
+This is the data-contract bridge between the global reference and the street/entrance datasets developed in PRs #40 and #41. Their existing Houston browser workspace remains a staging/admin tool; it has not been converted into a global route engine or live Kernel adapter.
 
-- `ao-global-geographic-reference.mjs`: global WGS84 observation validation and explicit AO-region selection, wrapping the existing spatial-addressing resolver.
-- `ao-spatial-addressing.mjs`: existing local metric Region → Chunk → Tile → Cell address primitives and persistence boundary contract.
-- `geography/ao-houston-gps-street-atlas.html`: Houston test map only; not the global atlas.
+## Relationship to the four geographic projects
 
-## Integration gates
+1. **PR #59 — Global geographic reference:** WGS84 observation, approved region selection, uncertainty metadata and geographic-feature bridge.
+2. **PR #43 — Spatial addressing:** deterministic AO Region → Chunk → Tile → Cell → Position addressing.
+3. **PR #40 — Street and entrance administration:** source road/building geometry, entrance placement and local admin workflows.
+4. **PR #41 — Entrance-to-street connectors:** explicit candidate/confirmed entrance connectors. A nearby road is not proof of pedestrian access.
 
-1. Approve and load the global AO region registry and its authoritative boundaries.
-2. Load source/coverage catalogs for each geography layer, with attribution and licensing.
-3. Validate global coordinate ingestion, antimeridian cases, poles, region edges, overlaps, gaps, and local-frame radius limits.
-4. Add GPS uncertainty handling and accuracy-aware cell confidence.
-5. Build a globally addressable street/pedestrian graph; do not infer routability from centerlines alone.
-6. Connect candidate addresses to Kernel-validated movement and atomic WorldHeart event/current-state commits.
-7. Add Builder and Play map views over the same shared geographic registry.
+The shared flow is:
 
-This PR establishes the geographic contract and resolver boundary. It does not claim that worldwide GIS datasets have already been imported or that GPS movement is connected to the live world.
+**GPS / GIS source → WGS84 validation → approved AO region → spatial address candidate → road/building/entrance feature candidate → topology/access validation → Kernel authorization → WorldHeart commit.**
+
+The first five steps can prepare and inspect geographic candidates. Only the Kernel and WorldHeart authority path can commit gameplay state/history.
+
+## Projection correctness
+
+The existing spatial resolver uses a bounded local equirectangular approximation, not a global projection. Longitude deltas are normalized across the antimeridian. Regional radius checks use the horizontal AO ground plane (X/Z); altitude is the vertical Y axis and must not be counted as horizontal travel distance.
+
+This remains a regional approximation, not survey-grade geodesy. Source CRS transformations must occur before import, and the original source CRS/provenance must be retained in the acquisition manifest.
+
+## Validation
+
+Run:
+
+```bash
+node --test spatial/ao-spatial-addressing.test.mjs
+node --test spatial/ao-global-geographic-reference.test.mjs
+node --check spatial/ao-geographic-feature-registry.mjs
+```
+
+The global suite covers WGS84 validation, region gaps/overlaps, antimeridian projection, north/south radius enforcement, altitude separation, observation accuracy, immutability, GPS metadata and GeoJSON road/entrance candidates.
+
+## Not claimed complete by this PR
+
+- No worldwide AO region boundaries or region IDs are invented or registered.
+- No global roads, sidewalks, crossings, addresses, parcels, buildings, elevation or indoor datasets are imported.
+- No road graph is automatically treated as pedestrian- or vehicle-routable.
+- No live device GPS movement, anti-spoofing, Kernel movement adapter, WorldHeart spatial persistence adapter, Supabase migration or production deployment is included.
+- Builder and Play do not yet share a deployed global geographic registry.
+
+Those remaining tasks require authoritative datasets, explicit AO region approvals, and a tested Kernel/WorldHeart integration—not fabricated geographic records.
