@@ -276,6 +276,64 @@ export function createSpatialResolver({
     });
   }
 
+  /**
+   * Resolve an address-point into its stable AO entrance anchor and map marker.
+   * The marker is presentation-only: it inherits the anchor coordinate and
+   * has no independent world position, collision body, or route origin.
+   */
+  function resolveAddressAnchor({
+    addressId, sourceId, sourceVersion = null,
+    latitude, longitude, regionId,
+    coordinateSource = "gis-address-point",
+    markerOffsetPx = { x: 0, y: -24 }
+  }) {
+    addressId = requiredString(addressId, "addressId");
+    sourceId = requiredString(sourceId, "sourceId");
+    if (sourceVersion !== null && sourceVersion !== undefined) {
+      sourceVersion = requiredString(String(sourceVersion), "sourceVersion");
+    } else {
+      sourceVersion = null;
+    }
+    if (!markerOffsetPx || !finite(markerOffsetPx.x) || !finite(markerOffsetPx.y)) {
+      throw new TypeError("markerOffsetPx must contain finite screen-space x and y values");
+    }
+
+    // A 2D address point has no surveyed elevation. Y=0 is only the local
+    // resolver's reference plane; the anchor explicitly preserves that fact.
+    const spatialAddress = resolveGeographic({
+      latitude, longitude, altitudeM: 0, regionId,
+      layer: "ground", coordinateSource, parentLocationId: addressId
+    });
+    const stableSuffix = worldId + ":" + spatialAddress.regionId + ":" + addressId;
+    const anchorId = "address-anchor:" + stableSuffix;
+    const markerId = "address-marker:" + stableSuffix;
+    const anchor = {
+      schemaVersion: SPATIAL_SCHEMA_VERSION,
+      id: anchorId,
+      addressId,
+      source: { sourceId, sourceVersion },
+      coordinate: {
+        crs: "EPSG:4326",
+        latitude,
+        longitude,
+        verticalPosition: { value: null, unit: "m", status: "unknown-from-2d-address-point" }
+      },
+      spatialAddress,
+      spatialAddressKey: spatialAddressKey(spatialAddress),
+      marker: {
+        id: markerId,
+        anchorId,
+        spatialAddressKey: spatialAddressKey(spatialAddress),
+        worldPosition: null,
+        inheritsAnchorCoordinate: true,
+        renderOffset: { space: "screen-pixels", x: markerOffsetPx.x, y: markerOffsetPx.y },
+        participatesInCollision: false,
+        isIndependentWorldObject: false
+      }
+    };
+    return deepFreeze(anchor);
+  }
+
   function resolveWorldPosition({
     regionId, x, y, z = 0, layer = "ground",
     coordinateSource = "world-metric", parentLocationId = null
@@ -389,6 +447,7 @@ export function createSpatialResolver({
     grid: g,
     regions: Object.freeze([...regionMap.values()]),
     resolveGeographic,
+    resolveAddressAnchor,
     resolveWorldPosition,
     resolveInterior,
     resolveUnderground,
