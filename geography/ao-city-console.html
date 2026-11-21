@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AO City Experience Console</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<style>
+:root{color-scheme:dark;--bg:#0b1118;--panel:#131e29;--panel2:#192735;--line:#2b3d4c;--text:#edf4f8;--muted:#9eb0bd;--accent:#69b9f4;--gold:#d9b66d;--good:#77d2a1;--warn:#edc16c;--bad:#ed8585}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer;color:var(--text);background:#203242;border:1px solid #3a5264;border-radius:8px;padding:8px 11px}button:hover{background:#2a4356}button.primary{background:#145b8c;border-color:#328dc8}button.active{outline:1px solid var(--accent);background:#183e59}button:disabled{opacity:.45;cursor:not-allowed}input,select,textarea{width:100%;background:#0c151e;color:var(--text);border:1px solid #354a5b;border-radius:8px;padding:9px}textarea{min-height:70px;resize:vertical}label{display:block;color:var(--muted);font-size:12px;margin:8px 0 4px}.muted,.hint{color:var(--muted)}.hint{font-size:11px}.eyebrow{font-size:10px;letter-spacing:.16em;color:var(--accent);font-weight:700}header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);background:#0e1720;position:sticky;top:0;z-index:500}h1{font-size:17px;margin:2px 0}h2{font-size:15px;margin:0 0 10px}h3{font-size:13px;margin:0 0 8px}.statuspill{border:1px solid var(--line);border-radius:99px;padding:4px 9px;color:var(--warn);font-size:11px}.shell{max-width:1500px;margin:auto;padding:12px;display:grid;grid-template-columns:minmax(0,1.45fr) minmax(310px,.8fr);gap:12px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px;min-width:0}.mapwrap{padding:0;overflow:hidden}.maphead{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:11px 13px;border-bottom:1px solid var(--line)}#map{height:min(66vh,720px);min-height:430px;background:#182733}.mapfoot{padding:8px 12px;border-top:1px solid var(--line);font-size:11px;color:var(--muted)}.tabs{display:flex;gap:6px;flex-wrap:wrap;padding:0 0 10px}.tabs button{font-size:12px}.view{display:none}.view.active{display:block}.stack{display:grid;gap:10px}.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.row>*{min-width:0}.grow{flex:1}.kv{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #263744;padding:6px 0;font-size:12px}.kv span{color:var(--muted)}.kv b{text-align:right;overflow-wrap:anywhere}.list{display:grid;gap:6px}.list button{text-align:left;width:100%}.log{height:240px;overflow:auto;display:flex;flex-direction:column;gap:8px}.bubble{border:1px solid var(--line);background:#101a24;border-radius:9px;padding:9px 10px;white-space:pre-wrap}.bubble.user{border-color:#315b78;background:#102337}.bubble .who{font-size:10px;letter-spacing:.08em;color:var(--accent);margin-bottom:3px}.commandrow{display:flex;gap:7px;margin-top:8px}.commandrow input{flex:1}.tag{display:inline-block;font-size:10px;border:1px solid var(--line);border-radius:99px;padding:2px 7px;color:var(--muted)}.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}#gridview{width:100%;max-width:620px;aspect-ratio:1;display:block;background:#0c151d;border:1px solid var(--line);border-radius:8px;touch-action:manipulation}.gridcell{stroke:#263b4a;stroke-width:.035;fill:#15232e}.gridcell.blocked{fill:#6a4141}.gridcell.you{fill:#277db7;stroke:#d7efff;stroke-width:.09}.gridcell.target{fill:#b28b42}.gridcell.door{fill:#347d61}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.notice{border-left:3px solid var(--warn);padding:8px 10px;background:#211e17;color:#e8d6aa;font-size:11px}.actions{display:flex;gap:7px;flex-wrap:wrap}.hidden{display:none!important}.placecard{border:1px solid var(--line);border-radius:8px;padding:9px;background:#101a23}.placecard strong{display:block}.placecard small{color:var(--muted)}.route-line{stroke:#c69bff;stroke-width:4;stroke-dasharray:8 6;fill:none}.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--muted)}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px}.footer{max-width:1500px;margin:0 auto;padding:0 12px 14px;color:var(--muted);font-size:11px}
+@media(max-width:900px){.shell{grid-template-columns:1fr}header{position:static}#map{height:52vh;min-height:340px}.log{height:190px}}
+@media(max-width:520px){.shell{padding:8px;gap:8px}.panel{padding:10px}.formgrid{grid-template-columns:1fr}header{padding:11px}.maphead{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+<header><div><div class="eyebrow">APOTHEOSIS ONLINE · CITY EXPERIENCE</div><h1>City Console</h1><div class="hint">Text · GPS · Tactical / ASCII · Navigation · Narration</div></div><div class="row"><span class="statuspill" id="modepill">LOCAL PROTOTYPE</span><button id="resetDemo">Reset demo</button></div></header>
+<main class="shell">
+<section class="panel mapwrap">
+ <div class="maphead"><div><strong id="maptitle">Geographic view</strong><div class="hint" id="mapsubtitle">Houston map context · select a point to inspect or author a place</div></div><div class="actions"><button id="gpsButton">Use device GPS</button><button id="centerButton">Center on Envoy</button></div></div>
+ <div id="map" aria-label="Geographic map"></div>
+ <div class="mapfoot"><div class="legend"><span><i class="dot" style="background:#55b7f0"></i>Envoy</span><span><i class="dot" style="background:#e1bd68"></i>Admin-authored building</span><span><i class="dot" style="background:#75d3a4"></i>Entrance</span><span><i class="dot" style="background:#c69bff"></i>Destination preview</span></div><div id="mapstatus">Map tiles are a visual basemap; they are not AO-authoritative geometry.</div></div>
+</section>
+<aside class="stack">
+ <nav class="tabs" aria-label="AO interfaces">
+  <button class="active" data-view="text">Text</button><button data-view="gps">GPS</button><button data-view="tactical">Tactical / ASCII</button><button data-view="navigation">Navigation</button><button data-view="narration">Narration</button><button data-view="admin">Admin</button>
+ </nav>
+ <section class="panel view active" id="view-text">
+  <h2>World conversation</h2><div class="hint">Issue a command in ordinary language. This demo recognizes a small, explicit command set.</div>
+  <div class="log" id="chatlog" aria-live="polite"></div>
+  <div class="commandrow"><input id="command" placeholder="Try: look around · show grid · move north · inspect selected · enter selected"><button class="primary" id="sendCommand">Send</button></div>
+  <div class="actions" style="margin-top:8px"><button data-command="look around">Look around</button><button data-command="show grid">Show grid</button><button data-command="where am I">Where am I?</button><button data-command="list places">List places</button></div>
+ </section>
+ <section class="panel view" id="view-gps">
+  <h2>GPS / geographic context</h2><div class="kv"><span>Latitude</span><b id="lat">29.7601930</b></div><div class="kv"><span>Longitude</span><b id="lon">-95.3693610</b></div><div class="kv"><span>Position source</span><b id="positionSource">Demo starting anchor</b></div><div class="kv"><span>Selected place</span><b id="selectedName">None</b></div>
+  <p class="hint">Click the map to set a destination or choose a point for an admin-authored location. GPS coordinates remain WGS84 display coordinates here; the Houston AO local origin is still unapproved.</p>
+  <div class="actions"><button id="setDestination">Use selected point as destination</button><button id="clearDestination">Clear destination</button></div>
+ </section>
+ <section class="panel view" id="view-tactical">
+  <h2>Tactical spatial grid</h2><div class="row"><span class="tag">1 m preview cells</span><span class="tag">Local tangent approximation</span><span class="tag">Not canonical AO coordinates</span></div>
+  <svg id="gridview" viewBox="0 0 21 21" role="img" aria-label="Twenty-one by twenty-one tactical grid"></svg>
+  <div class="legend" style="margin-top:8px"><span><i class="dot" style="background:#277db7"></i>Envoy</span><span><i class="dot" style="background:#6a4141"></i>Blocked footprint</span><span><i class="dot" style="background:#347d61"></i>Entrance</span></div>
+  <div class="actions" style="margin-top:8px"><button data-move="north">↑ North</button><button data-move="west">← West</button><button data-move="south">↓ South</button><button data-move="east">East →</button></div>
+  <p class="hint" id="gridstatus">Tactical grid is a local interaction preview around the Envoy.</p>
+ </section>
+ <section class="panel view" id="view-navigation">
+  <h2>Navigation</h2><div class="kv"><span>Destination</span><b id="navDestination">None selected</b></div><div class="kv"><span>Direct distance</span><b id="navDistance">—</b></div><div class="kv"><span>Bearing</span><b id="navBearing">—</b></div><div class="kv"><span>Route status</span><b id="navStatus">No route preview</b></div>
+  <div class="actions"><button class="primary" id="previewRoute">Preview direct route</button><button id="moveToDestination">Move to destination</button></div>
+  <p class="notice">This build draws a direct-line preview only. Verified road, sidewalk, entrance and interior connectivity must be imported and approved before AO can claim a navigable street route.</p>
+ </section>
+ <section class="panel view" id="view-narration">
+  <h2>Narration preview</h2><div class="bubble" id="narrationText">You are at the demo starting anchor. The surrounding city is represented by the geographic basemap; no unverified interior details are assumed.</div>
+  <div class="actions"><button id="refreshNarration">Describe current situation</button><button id="describeSelected">Describe selected place</button></div>
+  <p class="hint">Narration here is a deterministic UI preview. Production narration must use the authorized character view and distinguish perception, belief, reports and world truth.</p>
+ </section>
+ <section class="panel view" id="view-admin">
+  <h2>Administrator · place development</h2>
+  <div class="notice">Changes in this prototype are stored in this browser only. They do not create AO canon, call the Kernel, or write to WorldHeart / Supabase.</div>
+  <label>Authoring mode</label><select id="authorMode"><option value="select">Select / inspect</option><option value="building">Place building footprint at next map click</option><option value="entrance">Add entrance to selected building at next map click</option></select>
+  <div class="formgrid"><div><label>Place name</label><input id="placeName" value="New building"></div><div><label>Building use</label><select id="placeUse"><option>Unspecified</option><option>Residential</option><option>Commercial</option><option>Industrial</option><option>Public</option><option>Fortification</option><option>Other</option></select></div><div><label>Footprint width (m)</label><input id="placeWidth" type="number" min="2" max="250" value="18"></div><div><label>Footprint depth (m)</label><input id="placeDepth" type="number" min="2" max="250" value="12"></div></div>
+  <div class="actions" style="margin-top:9px"><button class="primary" id="armBuilding">Place building on map</button><button id="armEntrance">Add entrance to selected</button></div>
+  <div id="selectedInspector" class="placecard" style="margin-top:10px">No place selected. Select a map feature or create one.</div>
+  <div class="formgrid"><div><label>New interior space</label><input id="roomName" placeholder="e.g. Lobby"></div><div><label>Floor</label><input id="roomFloor" type="number" value="1" min="-10" max="200"></div></div>
+  <button id="addRoom" style="margin-top:8px">Add room to selected building</button>
+  <div id="adminList" class="list" style="margin-top:10px"></div>
+ </section>
+ <section class="panel">
+  <h2>Current state</h2><div class="kv"><span>Envoy position</span><b id="positionLabel">Starting anchor</b></div><div class="kv"><span>Selected object</span><b id="selectionLabel">None</b></div><div class="kv"><span>Local objects</span><b id="objectCount">0</b></div><div class="kv"><span>Local connections</span><b id="connectionCount">0</b></div><div class="kv"><span>World authority</span><b class="warn">Not connected</b></div>
+ </section>
+</aside>
+</main>
+<div class="footer">Prototype boundary: the map basemap is geographic context, but no citywide building/entrance import, approved Houston AO coordinate origin, trusted admin API, Kernel movement, WorldHeart persistence, road-graph pathfinding, or production narration is connected yet.</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="./ao-city-console.js"></script>
+</body>
+</html>
