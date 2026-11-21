@@ -39,8 +39,17 @@ test("negative world coordinates use mathematical floor, not truncation", () => 
   assert.equal(a.grid.cellX, -1);
 });
 
-test("GPS does not silently guess an unconfigured or ambiguous region", () => {
-  assert.throws(() => resolver.resolveGeographic({ latitude: 29.7, longitude: -95.4 }), /supply regionId explicitly/);
+test("GPS uses one unique configured region and rejects uncovered or ambiguous points", () => {
+  assert.equal(resolver.resolveGeographic({ latitude: 29.7, longitude: -95.4 }).regionId, "houston-test");
+  assert.throws(() => resolver.resolveGeographic({ latitude: 31, longitude: -95.4 }), /No configured region covers/);
+  const ambiguous = createSpatialResolver({
+    worldId: "ambiguous-world",
+    regions: [
+      { id: "region-a", originLat: 29.76, originLon: -95.37, bounds: { south: 29, north: 30, west: -96, east: -95 } },
+      { id: "region-b", originLat: 29.76, originLon: -95.37, bounds: { south: 29, north: 30, west: -96, east: -95 } }
+    ]
+  });
+  assert.throws(() => ambiguous.resolveGeographic({ latitude: 29.7, longitude: -95.4 }), /multiple regions/);
   assert.throws(() => resolver.resolveGeographic({ latitude: 31, longitude: -95.4, regionId: "houston-test" }), /outside explicitly selected region/);
 });
 
