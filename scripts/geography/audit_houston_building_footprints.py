@@ -236,9 +236,6 @@ def main():
             "Pending city-limit areas are excluded.",
         ],
     }
-    (out / "source-layer-metadata.json").write_text(
-        json.dumps(metadata, indent=2) + "\\n", encoding="utf-8"
-    )
     (out / "building-footprint-audit.json").write_text(
         json.dumps(report, indent=2) + "\n", encoding="utf-8"
     )
