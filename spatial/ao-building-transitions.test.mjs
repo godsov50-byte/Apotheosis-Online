@@ -142,6 +142,31 @@ test("stale transition origin is rejected without appending or moving", async ()
   assert.equal(spatialAddressKey(state.positions["actor-1"]), spatialAddressKey(elsewhere));
 });
 
+test("adapter compare-and-set rejects a concurrent position change after the pre-read", async () => {
+  const elsewhere = resolver.resolveGeographic({
+    latitude: 29.761, longitude: -95.371, regionId: "houston-test"
+  });
+  const state = { position: exterior, events: [] };
+  const adapter = {
+    async getChunk() { state.position = elsewhere; return null; },
+    async putChunk() {},
+    async getEntityAddress() { return state.position; },
+    async commitTransitionAtomic({ event, expectedOriginAddressKey }) {
+      if (spatialAddressKey(state.position) !== expectedOriginAddressKey) throw new Error("atomic compare-and-set rejected");
+      state.events.push(event);
+      state.position = event.to;
+    }
+  };
+  const repository = createSpatialRepository(adapter);
+  const event = resolveBuildingPortalTransition({
+    resolver, portal, direction: "enter", entityId: "actor-1",
+    currentAddress: exterior, transitionId: "event-concurrent-1"
+  });
+  await assert.rejects(() => commitSpatialTransition({ repository, event }), /atomic compare-and-set rejected/);
+  assert.equal(state.events.length, 0);
+  assert.equal(spatialAddressKey(state.position), spatialAddressKey(elsewhere));
+});
+
 test("Kernel approval is mandatory before production repository commit", async () => {
   const { state, repository } = memoryRepository({ "actor-1": exterior });
   const event = resolveBuildingPortalTransition({
