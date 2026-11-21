@@ -19,6 +19,13 @@ class AcquisitionContractTests(unittest.TestCase):
         ACQUIRE.validate_feature({"properties":{"OBJECTID":1,"GlobalID":"g1"},"geometry":None})
         ACQUIRE.validate_feature({"properties":{"OBJECTID":2,"GlobalID":"g2"},
           "geometry":{"type":"LineString","coordinates":[[-95,29],[-95.001,29]]}})
+    def test_feature_order_is_canonical_by_source_object_id(self):
+        features=[
+          {"properties":{"OBJECTID":9,"GlobalID":"g9"},"geometry":None},
+          {"properties":{"OBJECTID":2,"GlobalID":"g2"},"geometry":None}]
+        ordered=ACQUIRE.canonical_feature_order(features)
+        self.assertEqual([f["properties"]["OBJECTID"] for f in ordered],[2,9])
+        self.assertEqual(ACQUIRE.canonical_feature_order(ordered),ordered)
     def test_bad_identity_or_coordinates_rejected(self):
         with self.assertRaises(ValueError):
             ACQUIRE.validate_feature({"properties":{"OBJECTID":1},"geometry":None})
