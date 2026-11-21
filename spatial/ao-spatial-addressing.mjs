@@ -80,26 +80,35 @@ function makeGridAddress({
   if (![x, y, z].every(finite)) throw new TypeError("Spatial x, y and z must be finite numbers");
   if (!SPATIAL_LAYERS.includes(layer)) throw new RangeError("Unsupported spatial layer: " + layer);
 
+  // Three-dimensional addressing: altitude/depth participates in chunk,
+  // tile and cell identity instead of being merely descriptive metadata.
   const cx = floorDiv(x, grid.chunkSizeM);
   const cy = floorDiv(y, grid.chunkSizeM);
+  const cz = floorDiv(z, grid.chunkSizeM);
   const localChunkX = x - cx * grid.chunkSizeM;
   const localChunkY = y - cy * grid.chunkSizeM;
+  const localChunkZ = z - cz * grid.chunkSizeM;
   const tilesPerChunk = grid.chunkSizeM / grid.tileSizeM;
   const txInChunk = floorDiv(localChunkX, grid.tileSizeM);
   const tyInChunk = floorDiv(localChunkY, grid.tileSizeM);
+  const tzInChunk = floorDiv(localChunkZ, grid.tileSizeM);
   const tileX = cx * tilesPerChunk + txInChunk;
   const tileY = cy * tilesPerChunk + tyInChunk;
+  const tileZ = cz * tilesPerChunk + tzInChunk;
   const localTileX = localChunkX - txInChunk * grid.tileSizeM;
   const localTileY = localChunkY - tyInChunk * grid.tileSizeM;
+  const localTileZ = localChunkZ - tzInChunk * grid.tileSizeM;
   const cellXInTile = floorDiv(localTileX, grid.cellSizeM);
   const cellYInTile = floorDiv(localTileY, grid.cellSizeM);
+  const cellZInTile = floorDiv(localTileZ, grid.cellSizeM);
   const cellX = floorDiv(x, grid.cellSizeM);
   const cellY = floorDiv(y, grid.cellSizeM);
+  const cellZ = floorDiv(z, grid.cellSizeM);
 
   const namespace = spaceId || ("region:" + regionId);
-  const chunkId = namespace + ":chunk:" + cx + ":" + cy;
-  const tileId = namespace + ":tile:" + tileX + ":" + tileY;
-  const cellId = namespace + ":cell:" + cellX + ":" + cellY;
+  const chunkId = namespace + ":chunk:" + cx + ":" + cy + ":" + cz;
+  const tileId = namespace + ":tile:" + tileX + ":" + tileY + ":" + tileZ;
+  const cellId = namespace + ":cell:" + cellX + ":" + cellY + ":" + cellZ;
 
   return Object.freeze({
     schemaVersion: SPATIAL_SCHEMA_VERSION,
@@ -112,11 +121,11 @@ function makeGridAddress({
     cellId,
     layer,
     grid: Object.freeze({
-      chunkX: cx, chunkY: cy,
-      tileX, tileY,
-      tileXInChunk: txInChunk, tileYInChunk: tyInChunk,
-      cellX, cellY,
-      cellXInTile: cellXInTile, cellYInTile: cellYInTile,
+      chunkX: cx, chunkY: cy, chunkZ: cz,
+      tileX, tileY, tileZ,
+      tileXInChunk: txInChunk, tileYInChunk: tyInChunk, tileZInChunk: tzInChunk,
+      cellX, cellY, cellZ,
+      cellXInTile: cellXInTile, cellYInTile: cellYInTile, cellZInTile: cellZInTile,
       cellSizeM: grid.cellSizeM,
       tileSizeM: grid.tileSizeM,
       chunkSizeM: grid.chunkSizeM
