@@ -5,7 +5,7 @@ Raw county ZIPs are preserved. Each county also gets a compressed GeoJSONL
 view in WGS84 with source attributes and source identity retained.
 """
 from __future__ import annotations
-import argparse, concurrent.futures, datetime as dt, gzip, hashlib, io, json, re, sys, time, urllib.request, zipfile
+import argparse, concurrent.futures, datetime as dt, gzip, hashlib, io, json, re, sys, urllib.request, zipfile
 from pathlib import Path
 from typing import Any
 from html.parser import HTMLParser
@@ -27,7 +27,7 @@ class Links(HTMLParser):
 def county_archive_names(index_html: str) -> list[str]:
     parser=Links(); parser.feed(index_html)
     names=sorted({h.rsplit("/",1)[-1] for h in parser.hrefs
-      if re.fullmatch(r"tl_2025_48\\d{3}_roads\\.zip",h.rsplit("/",1)[-1])})
+      if re.fullmatch(r"tl_2025_48\d{3}_roads\.zip",h.rsplit("/",1)[-1])})
     if len(names)!=EXPECTED_COUNTIES:
         raise RuntimeError(f"Expected {EXPECTED_COUNTIES} Texas county road archives; found {len(names)}.")
     return names
@@ -47,7 +47,7 @@ def transform_coords(coords: Any, transformer):
 
 def acquire_one(name: str, output: Path, timeout: int) -> dict[str,Any]:
     url=ROADS_INDEX+name; raw=get(url,timeout); raw_hash=sha(raw)
-    county_fips=re.search(r"tl_2025_(48\\d{3})_roads",name).group(1)
+    county_fips=re.search(r"tl_2025_(48\d{3})_roads",name).group(1)
     county_dir=output/"raw"; county_dir.mkdir(parents=True,exist_ok=True)
     raw_path=county_dir/name; raw_path.write_bytes(raw)
     with zipfile.ZipFile(io.BytesIO(raw)) as z:
@@ -67,7 +67,7 @@ def acquire_one(name: str, output: Path, timeout: int) -> dict[str,Any]:
     reader=shapefile.Reader(shp=io.BytesIO(shp_bytes),shx=io.BytesIO(shx_bytes),dbf=io.BytesIO(dbf_bytes),encoding="utf-8",encodingErrors="replace")
     fields=[f[0] for f in reader.fields[1:]]
     out_dir=output/"geojsonl"; out_dir.mkdir(parents=True,exist_ok=True)
-    out_path=out_dir+Path(name).with_suffix(".geojsonl.gz").name if False else out_dir/(Path(name).stem+".geojsonl.gz")
+    out_path=out_dir/(Path(name).stem+".geojsonl.gz")
     count=0; missing=0; linear_ids=set(); mtfcc={}
     with gzip.open(out_path,"wt",encoding="utf-8",newline="\n") as stream:
         for shape_rec in reader.iterShapeRecords():
