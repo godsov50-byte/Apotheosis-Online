@@ -205,7 +205,7 @@
           }
         }
         if (!done) {
-          buffer = buffer.slice(cursor); cursor = 0;
+          if (depth === 0) { buffer = buffer.slice(cursor); cursor = 0; }
           const part = await reader.read();
           done = part.done;
           if (part.value) buffer += decoder.decode(part.value, {stream: true});
