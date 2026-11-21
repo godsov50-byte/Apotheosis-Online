@@ -1,0 +1,200 @@
+{
+  "schema_version": "1.0.0",
+  "status": "source_plan_not_imported",
+  "scope": {
+    "country": {
+      "id": "earth:country:US",
+      "name": "United States",
+      "iso_3166_1_alpha_2": "US"
+    },
+    "state": {
+      "id": "earth:subdivision:US-TX",
+      "name": "Texas",
+      "subdivision_code": "US-TX"
+    },
+    "city": {
+      "id": "earth:place:houston-tx-us",
+      "name": "Houston",
+      "admin_level": "municipality",
+      "country": "US",
+      "subdivision": "US-TX",
+      "representative_point": {
+        "latitude": 29.7604,
+        "longitude": -95.3698,
+        "usage": "map_center_only_not_boundary_or_user_location"
+      }
+    }
+  },
+  "coordinate_policy": {
+    "interchange_crs": "EPSG:4326",
+    "s2_input": "WGS84_latitude_longitude",
+    "preserve_source_crs": true,
+    "projected_measurement_crs": "EPSG:2278",
+    "projected_crs_note": "Houston COH Limits service spatial reference WKID 102740 / EPSG:2278 (NAD83 / Texas South Central, US survey feet). Retain source-native coordinates and explicit transforms.",
+    "vertical_reference": "must_be_declared_per_dataset"
+  },
+  "datasets": [
+    {
+      "id": "tx-state-boundary",
+      "scope": "Texas",
+      "feature_type": "administrative_boundary",
+      "source": "U.S. Census Bureau 2024 TIGER/Line",
+      "source_urls": [
+        "https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html",
+        "https://www2.census.gov/geo/tiger/TIGER2024/STATE/tl_2024_us_state.zip"
+      ],
+      "priority": "P0",
+      "status": "selected_for_acquisition",
+      "usage": "Statewide overview and containment; stable 2024 baseline, not survey-grade",
+      "vintage": "2024",
+      "boundary_reference_date": "2024-01-01",
+      "acquisition_script": "scripts/geography/acquire_texas_boundary_2024.py"
+    },
+    {
+      "id": "houston-city-limits",
+      "scope": "Houston",
+      "feature_type": "administrative_boundary",
+      "source": "Harris County GIS CoH_Boundaries MapServer, COH_City_Limit layer",
+      "source_urls": [
+        "https://www.gis.hctx.net/arcgis/rest/services/CoH/CoH_Boundaries/MapServer/2",
+        "https://www.arcgis.com/home/item.html?id=2707cf506dce4879a9312ed0d66d2eb5",
+        "https://services.arcgis.com/su8ic9KbA7PYVxPS/ArcGIS/rest/services/COH_Limits/FeatureServer"
+      ],
+      "service_layer": 2,
+      "source_crs": "WKID:102740 / EPSG:2278",
+      "priority": "P0",
+      "status": "metadata_verified_geometry_not_yet_imported",
+      "required_classification": [
+        "Full Service",
+        "Limited Service",
+        "Pending"
+      ],
+      "filter_rule": "Do not classify Pending as current city limits; preserve Full Service and Limited Service separately.",
+      "metadata_reviewed_at": "2026-11-20",
+      "verified_fields": [
+        "SERVICE_TY",
+        "DESCRIPTIO",
+        "ENTITY_NAM",
+        "EFF_DATE",
+        "LEGAL_DOC",
+        "COUNCIL_AP"
+      ],
+      "verified_service_types": [
+        "Full Service",
+        "Limited Service",
+        "Pending"
+      ],
+      "note": "Harris County GIS MapServer layer 2 advertises JSON and GeoJSON and exposes SERVICE_TY. A separate City of Houston public feature layer is explicitly labelled Version 2024 (item updated 2024-11-20); use it as a historical cross-check, not as an assumption that the MapServer has the same vintage.",
+      "source_vintage": "Not declared in MapServer metadata; preserve retrieval timestamp and use the public 2024 City of Houston layer as a historical cross-check"
+    },
+    {
+      "id": "houston-road-network",
+      "scope": "Houston",
+      "feature_type": "transportation_network",
+      "source": "City of Houston GIS / Houston Public Works / OSM fallback",
+      "source_urls": [
+        "https://houston-mycity.opendata.arcgis.com/",
+        "https://geohub.houstontx.gov/",
+        "https://www.openstreetmap.org/"
+      ],
+      "priority": "P1",
+      "status": "source_selection_required"
+    },
+    {
+      "id": "houston-hydrography",
+      "scope": "Houston",
+      "feature_type": "hydrography",
+      "source": "City, county, state, or federal GIS",
+      "source_urls": [
+        "https://houston-mycity.opendata.arcgis.com/",
+        "https://www.tnris.org/"
+      ],
+      "priority": "P1",
+      "status": "source_selection_required"
+    },
+    {
+      "id": "houston-terrain",
+      "scope": "Houston",
+      "feature_type": "elevation",
+      "source": "TxGIO / USGS elevation products",
+      "source_urls": [
+        "https://www.tnris.org/",
+        "https://www.usgs.gov/3d-elevation-program"
+      ],
+      "priority": "P1",
+      "status": "source_selection_required"
+    },
+    {
+      "id": "houston-parcels-addresses",
+      "scope": "Houston",
+      "feature_type": "cadastre_and_address",
+      "source": "HCAD / City GIS",
+      "source_urls": [
+        "https://www.hcad.org/",
+        "https://houston-mycity.opendata.arcgis.com/"
+      ],
+      "priority": "P2",
+      "status": "source_selection_required"
+    },
+    {
+      "id": "houston-building-footprints",
+      "scope": "Houston",
+      "feature_type": "building_footprints",
+      "source": "City GIS / HCAD / OSM fallback",
+      "source_urls": [
+        "https://houston-mycity.opendata.arcgis.com/",
+        "https://www.openstreetmap.org/"
+      ],
+      "priority": "P2",
+      "status": "source_selection_required"
+    },
+    {
+      "id": "houston-indoor-models",
+      "scope": "Houston",
+      "feature_type": "indoor_navigation",
+      "source": "Building plans, approved authored data, or labelled estimates",
+      "source_urls": [],
+      "priority": "P3",
+      "status": "not_available_until_sourced",
+      "rule": "Never infer floor plans or rooms from exterior footprints."
+    },
+    {
+      "id": "houston-city-limits-2024-crosscheck",
+      "scope": "Houston",
+      "feature_type": "administrative_boundary_reference",
+      "source": "City of Houston COH CITY LIMITS public layer, Version 2024",
+      "source_urls": [
+        "https://www.arcgis.com/home/item.html?id=2707cf506dce4879a9312ed0d66d2eb5"
+      ],
+      "priority": "P0",
+      "status": "reference_only_geometry_not_acquired",
+      "vintage": "2024",
+      "note": "Public-only layer item updated 2024-11-20; general-reference accuracy/completeness disclaimer applies."
+    }
+  ],
+  "provenance_required": [
+    "feature_id",
+    "source_name",
+    "source_dataset_id",
+    "source_feature_id",
+    "source_url",
+    "source_crs",
+    "normalized_crs",
+    "source_updated_at",
+    "retrieved_at",
+    "dataset_version",
+    "provenance_type",
+    "validation_status",
+    "confidence",
+    "known_limitations"
+  ],
+  "rules": {
+    "s2_ids": "fixed_width_hex_strings_never_javascript_number",
+    "city_metro_separation": true,
+    "pending_city_limit_not_current": true,
+    "road_grade_separation_aware": true,
+    "building_entrance_must_be_validated": true,
+    "interior_geometry_requires_source_or_labelled_estimate": true,
+    "no_automatic_overwrite_of_authored_or_committed_ao_state": true
+  }
+}
