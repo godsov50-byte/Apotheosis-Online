@@ -109,7 +109,7 @@ def build(collection:dict[str,Any], tolerance_m:float)->tuple[dict[str,Any],dict
       "snap_tolerance_m":tolerance_m,"connected_component_count":len(components),
       "largest_component_nodes":max(components,default=0),
       "degree_histogram":dict(sorted(degree_counts.items(),key=lambda kv:int(kv[0]))),
-      "isolated_nodes":sum(1 for n in nodes if n["degree"]==1),
+      "dead_end_nodes":sum(1 for n in nodes if n["degree"]==1),
       "limitations":["Only polyline endpoints are clustered; interior line crossings are not split or joined.",
        "No bridge/tunnel/rail/grade-separation attributes were validated; endpoint proximity is a candidate, not proof of at-grade connectivity.",
        "Raw one-way, speed, lane, and access values are preserved but not decoded.",
