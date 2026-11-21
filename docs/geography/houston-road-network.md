@@ -1,6 +1,6 @@
 # Houston Road Network — AO Geographic Foundation
 
-**Status:** Official source and acquisition contract verified; acquisition pipeline committed; full feature snapshot not yet downloaded or imported into AO's canonical spatial registry.
+**Status:** Official source and acquisition contract verified; the full 83,760-feature snapshot and an endpoint-graph build have been generated as a GitHub Actions artifact. The snapshot has not been imported into AO's canonical spatial registry.
 
 ## Authoritative road source
 
@@ -94,7 +94,7 @@ A live null-geometry count query on 2026-11-21 found 11 records in the selected 
 5. Checks the source data edit timestamp before and after acquisition and refuses to publish if the source changed mid-run.
 6. Writes GeoJSON and a SHA-256 manifest atomically.
 
-Default output is under `build/`, not committed automatically. A successful local run is required before claiming the 83,760 geometries have been downloaded or imported.
+Default output is under `build/`, not committed automatically. A successful CI acquisition on 2026-11-21 produced 83,760 GeoJSON features with 83,760 unique OBJECTIDs. The manifest records 11 source records with null geometry (OBJECTIDs 10002, 35941, 68515, 87970, 88015, 107136, 107286, 238470, 243550, 246448, and 253048); these are retained as source records but cannot form spatial edges. The roads GeoJSON SHA-256 is `fe9c03b3b8293d01de76abc86d54d6697827df16e1a40521d4caf1b866003206`. The versioned artifact is attached to GitHub Actions run [44855847408](https://github.com/godsov50-byte/Apotheosis-Online/actions/runs/44855847408) and expires after the configured 14-day retention. This confirms acquisition to a build artifact, not import into AO's canonical registry.
 
 ## Map demonstration
 
