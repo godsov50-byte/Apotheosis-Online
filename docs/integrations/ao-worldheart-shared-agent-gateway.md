@@ -32,3 +32,8 @@ Any MCP-capable agent may connect to the same endpoint using Streamable HTTP and
 Migration `20261121191414_harden_world_proposal_target_requirements` adds a table constraint requiring every non-`building.create` proposal to reference an existing target entity, and requiring `building.create` to have no target. This prevents orphan room/door/stair/entrance elements or NPC assignments from reaching the commit function.
 
 GitHub Actions now runs `deno check` against both Edge Functions on relevant pull requests.
+
+
+## CI note
+
+The new Deno workflow's first GitHub Actions run ended with `startup_failure` before GitHub created a job; therefore no Deno checks ran. Supabase accepted and deployed both Edge Function sources, but this is not a substitute for a completed CI run or real OAuth/runtime testing.
