@@ -17,6 +17,10 @@ The verified 2026-11-21 City of Houston road-centerline snapshot was scanned loc
 
 The 2.0 m threshold is a conservative filtering parameter for this review tool, not a new snap tolerance and not a Kernel movement rule. Distances are estimated from WGS84 coordinates using a local meters-per-degree approximation.
 
+## Automated reproducible build
+
+The Houston road-network workflow now installs Shapely, runs the crossing audit self-test, regenerates the candidate JSON from the acquired snapshot, and uploads it alongside the source snapshot and endpoint graph. This runs on pushes to the Houston geography branches when the relevant files change and can also be started manually. CI results—not this preliminary local count—are the reproducible verification record.
+
 ## Tool
 
 Run the candidate audit:
