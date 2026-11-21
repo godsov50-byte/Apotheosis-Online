@@ -49,4 +49,4 @@ python scripts/geography/acquire_texas_tiger_roads.py --self-test
 python scripts/geography/acquire_texas_tiger_roads.py --output-dir build/texas-roads
 ```
 
-Run the existing Houston workflows separately to produce the detailed city snapshots. Then compare and validate the two layers; do not combine their feature identities into one untraceable geometry set.
+Run the new **AO Houston and Texas geography acquisition** workflow manually from GitHub Actions. It validates the existing Houston tools, acquires the Houston COH road snapshot and deterministic registry, acquires Houston-intersecting H-GAC building footprints, and acquires all 254 Texas county road archives. It uploads separate 90-day Houston and Texas artifacts. The workflow is deliberately manual because the source acquisitions are large and can take hours. Then compare and validate the two road layers; do not combine their feature identities into one untraceable geometry set.
