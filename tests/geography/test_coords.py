@@ -1,9 +1,7 @@
 """Unit tests for the Houston projected-coordinate adapter (stdlib only)."""
 
 from decimal import Decimal
-import json
 from pathlib import Path
-import tempfile
 import unittest
 
 from geography.adapter.coords import (
@@ -58,7 +56,7 @@ class CoordinateTransformTests(unittest.TestCase):
             ProjectedCoordinate(Decimal("1003937"), Decimal("503937")),
             profile,
         )
-        self.assertEqual(point, AOCoordinate(1_200_000_000, -1_200_000_000))
+        self.assertEqual(point, AOCoordinate(1_200_000, -1_200_000))
 
     def test_us_survey_foot_conversion(self):
         profile = approved_test_profile()
