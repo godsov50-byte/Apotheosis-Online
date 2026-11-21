@@ -19,7 +19,7 @@ These layers must not be collapsed into one table or treated as interchangeable.
 | `database/migrations/20261121000100_ao_houston_spatial_features.sql` | PostGIS source/canonical geometry store | Migration artifact; not applied |
 | `database/migrations/20261121000200_ao_houston_spatial_scaffold.sql` | Spatial objects, typed connections, and admin development queue | Migration artifact; not applied |
 | `../docs/geography/houston-spatial-profile-and-storage.md` | Coordinate/storage architecture and developer walkthrough | Documentation |
-| `../docs/geography/houston-admin-place-development.md` | Empty spatial scaffold and incremental admin workflow | Documentation |
+| `../docs/geography/houston-admin-place-development.md` | Empty spatial scaffold and incremental admin workflow | Documentation |\n| `ao-city-console.html` | Interactive text/GPS/tactical/navigation/narration/admin browser prototype | Local demo only; not Kernel-connected |\n| `../docs/geography/ao-city-console.md` | Console behavior, boundaries, and integration roadmap | Documentation |
 | `../tests/spatial/` | Coordinate and migration contract tests | Python standard-library tests |
 
 The S2 cell registry and its proposed `ao_geo` schema are a separate layer currently developed in other branches/PRs. This Houston feature store uses `ao_spatial`; it does not replace or duplicate S2 cell identity.
