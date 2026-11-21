@@ -547,7 +547,11 @@ export function samePhysicalPlace(a, b) {
   assertSpatialAddress(a);
   assertSpatialAddress(b);
   if (a.worldId !== b.worldId) return false;
-  const physicalA = a.physicalAddressKey || spatialAddressKey(a);
-  const physicalB = b.physicalAddressKey || spatialAddressKey(b);
+  const keyA = spatialAddressKey(a), keyB = spatialAddressKey(b);
+  // A portal-linked interior address is a different simulation space but
+  // retains the exact exterior threshold key for physical-place comparison.
+  if (a.exteriorAddressKey === keyB || b.exteriorAddressKey === keyA) return true;
+  const physicalA = a.physicalAddressKey || keyA;
+  const physicalB = b.physicalAddressKey || keyB;
   return physicalA === physicalB;
 }
