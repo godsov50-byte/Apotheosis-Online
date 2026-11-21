@@ -29,8 +29,8 @@ except ImportError as exc:  # pragma: no cover - exercised in workflow
     raise SystemExit("Install requirements: pip install shapely") from exc
 
 FOOTPRINT_LAYER = (
-    "https://www.gis.hctx.net/arcgishcpid/rest/services/"
-    "HCFCD/Building_Footprints_2018/MapServer/0"
+    "https://geohwp.houstontx.gov/arcgis/rest/services/"
+    "02_BaseData_Boundaries/Other/FeatureServer/4"
 )
 BOUNDARY_SOURCE = (
     "https://www.gis.hctx.net/arcgis/rest/services/"
