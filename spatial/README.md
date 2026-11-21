@@ -18,7 +18,7 @@ Run tests from the repository root with:
 node --test spatial/ao-spatial-addressing.test.mjs
 \`\`\`
 
-No third-party JavaScript dependencies are required.
+Requires Node.js 18+ and no third-party JavaScript dependencies. A test-only Houston coordinate-frame example is provided at `spatial/examples/houston-test-region.json`; it is not an approved geographic boundary or production region registry.
 
 ## Address hierarchy
 
