@@ -5,7 +5,7 @@
 - Shared MCP endpoint: `https://hixbtiuibtyiqrtacver.supabase.co/functions/v1/ao-chatgpt-mcp`.
 - Transport/auth: Streamable HTTP MCP with Supabase OAuth 2.1 / dynamic client registration.
 - Human review console: `https://hixbtiuibtyiqrtacver.supabase.co/functions/v1/ao-worldheart-review`.
-- ChatGPT plugin: private `ao-worldheart`, version 0.1.8. It reuses the same MCP endpoint; another agent connects to that endpoint rather than creating another database.
+- ChatGPT plugin: private `ao-worldheart`, version 0.1.9. It reuses the same MCP endpoint; another agent connects to that endpoint rather than creating another database.
 
 ## MCP capabilities added
 Read: `list_grand_meridian_buildings`, `inspect_grand_meridian_building`, `list_grand_meridian_building_elements`.
