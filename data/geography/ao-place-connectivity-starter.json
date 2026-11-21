@@ -1,0 +1,91 @@
+{
+  "schemaVersion": "1.0.0",
+  "worldId": "apotheosis-online",
+  "status": "starter-connectivity-seed",
+  "rootPlaceId": "city:houston-us-tx",
+  "coordinateReference": "EPSG:4326",
+  "sourcePolicy": {
+    "countryIdentity": "ISO 3166-1 alpha-3 where applicable",
+    "countryBoundarySource": "Natural Earth Admin 0 or an explicitly licensed equivalent",
+    "streetAndCrossingSource": "OpenStreetMap or authoritative local GIS",
+    "sourceGeometryRequiredBeforeProductionRouting": true,
+    "retrievalDateRequired": true,
+    "licenseAndAttributionRequired": true
+  },
+  "placeNodes": [
+    {
+      "id": "city:houston-us-tx",
+      "type": "city",
+      "name": "Houston",
+      "countryCode": "USA",
+      "admin1": "Texas",
+      "coordinates": { "latitude": 29.7604, "longitude": -95.3698 },
+      "source": { "name": "AO Houston test reference", "status": "test-coordinate" }
+    },
+    {
+      "id": "admin1:texas-us",
+      "type": "admin1",
+      "name": "Texas",
+      "countryCode": "USA",
+      "source": { "name": "Administrative geography", "status": "identity-reference; geometry-pending" }
+    },
+    {
+      "id": "country:USA",
+      "type": "country",
+      "name": "United States",
+      "countryCode": "USA",
+      "source": { "name": "ISO 3166-1", "status": "identity-reference; geometry-pending" }
+    },
+    {
+      "id": "country:CAN",
+      "type": "country",
+      "name": "Canada",
+      "countryCode": "CAN",
+      "source": { "name": "ISO 3166-1", "status": "identity-reference; geometry-pending" }
+    },
+    {
+      "id": "country:MEX",
+      "type": "country",
+      "name": "Mexico",
+      "countryCode": "MEX",
+      "source": { "name": "ISO 3166-1", "status": "identity-reference; geometry-pending" }
+    },
+    {
+      "id": "country:BLZ",
+      "type": "country",
+      "name": "Belize",
+      "countryCode": "BLZ",
+      "source": { "name": "ISO 3166-1", "status": "identity-reference; geometry-pending" }
+    },
+    {
+      "id": "country:GTM",
+      "type": "country",
+      "name": "Guatemala",
+      "countryCode": "GTM",
+      "source": { "name": "ISO 3166-1", "status": "identity-reference; geometry-pending" }
+    }
+  ],
+  "placeRelations": [
+    { "from": "city:houston-us-tx", "to": "admin1:texas-us", "type": "located-in" },
+    { "from": "admin1:texas-us", "to": "country:USA", "type": "located-in" },
+    { "from": "country:USA", "to": "country:CAN", "type": "shares-land-border-with" },
+    { "from": "country:USA", "to": "country:MEX", "type": "shares-land-border-with" },
+    { "from": "country:MEX", "to": "country:BLZ", "type": "shares-land-border-with" },
+    { "from": "country:MEX", "to": "country:GTM", "type": "shares-land-border-with" },
+    { "from": "country:BLZ", "to": "country:GTM", "type": "shares-land-border-with" }
+  ],
+  "transportConnections": [],
+  "coverage": {
+    "rootCity": "Houston, Texas, United States",
+    "seededCountryNodes": ["USA", "CAN", "MEX", "BLZ", "GTM"],
+    "globalCountryInventoryLoaded": false,
+    "globalBoundaryGeometryLoaded": false,
+    "crossingAndTransportGraphLoaded": false,
+    "notes": [
+      "This is a deliberately small North America starter graph, not a complete world country registry.",
+      "Shared land borders establish geographic adjacency only; they do not assert a legal crossing, open border, pedestrian route, road connection, or travel permission.",
+      "Island and non-contiguous countries require separately sourced ferry, maritime, air, bridge, tunnel, or other transport edges.",
+      "Do not create AO room geometry from these identity records until source boundary and street geometry are imported and validated."
+    ]
+  }
+}
