@@ -7,7 +7,7 @@ create table ao_spatial.object_identities (
  spatial_object_id uuid not null references ao_spatial.spatial_objects(spatial_object_id),
  identity_namespace text not null,
  source_record_key text not null,
- identity_key text generated always as (identity_namespace || ':' || source_record_key) stored,
+ identity_key text not null unique,
  identity_role text not null default 'primary' check(identity_role in ('primary','source_alias','legacy_alias')),
  created_at timestamptz not null default now(),
  unique(identity_namespace,source_record_key),
