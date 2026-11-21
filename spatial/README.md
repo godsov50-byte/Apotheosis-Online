@@ -15,7 +15,7 @@ This package is the shared addressing foundation intended to replace disconnecte
 Run tests from the repository root with:
 
 \`\`\`bash
-node --test spatial/ao-spatial-addressing.test.mjs
+node --test spatial/*.test.mjs
 \`\`\`
 
 Requires Node.js 18+ and no third-party JavaScript dependencies. A test-only Houston coordinate-frame example is provided at `spatial/examples/houston-test-region.json`; it is not an approved geographic boundary or production region registry.
@@ -95,7 +95,7 @@ The atomic commit operation must append the transition ledger event and update t
 
 Chunks are retrieved by deterministic ID. Missing chunk metadata can be initialized; an unloaded chunk is not deleted. Persisted state and the append-only history are separate: chunk/entity records represent current derived state, while transition rows record committed history.
 
-The SQL proposal creates region configuration, chunk state, current entity addresses, and an append-only transition ledger. It denies direct browser roles and requires a trusted server-side Kernel adapter. **Do not apply this migration until the real Supabase project, existing RLS conventions, service-role boundary, and transaction implementation have been inspected and reviewed.** The repository change does not modify Supabase.
+The SQL proposal creates region configuration, chunk state, current entity addresses, and an append-only transition ledger. Its `ao_commit_spatial_transition` RPC appends the transition, upserts the destination chunk and updates the entity's current address inside one database transaction. It denies direct browser roles and grants the RPC only to the server-side service role. The JavaScript adapter must only be instantiated with a server-side service-role client; never bundle it or the service key into browser code. **Do not apply this migration until the real Supabase project, existing RLS conventions, service-role boundary, and transaction implementation have been inspected and reviewed.** The repository change does not modify Supabase.
 
 ## Authority boundary
 
@@ -109,7 +109,7 @@ The module is deliberately not allowed to write directly to Supabase or decide w
 ## Not implemented by this first slice
 
 - Live GPS device integration or anti-spoofing.
-- Supabase deployment, transaction RPC, service adapter, or RLS integration test.
+- Supabase deployment and live RLS/transaction integration test. The migration RPC and server-side adapter are proposals in this branch, not deployed infrastructure.
 - Automatic conversion of the current Houston builder's local-storage JSON into canonical addresses.
 - Verified street/sidewalk topology, pedestrian access, collision, doors, stairs, LOS, movement simulation, or combat initiative.
 - Full globe projection and region-boundary transforms.
