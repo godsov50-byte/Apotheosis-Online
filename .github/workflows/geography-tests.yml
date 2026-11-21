@@ -25,6 +25,8 @@ jobs:
           python-version: "3.12"
       - name: Check city console JavaScript syntax
         run: node --check geography/ao-city-console.js
+      - name: Test deterministic registry helpers
+        run: node tests/spatial/consistency-registry.test.js
       - name: Compile Python modules
         run: python -m compileall -q geography tests
       - name: Run unit and migration contract tests
