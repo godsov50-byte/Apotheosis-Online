@@ -150,3 +150,164 @@ comment on table public.ao_spatial_entity_addresses is
   'Current derived spatial address per entity; updated only by trusted AO Kernel service.';
 comment on table public.ao_spatial_transition_ledger is
   'Append-only committed movement and spatial transition history; corrections use compensating events.';
+
+
+-- One trusted RPC commits the append-only event, current entity address, and
+-- destination chunk in a single database transaction. The caller must be the
+-- server-side AO Kernel/WorldHeart service adapter, never a browser client.
+create or replace function public.ao_commit_spatial_transition(
+  p_event jsonb,
+  p_destination_address jsonb,
+  p_destination_chunk jsonb
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_world_id text;
+  v_entity_id text;
+  v_transition_id uuid;
+  v_from jsonb;
+  v_to jsonb;
+  v_origin_key text;
+  v_destination_key text;
+  v_chunk_id text;
+begin
+  if jsonb_typeof(p_event) <> 'object'
+     or jsonb_typeof(p_destination_address) <> 'object'
+     or jsonb_typeof(p_destination_chunk) <> 'object' then
+    raise exception 'Spatial transition, address and chunk must be JSON objects';
+  end if;
+
+  if (p_event->>'schemaVersion')::integer <> 1
+     or (p_destination_address->>'schemaVersion')::integer <> 1 then
+    raise exception 'Unsupported AO spatial schema version';
+  end if;
+
+  v_world_id := p_event->>'worldId';
+  v_entity_id := p_event->>'entityId';
+  v_from := p_event->'from';
+  v_to := p_event->'to';
+
+  if v_world_id is null or v_entity_id is null or
+     jsonb_typeof(v_from) <> 'object' or jsonb_typeof(v_to) <> 'object' then
+    raise exception 'Transition is missing world, entity, origin or destination';
+  end if;
+
+  if v_to is distinct from p_destination_address then
+    raise exception 'Destination address does not match transition payload';
+  end if;
+
+  if v_from->>'worldId' <> v_world_id or v_to->>'worldId' <> v_world_id then
+    raise exception 'Transition address belongs to another world';
+  end if;
+
+  v_origin_key := concat_ws('|',
+    v_from->>'worldId', v_from->>'spaceId', v_from->>'layer',
+    coalesce(nullif(v_from->>'instanceId', ''), '-'),
+    v_from->>'chunkId', v_from->>'tileId', v_from->>'cellId'
+  );
+  v_destination_key := concat_ws('|',
+    v_to->>'worldId', v_to->>'spaceId', v_to->>'layer',
+    coalesce(nullif(v_to->>'instanceId', ''), '-'),
+    v_to->>'chunkId', v_to->>'tileId', v_to->>'cellId'
+  );
+
+  if p_event->>'originAddressKey' is distinct from v_origin_key
+     or p_event->>'destinationAddressKey' is distinct from v_destination_key then
+    raise exception 'Transition address keys do not match address payloads';
+  end if;
+
+  v_chunk_id := p_destination_chunk->>'id';
+  if v_chunk_id is null
+     or v_chunk_id <> p_destination_address->>'chunkId'
+     or p_destination_chunk->>'worldId' <> v_world_id
+     or p_destination_chunk->>'regionId' <> p_destination_address->>'regionId'
+     or p_destination_chunk->>'layer' <> p_destination_address->>'layer' then
+    raise exception 'Destination chunk does not match destination address';
+  end if;
+
+  insert into public.ao_spatial_transition_ledger (
+    world_id, entity_id, transition_kind,
+    origin_address_key, destination_address_key,
+    origin_address, destination_address, occurred_at, metadata, schema_version
+  ) values (
+    v_world_id, v_entity_id, p_event->>'kind',
+    v_origin_key, v_destination_key,
+    v_from, v_to, (p_event->>'occurredAt')::timestamptz,
+    coalesce(p_event->'metadata', '{}'::jsonb), 1
+  )
+  returning transition_id into v_transition_id;
+
+  insert into public.ao_spatial_chunks (
+    world_id, chunk_id, region_id, space_id, layer,
+    grid_config, chunk_state, tile_ids, entity_ids,
+    source, load_state, revision, updated_at
+  ) values (
+    v_world_id, v_chunk_id,
+    p_destination_chunk->>'regionId',
+    p_destination_chunk->>'spaceId',
+    p_destination_chunk->>'layer',
+    coalesce(p_destination_chunk->'grid', '{}'::jsonb),
+    jsonb_build_object(
+      'status', coalesce(p_destination_chunk->>'status', 'known'),
+      'source', coalesce(p_destination_chunk->>'source', 'kernel')
+    ),
+    coalesce(p_destination_chunk->'tileIds', '[]'::jsonb),
+    coalesce(p_destination_chunk->'entityIds', '[]'::jsonb),
+    coalesce(p_destination_chunk->>'source', 'kernel'),
+    coalesce(p_destination_chunk->>'status', 'known'),
+    1,
+    now()
+  )
+  on conflict (world_id, chunk_id) do update set
+    grid_config = excluded.grid_config,
+    chunk_state = excluded.chunk_state,
+    tile_ids = excluded.tile_ids,
+    entity_ids = excluded.entity_ids,
+    source = excluded.source,
+    load_state = excluded.load_state,
+    revision = public.ao_spatial_chunks.revision + 1,
+    updated_at = now();
+
+  insert into public.ao_spatial_entity_addresses (
+    world_id, entity_id, region_id, space_id, chunk_id,
+    tile_id, cell_id, layer, instance_id, address_key, address,
+    address_version, updated_at
+  ) values (
+    v_world_id, v_entity_id,
+    p_destination_address->>'regionId',
+    p_destination_address->>'spaceId',
+    p_destination_address->>'chunkId',
+    p_destination_address->>'tileId',
+    p_destination_address->>'cellId',
+    p_destination_address->>'layer',
+    p_destination_address->>'instanceId',
+    v_destination_key,
+    p_destination_address,
+    1,
+    now()
+  )
+  on conflict (world_id, entity_id) do update set
+    region_id = excluded.region_id,
+    space_id = excluded.space_id,
+    chunk_id = excluded.chunk_id,
+    tile_id = excluded.tile_id,
+    cell_id = excluded.cell_id,
+    layer = excluded.layer,
+    instance_id = excluded.instance_id,
+    address_key = excluded.address_key,
+    address = excluded.address,
+    address_version = public.ao_spatial_entity_addresses.address_version + 1,
+    updated_at = now();
+
+  return v_transition_id;
+end;
+$$;
+
+revoke all on function public.ao_commit_spatial_transition(jsonb, jsonb, jsonb)
+  from public, anon, authenticated;
+grant execute on function public.ao_commit_spatial_transition(jsonb, jsonb, jsonb)
+  to service_role;
