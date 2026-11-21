@@ -57,7 +57,10 @@ def acquire_one(name: str, output: Path, timeout: int) -> dict[str,Any]:
         stem=shp[:-4]
         def member(ext):
             return next((x for x in members if x.lower()==(stem+ext).lower()),None)
-        shp_bytes=z.read(shp); shx_bytes=z.read(member(".shx")); dbf_bytes=z.read(member(".dbf"))
+        shx_name=member(".shx"); dbf_name=member(".dbf")
+        if not shx_name or not dbf_name:
+            raise RuntimeError(f"{name}: shapefile is missing its required SHX or DBF component")
+        shp_bytes=z.read(shp); shx_bytes=z.read(shx_name); dbf_bytes=z.read(dbf_name)
         prj_name=member(".prj")
         prj=z.read(prj_name).decode("utf-8",errors="replace") if prj_name else ""
     import shapefile
@@ -74,6 +77,8 @@ def acquire_one(name: str, output: Path, timeout: int) -> dict[str,Any]:
             attrs=dict(zip(fields,list(shape_rec.record)))
             geom=shape_rec.shape.__geo_interface__
             if not geom.get("coordinates"): missing+=1; continue
+            if geom.get("type") not in ("LineString","MultiLineString"):
+                raise RuntimeError(f"{name}: unexpected road geometry type {geom.get('type')!r}")
             geom={"type":geom["type"],"coordinates":transform_coords(geom["coordinates"],transformer)}
             linear=str(attrs.get("LINEARID") or "")
             if linear: linear_ids.add(linear)
