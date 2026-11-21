@@ -8,6 +8,7 @@ on:
       - main
     paths:
       - ".github/workflows/houston-building-footprints-build.yml"
+      - "geography/AO_HOUSTON_GEOGRAPHIC_CANON_BASELINE_v0_1.md"
       - "scripts/geography/acquire_houston_building_footprints.py"
 
 permissions:

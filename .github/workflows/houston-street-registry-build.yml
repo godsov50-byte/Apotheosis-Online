@@ -7,6 +7,7 @@ on:
       - main
     paths:
       - ".github/workflows/houston-street-registry-build.yml"
+      - "geography/AO_HOUSTON_GEOGRAPHIC_CANON_BASELINE_v0_1.md"
       - "scripts/geography/acquire_houston_road_centerlines.py"
       - "scripts/geography/build_houston_street_registry.py"
 
