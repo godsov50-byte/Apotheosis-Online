@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "dataset_id": "ao-earth-houston-road-network",
-  "status": "source_verified_acquisition_pipeline_committed_snapshot_not_yet_imported",
+  "status": "acquired_and_endpoint_graph_built_ci_artifact_verified_not_imported",
   "geographic_scope": {
     "jurisdiction": "City of Houston, Texas",
     "selection_rule": "munileft = 'HOUSTON' OR muniright = 'HOUSTON'",
@@ -115,7 +115,44 @@
       "manifest.json"
     ],
     "method": "Capture stable source OBJECTID set, download in bounded batches, transform server output to EPSG:4326, validate geometry and IDs, compare source edit timestamp before/after, write atomically.",
-    "current_state": "Pipeline committed; no full road geometry snapshot downloaded or committed yet."
+    "current_state": "Full filtered road snapshot acquired and endpoint graph built in successful CI; verified downloadable artifact exists. Snapshot/graph remain staging artifacts and have not been imported into AO's canonical spatial registry.",
+    "latest_verified_build": {
+      "workflow_run_id": "44855855540",
+      "workflow_run_url": "https://github.com/godsov50-byte/Apotheosis-Online/actions/runs/44855855540",
+      "branch_head_sha": "425140324ba23377f308d72b8428be5c33a42888",
+      "source_feature_count": 83760,
+      "unique_object_ids": 83760,
+      "null_geometry_count": 11,
+      "null_geometry_object_ids": [
+        10002,
+        35941,
+        68515,
+        87970,
+        88015,
+        107136,
+        107286,
+        238470,
+        243550,
+        246448,
+        253048
+      ],
+      "graph_edge_count": 84267,
+      "graph_node_count": 63923,
+      "connected_component_count": 607,
+      "largest_component_nodes": 58010,
+      "dead_end_nodes": 11123,
+      "graph_skipped_null_geometry_features": 11,
+      "snap_tolerance_m": 1.5,
+      "roads_geojson_sha256": "fe9c03b3b8293d01de76abc86d54d6697827df16e1a40521d4caf1b866003206",
+      "artifact_id": "14687556499",
+      "artifact_name": "ao-houston-road-network-8e8ce1b6bf98980742c26ebcc5deeae607125ac6",
+      "artifact_contents": [
+        "roads.geojson",
+        "graph.json",
+        "manifest.json",
+        "topology-report.json"
+      ]
+    }
   },
   "usage_limits": [
     "Road centerlines are not lane-level driving geometry.",
