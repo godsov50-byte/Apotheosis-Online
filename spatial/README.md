@@ -26,6 +26,8 @@ Every address has the same stable shape:
 
 \`World → Region → Chunk → Tile → Cell → Position\`
 
+AO's existing experimental world uses an XZ ground plane with Y vertical. This resolver follows that convention: X is east/west, Z is north/south, and Y is elevation/depth. Geographic longitude projects to X, latitude to Z, and GPS altitude to Y. This keeps the resolver compatible with the current AO movement model rather than introducing a competing Y-ground/Z-up convention.
+
 The address also records:
 
 - \`layer\`: ground, interior, underground, aerial, water, subsurface, or instance.
@@ -45,7 +47,7 @@ The address also records:
 | Tile | 64 m × 64 m × 64 m |
 | Cell | 1 m × 1 m × 1 m |
 
-These are engineering defaults, not AO canon. Configure them per world/region. X, Y and Z all participate in the identifiers, and the spatial layer is part of the chunk/tile/cell namespace. An aerial position 120 m above ground therefore resolves to a different layer namespace and vertical tile/cell from the ground position even when its horizontal coordinates match.
+These are engineering defaults, not AO canon. Configure them per world/region. X, Y and Z all participate in the identifiers, and the spatial layer is part of the chunk/tile/cell namespace. An aerial position 120 m above ground therefore resolves to a different layer namespace and vertical tile/cell on the Y axis from the ground position even when its horizontal coordinates match.
 
 The identifiers use mathematical floor, including for negative coordinates, so positions west/south/below the region origin remain deterministic.
 
@@ -55,7 +57,7 @@ The identifiers use mathematical floor, including for negative coordinates, so p
 
 Each region defines an origin and a local metric coordinate frame. Version 1 uses a local equirectangular approximation suitable for regional maps, not a single global projection. The resolver enforces a configurable maximum radius (250 km by default) to prevent silently stretching one local frame across a continent. Large worlds need multiple approved region frames and an explicit region-to-world transform strategy.
 
-Altitude is stored as Z in metres, but its vertical datum must be supplied and governed by the integrating source. The resolver does not decide whether a device reports ellipsoid height, mean sea level, floor-relative height, or another datum. Unknown altitude should not be presented as verified elevation.
+Altitude is stored as Y in metres, but its vertical datum must be supplied and governed by the integrating source. The resolver does not decide whether a device reports ellipsoid height, mean sea level, floor-relative height, or another datum. Unknown altitude should not be presented as verified elevation.
 
 GPS is an input source, not an authority. Device readings can be inaccurate, spoofed, unavailable indoors, or stale. The Kernel must validate movement, speed, access, collision, permissions, and transition legality before committing a new entity address.
 
