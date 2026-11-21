@@ -143,6 +143,21 @@ This is an AO spatial-placement convention, not a claim that the source address 
 
 The City site-address and multi-county parcel layers remain candidate sources until complete versioned snapshots pass the acquisition gate in §6. This design rule does not upgrade their unacquired features to source-backed or validated status.
 
+
+### 2.10 Address location-sign coordinate and tile identity
+
+The small location sign / map marker displayed above an address is a **rendered representation of that address's default entrance anchor**, not a separate geographic object and not an independently guessed location.
+
+- **World position:** the marker inherits the exact address-anchor coordinate. Its geographic position must not be shifted to the center of a parcel, structure, road or screen.
+- **Spatial address:** resolve that coordinate through AO's spatial hierarchy and store/reference the resulting World ID, Region ID, Chunk ID, Tile ID, Cell ID and local Position, together with the spatial layer and coordinate reference system. The coordinate remains the source of truth; tile/cell IDs are deterministic spatial indexes derived from it.
+- **Visual offset:** the sign may be drawn slightly above the ground/address point for legibility, but that is a presentation-only screen/world-render offset. It must not change the stored geographic coordinate, tile/cell assignment, collision position, entrance anchor or route origin.
+- **Boundary handling:** if the coordinate lies on a tile/chunk boundary, use one documented deterministic boundary rule so the same coordinate always resolves to the same address. Preserve sufficient coordinate precision to reproduce the assignment.
+- **Layer and elevation:** retain the applicable spatial layer (for example, surface/outdoor) and elevation/vertical datum when known. Do not invent altitude or treat a 2D address point as an interior-floor, underground or aerial position.
+- **Identity and updates:** bind the marker to the stable AO address-anchor record, with the source address ID/version retained as provenance. If a corrected source coordinate moves the anchor into another tile/cell, record a versioned spatial relocation; do not silently mutate history.
+- **Provisional resolution parameters:** the Spatial Addressing prototype's 1,024 m chunk / 64 m tile / 1 m cell values are engineering defaults only, not approved AO canon. The authoritative tile scheme, origin, projection and boundary convention must be selected and validated before production indexing.
+
+The marker may be hidden, clustered or visually displaced for interface clarity at different zoom levels, but its underlying address-anchor coordinate and resolved spatial address remain stable. This rule applies independently to addresses on both sides of a road.
+
 ## 3. Layers not yet established
 
 The following are not locked as complete geographic truth because the current source inventory does not demonstrate adequate acquired and validated coverage:
