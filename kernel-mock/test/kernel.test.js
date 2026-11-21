@@ -130,3 +130,17 @@ test("18 request fingerprints ignore object key order", async () => {
   assert.equal(second.outcome, "committed");
   assert.equal(k.revision, 1);
 });
+test("19 long-running requests are idempotent and key-bound", async () => {
+  const k = new MockKernel();
+  const a = req("long-a", "action", { domain: "exploration", verb: "survey", parameters: { longRunning: true } }, { actor_id: "character_anasi" });
+  a.payload.idempotency_key = "long-key";
+  const b = req("long-b", "action", { domain: "exploration", verb: "survey", parameters: { longRunning: true } }, { actor_id: "character_anasi" });
+  b.payload.idempotency_key = "long-key";
+  const first = await k.handle(a); const replay = await k.handle(b);
+  assert.equal(first.execution_id, replay.execution_id);
+  assert.equal(k.executions.size, 1);
+  const altered = req("long-c", "action", { domain: "exploration", verb: "survey", parameters: { longRunning: true, other: true } }, { actor_id: "character_anasi" });
+  altered.payload.idempotency_key = "long-key";
+  const conflict = await k.handle(altered);
+  assert.equal(conflict.error.code, "IDEMPOTENCY_KEY_REUSED");
+});
