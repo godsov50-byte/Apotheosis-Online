@@ -83,8 +83,14 @@ def build(collection:dict[str,Any], tolerance_m:float)->tuple[dict[str,Any],dict
         lat=sum(endpoints[i]["coord"][1] for i in members)/len(members)
         key=f"{lon:.6f},{lat:.6f}"
         nid=digest_id("hn",key)
+        member_xy=[xy(endpoints[i]["coord"]) for i in members]
+        spread_upper_bound=math.hypot(
+            max(p[0] for p in member_xy)-min(p[0] for p in member_xy),
+            max(p[1] for p in member_xy)-min(p[1] for p in member_xy))
         node={"id":nid,"coordinate":[round(lon,7),round(lat,7)],
               "degree":len(members),"endpoint_count":len(members),
+              "cluster_bbox_diameter_upper_bound_m":round(spread_upper_bound,3),
+              "snap_cluster_exceeds_tolerance":spread_upper_bound>tolerance_m,
               "endpoint_refs":[{"source_id":endpoints[i]["source"],"path_index":endpoints[i]["path"],"side":endpoints[i]["side"]} for i in members]}
         nodes.append(node)
         for i in members: endpoint_node[i]=nid
@@ -113,6 +119,8 @@ def build(collection:dict[str,Any], tolerance_m:float)->tuple[dict[str,Any],dict
       "largest_component_nodes":max(components,default=0),
       "degree_histogram":dict(sorted(degree_counts.items(),key=lambda kv:int(kv[0]))),
       "dead_end_nodes":sum(1 for n in nodes if n["degree"]==1),
+      "snap_clusters_exceeding_tolerance":sum(1 for n in nodes if n["snap_cluster_exceeds_tolerance"]),
+      "max_snap_cluster_bbox_diameter_upper_bound_m":max((n["cluster_bbox_diameter_upper_bound_m"] for n in nodes),default=0.0),
       "limitations":["Only polyline endpoints are clustered; interior line crossings are not split or joined.",
        "No bridge/tunnel/rail/grade-separation attributes were validated; endpoint proximity is a candidate, not proof of at-grade connectivity.",
        "Raw one-way, speed, lane, and access values are preserved but not decoded.",
@@ -136,7 +144,21 @@ def self_test()->None:
     assert r["skipped_paths_or_features"]==1
     assert r["connected_component_count"]==2
     assert next(e for e in g["edges"] if e["source_id"]=="a")["to_node"]==next(e for e in g["edges"] if e["source_id"]=="b")["from_node"]
-    print("self-test passed")
+    # Transitive endpoint snapping can create a cluster wider than the configured
+    # tolerance even when each pairwise link is within tolerance.
+    one_meter_lon=1.0/(111320.0*math.cos(math.radians(29.0)))
+    chain={"features":[
+      {"properties":{"GlobalID":"chain-a","OBJECTID":10},"geometry":{"type":"LineString","coordinates":[[-95.0,29.0],[-95.0+10*one_meter_lon,29.0]]}},
+      {"properties":{"GlobalID":"chain-b","OBJECTID":11},"geometry":{"type":"LineString","coordinates":[[-95.0+one_meter_lon,29.0],[-95.0+20*one_meter_lon,29.0]]}},
+      {"properties":{"GlobalID":"chain-c","OBJECTID":12},"geometry":{"type":"LineString","coordinates":[[-95.0+2*one_meter_lon,29.0],[-95.0+30*one_meter_lon,29.0]]}},
+    ]}
+    chain_graph,chain_report=build(chain,1.5)
+    oversized=[n for n in chain_graph["nodes"] if n["endpoint_count"]==3]
+    assert len(oversized)==1
+    assert oversized[0]["snap_cluster_exceeds_tolerance"]
+    assert chain_report["snap_clusters_exceeding_tolerance"]==1
+    assert chain_report["max_snap_cluster_bbox_diameter_upper_bound_m"]>=1.9
+    print("self-test passed: endpoint graph and snap-cluster spread warning")
 
 def main()->int:
     p=argparse.ArgumentParser(description=__doc__)
