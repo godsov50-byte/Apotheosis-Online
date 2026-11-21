@@ -30,8 +30,8 @@ except ImportError as exc:  # pragma: no cover - exercised in workflow
     raise SystemExit("Install requirements: pip install shapely") from exc
 
 FOOTPRINT_LAYER = (
-    "https://services.arcgis.com/lqRTrQp2HrfnJt8U/ArcGIS/rest/services/"
-    "Texas_BuildingFootprints/FeatureServer/0"
+    "https://geohwp.houstontx.gov/arcgis/rest/services/"
+    "02_BaseData_Boundaries/Other/FeatureServer/4"
 )
 BOUNDARY_SOURCE = (
     "https://www.gis.hctx.net/arcgis/rest/services/"
@@ -209,29 +209,32 @@ def main():
     validate_footprint_source(metadata)
     count = query_footprint_count(raw_polygons)
     report = {
-        "source_name": "Microsoft US Building Footprints (Texas layer)",
+        "source_name": "H-GAC Building Footprints 2018 (Houston GeoHub republish)",
         "source_url": FOOTPRINT_LAYER,
-        "source_description": "Building footprints extracted from 2019-2020 imagery; Microsoft-licensed Open Database License (ODbL).",
-        "source_vintage": "2019-2020 imagery",
-        "source_copyright": "Microsoft",
+        "source_description": "H-GAC 2018 LiDAR-derived Harris County building footprints; publisher warns of LiDAR classification false positives.",
+        "source_vintage": "2018 LiDAR; Harris County delivery 2019-06-24; GeoHub layer last updated 2022-01-25",
+        "source_copyright": "Houston-Galveston Area Council and Esri",
         "boundary_source": BOUNDARY_SOURCE,
         "boundary_classes_included": ["FULL", "LIMITED"],
         "boundary_classes_excluded": ["PENDING"],
         "boundary_feature_count": len(raw_polygons),
         "retrieved_at": datetime.now(timezone.utc).isoformat(),
-        "unique_footprint_features_intersecting_city_limits": count,
+        "unique_footprint_features_intersecting_source_coverage_and_city_limits": count,
         "count_definition": (
             "ArcGIS returnCountOnly count of unique source footprint polygon features "
-            "intersecting the union of Full/Limited Service Houston city-limit polygons. "
-            "This is a source-footprint count, not a verified count of distinct physical buildings."
+            "intersecting both the source layer coverage and the union of Full/Limited "
+            "Service Houston city-limit polygons. The source coverage is incomplete "
+            "for the full city; this is not a citywide building total."
         ),
-        "source_full_extent": metadata.get("fullExtent"),
+        "source_full_extent_native_crs": metadata.get("extent"),
+        "source_layer_last_updated": "2022-01-25",
+        "coverage_warning": "The published H-GAC footprint extent covers only part of the Houston city-limit geometry; the count is a partial-coverage subtotal, not the citywide total.",
         "source_spatial_reference": metadata.get("extent", {}).get("spatialReference"),
         "limitations": [
-            "2019-2020 imagery vintage; not a current ground survey.",
-            "Automated imagery extraction can omit buildings or produce false positives.",
+            "2018 LiDAR vintage; not a current ground survey.",
+            "LiDAR classification can omit buildings or produce false positives.",
             "One footprint feature is not guaranteed to equal one physically distinct building.",
-            "The count includes polygons intersecting the city boundary, including any edge-touching features.",
+            "The count includes polygons intersecting the city boundary, including any edge-touching features.\n            "The source layer does not cover the full city boundary.",
             "Building use, occupancy, floors, entrances, and business tenancy are not supplied by this count.",
             "Pending city-limit areas are excluded.",
         ],
