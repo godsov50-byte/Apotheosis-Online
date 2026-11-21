@@ -44,3 +44,19 @@ Imported GIS geometry is retained as source reference. Admin-authored buildings,
 5. Place occupants in cells and verify duplicate occupancy is rejected.
 6. Export, clear, import and compare the project data.
 7. Repeat on the full Houston datasets and supported mobile browsers before considering integration.
+
+
+## Local walking simulation preview
+
+The builder now imports the isolated AO spatial movement module and adds a two-step walking preview:
+
+1. Place the blue admin avatar on the road graph.
+2. Select a building and its entrance.
+3. The entrance must be usable and its road connector must be explicitly marked "Confirmed by admin".
+4. Preview the candidate route in amber.
+5. Inspect it, then explicitly click "Confirm route & walk" to approve that route for this local staging run.
+6. The blue avatar advances along the route using the movement engine's elapsed-time integration and the selected walking speed.
+
+This is a local, reversible staging assertion. The generated graph edges are marked accepted_for_staging only for the preview run; they are not source-verified road topology, persistent world state, or canon. The preview does not currently add building-footprint collision obstacles, simulate sidewalk width, validate crossings, or enter the building's interior. Reaching the entrance connector is not the same as entering a building. The movement result is not written to Kernel, WorldHeart or Supabase.
+
+The browser preview uses the same movement module as the deterministic unit tests. A static contract test extracts the module script and runs Node's syntax checker during CI.
