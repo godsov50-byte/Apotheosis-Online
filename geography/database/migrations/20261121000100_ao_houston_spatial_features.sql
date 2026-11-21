@@ -3,6 +3,7 @@
 -- This creates an isolated evidence/geometry schema; it does not write world state.
 
 begin;
+set local search_path = extensions, public, pg_catalog;
 
 create schema if not exists extensions;
 create extension if not exists postgis with schema extensions;
@@ -49,7 +50,6 @@ create table ao_spatial.spatial_profiles (
             origin_easting is not null
             and origin_northing is not null
             and source_to_working_crs_pipeline is not null
-            and jsonb_typeof(approval_record) = 'object'
             and approval_record ? 'kernel_approval_id'
         )
     )
@@ -72,7 +72,7 @@ create table ao_spatial.source_datasets (
     attribution text,
     retrieval_metadata jsonb not null default '{}'::jsonb
         check (jsonb_typeof(retrieval_metadata) = 'object'),
-    coverage_geom extensions.geometry(Geometry),
+    coverage_geom geometry(Geometry),
     coverage_crs text,
     known_omissions text,
     created_at timestamptz not null default now(),
@@ -98,7 +98,7 @@ create table ao_spatial.import_runs (
         source_snapshot_sha256 is null
         or source_snapshot_sha256 ~ '^[0-9a-f]{64}$'
     ),
-    target_area_ao extensions.geometry(Geometry, 0),
+    target_area_ao geometry(Geometry, 0),
     started_at timestamptz not null default now(),
     completed_at timestamptz,
     feature_counts jsonb not null default '{}'::jsonb
@@ -124,7 +124,7 @@ create table ao_spatial.source_features (
         references ao_spatial.source_datasets(source_dataset_id),
     source_feature_key text not null,
     source_crs text not null,
-    source_geom extensions.geometry(Geometry),
+    source_geom geometry(Geometry),
     raw_attributes jsonb not null default '{}'::jsonb
         check (jsonb_typeof(raw_attributes) = 'object'),
     source_feature_sha256 char(64) check (
@@ -159,7 +159,7 @@ create table ao_spatial.canonical_features (
             'tunnel_path', 'address_point', 'other'
         )
     ),
-    canonical_geom extensions.geometry(Geometry, 0) not null,
+    canonical_geom geometry(Geometry, 0) not null,
     feature_status text not null default 'derived_candidate' check (
         feature_status in (
             'source_verified', 'derived_candidate', 'needs_review',
