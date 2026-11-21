@@ -9,12 +9,12 @@ Produce a reproducible count of building-footprint source features inside the cu
 
 ## Selected source
 
-Primary source: [H-GAC Building Footprints 2018, Harris County layer](https://www.gis.hctx.net/arcgishcpid/rest/services/HCFCD/Building_Footprints_2018/MapServer/0).
+Primary source: [H-GAC Building Footprints 2018, City of Houston GeoHub layer 4](https://geohwp.houstontx.gov/arcgis/rest/services/02_BaseData_Boundaries/Other/FeatureServer/4).
 
 - Polygon footprints derived from 2018 LiDAR.
 - Harris County delivery date stated by the source: 2019-06-24.
-- Attributes include source ObjectID, `GeomType`, and `HGAC_Parcel_Number`.
-- Source explicitly warns that LiDAR classification can produce false positives and that the layer is informational, not a ground survey.
+- Attributes include source ObjectID and `PARCEL_ID` (parcel reference, not building ID).
+- The City of Houston GeoHub republish says the layer was last updated 2022-01-25. It explicitly warns that LiDAR classification can produce false positives and that the layer is informational, not a ground survey.
 - Attribution to Houston-Galveston Area Council and Esri is required by the service notice.
 
 Boundary source: [Harris County GIS City of Houston limits, layer 2](https://www.gis.hctx.net/arcgis/rest/services/CoH/CoH_Boundaries/MapServer/2). The existing acquisition script preserves service-type properties. The audit includes Full Service and Limited Service polygons and excludes Pending areas.
@@ -31,7 +31,7 @@ Boundary source: [Harris County GIS City of Houston limits, layer 2](https://www
 
 ## What the count means—and does not mean
 
-The primary figure is a **unique source-footprint feature count**, not a verified count of physically distinct buildings. One structure may be represented by multiple polygons; attached structures may be merged; some footprints may be missing or misclassified. The 2018 source vintage also means demolitions and newer construction may not be reflected.
+The primary figure is a **unique source-footprint feature count**, not a verified count of physically distinct buildings. The layer has no stable building identifier; `PARCEL_ID` is only a parcel reference. One structure may be represented by multiple polygons; attached structures may be merged; some footprints may be missing or misclassified. The 2018 source vintage also means demolitions and newer construction may not be reflected.
 
 Do not infer residential/commercial/industrial use from `GeomType` unless the source domain is inspected and documented. Do not treat parcel IDs as building IDs. A parcel may contain multiple buildings; one building may span parcels. Businesses and institutions require separate address/establishment inventories.
 
