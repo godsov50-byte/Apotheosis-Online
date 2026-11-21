@@ -85,8 +85,8 @@ python scripts/geography/acquire_houston_road_centerlines.py --output-dir build/
 
 The script:
 
-1. Captures the filtered source OBJECTID set and independently checks its count.
-2. Fetches the fixed ID set in bounded batches.
+1. Captures the filtered source OBJECTID set and independently checks its count with short GET requests.
+2. Fetches the fixed ID set in bounded batches using form-encoded HTTP POST requests. The geometry query is sent in the request body rather than a long URL, avoiding the City GIS server's 404 response to oversized batch URLs.
 3. Requests geometry in EPSG:4326.
 4. Validates unique IDs, GlobalIDs, line geometry, and coordinate ranges.
 5. Checks the source data edit timestamp before and after acquisition and refuses to publish if the source changed mid-run.
