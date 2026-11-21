@@ -56,6 +56,10 @@ test("address signs inherit exact address coordinates and deterministic tile ide
   assert.equal(left.spatialAddress.geographic.latitude, 29.761);
   assert.equal(left.spatialAddress.geographic.longitude, -95.369);
   assert.equal(left.marker.spatialAddressKey, left.spatialAddressKey);
+  assert.equal(left.marker.chunkId, left.spatialAddress.chunkId);
+  assert.equal(left.marker.tileId, left.spatialAddress.tileId);
+  assert.equal(left.marker.cellId, left.spatialAddress.cellId);
+  assert.equal(left.marker.layer, "ground");
   assert.equal(left.marker.inheritsAnchorCoordinate, true);
   assert.equal(left.marker.worldPosition, null);
   assert.equal(left.marker.participatesInCollision, false);
@@ -67,6 +71,30 @@ test("address signs inherit exact address coordinates and deterministic tile ide
   });
   assert.ok(Object.isFrozen(left));
   assert.ok(Object.isFrozen(left.marker));
+});
+
+test("correcting an address coordinate preserves anchor identity but changes its spatial tile", () => {
+  const original = resolver.resolveAddressAnchor({
+    addressId: "stable-address-id",
+    sourceId: "site-addresses:object-9",
+    sourceVersion: "snapshot-v1",
+    latitude: 29.761,
+    longitude: -95.369,
+    regionId: "houston-test"
+  });
+  const corrected = resolver.resolveAddressAnchor({
+    addressId: "stable-address-id",
+    sourceId: "site-addresses:object-9",
+    sourceVersion: "snapshot-v2",
+    latitude: 29.761,
+    longitude: -95.368,
+    regionId: "houston-test"
+  });
+  assert.equal(original.id, corrected.id);
+  assert.equal(original.marker.id, corrected.marker.id);
+  assert.notEqual(original.coordinate.longitude, corrected.coordinate.longitude);
+  assert.notEqual(original.marker.tileId, corrected.marker.tileId);
+  assert.equal(corrected.marker.tileId, corrected.spatialAddress.tileId);
 });
 
 test("address anchors on opposite road sides remain independent source positions", () => {
