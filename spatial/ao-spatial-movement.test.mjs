@@ -2,8 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   createNavigationGraph, planRoute, resolveMovementStep,
-  advanceAoCalendarSeconds, MOVEMENT_SPEED_PROFILES_MPS
+  advanceAoCalendarSeconds, MOVEMENT_SPEED_PROFILES_MPS,
+  createMovementTransitionEvent
 } from "./ao-spatial-movement.mjs";
+import { createSpatialResolver, createSpatialRepository, spatialAddressKey } from "./ao-spatial-addressing.mjs";
 
 function graph(edges = []) {
   return createNavigationGraph({
@@ -139,6 +141,76 @@ test("movement returns canonical address through an injected address resolver", 
   });
   assert.equal(step.spatialAddress.cell, 1);
   assert.equal(step.spatialAddress.x, 1.2);
+});
+
+test("movement resolves into canonical AO address and produces a commit-ready transition", async () => {
+  const resolver = createSpatialResolver({
+    worldId: "ao-movement-test",
+    regions: [{
+      id: "houston-test", originLat: 29.76, originLon: -95.37,
+      bounds: { south: 29.5, north: 30.2, west: -96, east: -95 }
+    }]
+  });
+  const fromAddress = resolver.resolveWorldPosition({ regionId: "houston-test", x: 0, y: 0, z: 0 });
+  const g = createNavigationGraph({
+    nodes: [
+      { id: "street-start", position: { x: 0, y: 0, z: 0 } },
+      { id: "street-end", position: { x: 10, y: 0, z: 0 } }
+    ],
+    edges: [{
+      id: "verified-sidewalk-1", from: "street-start", to: "street-end",
+      modes: ["walk"], routingApproved: true, status: "accepted_for_staging",
+      kind: "sidewalk", addressContext: { layer: "ground", regionId: "houston-test" }
+    }]
+  });
+  const route = planRoute(g, { fromNodeId: "street-start", toNodeId: "street-end", mode: "walk" });
+  const step = resolveMovementStep({
+    actor: { id: "traveler-1", position: { x: 0, y: 0, z: 0 }, mode: "walk" },
+    route, elapsedSeconds: 1,
+    addressAtPosition: (p, actor, plannedRoute, cursor) => {
+      assert.equal(cursor.edge.kind, "sidewalk");
+      return resolver.resolveWorldPosition({
+        regionId: cursor.edge.addressContext.regionId, x: p.x, y: p.y, z: p.z
+      });
+    }
+  });
+  const event = createMovementTransitionEvent({
+    resolver, entityId: "traveler-1", fromAddress, movementResult: step,
+    occurredAt: "2026-11-21T18:00:00.000Z"
+  });
+  assert.equal(event.kind, "walk");
+  assert.equal(event.from.worldId, "ao-movement-test");
+  assert.equal(event.to.position.x, 1.2);
+  assert.equal(event.originAddressKey, spatialAddressKey(fromAddress));
+  assert.equal(event.destinationAddressKey, spatialAddressKey(step.spatialAddress));
+  assert.equal(event.metadata.distanceMovedM, 1.2);
+
+  const current = new Map(), chunks = new Map(), ledger = [];
+  const repository = createSpatialRepository({
+    async getChunk(id) { return chunks.get(id) || null; },
+    async putChunk(chunk) { chunks.set(chunk.id, chunk); },
+    async getEntityAddress(id) { return current.get(id) || null; },
+    async commitTransitionAtomic({ event: committed, destinationAddress, destinationChunk }) {
+      ledger.push(committed);
+      current.set(committed.entityId, destinationAddress);
+      chunks.set(destinationChunk.id, destinationChunk);
+    }
+  });
+  await repository.commitTransition(event);
+  assert.equal(ledger.length, 1);
+  assert.equal((await repository.loadEntityAddress("traveler-1")).cellId, step.spatialAddress.cellId);
+});
+
+test("zero displacement cannot create a movement transition event", () => {
+  const resolver = createSpatialResolver({
+    worldId: "ao-movement-test",
+    regions: [{ id: "r", originLat: 0, originLon: 0 }]
+  });
+  const address = resolver.resolveWorldPosition({ regionId: "r", x: 0, y: 0 });
+  assert.throws(() => createMovementTransitionEvent({
+    resolver, entityId: "traveler-1", fromAddress: address,
+    movementResult: { mode: "walk", distanceMovedM: 0, spatialAddress: address }
+  }), /positive resolved displacement/);
 });
 
 test("AO calendar runs at one third of elapsed real time, independently of movement", () => {
