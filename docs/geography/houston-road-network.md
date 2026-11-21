@@ -96,6 +96,25 @@ A live null-geometry count query on 2026-11-21 found 11 records in the selected 
 
 Default output is under `build/`, not committed automatically. A successful CI acquisition on 2026-11-21 produced 83,760 GeoJSON features with 83,760 unique OBJECTIDs. The manifest records 11 source records with null geometry (OBJECTIDs 10002, 35941, 68515, 87970, 88015, 107136, 107286, 238470, 243550, 246448, and 253048); these are retained as source records but cannot form spatial edges. The roads GeoJSON SHA-256 is `fe9c03b3b8293d01de76abc86d54d6697827df16e1a40521d4caf1b866003206`. The versioned artifact is attached to GitHub Actions run [44855847408](https://github.com/godsov50-byte/Apotheosis-Online/actions/runs/44855847408) and expires after the configured 14-day retention. This confirms acquisition to a build artifact, not import into AO's canonical registry.
 
+## Verified endpoint-graph build
+
+The corrected GitHub Actions build completed successfully on 2026-11-21: [run 44855855540](https://github.com/godsov50-byte/Apotheosis-Online/actions/runs/44855855540). Its versioned artifact contains `roads.geojson`, `graph.json`, `manifest.json`, and `topology-report.json`.
+
+| Measure | Result |
+|---|---:|
+| Source features retained | 83,760 |
+| Unique source OBJECTIDs | 83,760 |
+| Source features with null geometry | 11 |
+| Graph edges | 84,267 |
+| Graph nodes | 63,923 |
+| Connected components | 607 |
+| Largest component | 58,010 nodes |
+| Dead-end nodes | 11,123 |
+| Null-geometry features skipped by graph | 11 |
+| Endpoint snap tolerance | 1.5 m |
+
+The roads GeoJSON SHA-256 is `fe9c03b3b8293d01de76abc86d54d6697827df16e1a40521d4caf1b866003206`. The artifact is retained by GitHub Actions for 14 days. The graph status is `endpoint_graph_built_needs_topology_review`, not routing-ready: endpoint clustering does not split interior crossings, and grade separation, turn restrictions, travel-mode access, and one-way semantics remain unvalidated.
+
 ## Map demonstration
 
 `geography/houston-spatial-navigation-demo.html` now overlays the filtered official Houston centerlines over the OpenStreetMap basemap. The overlay can be toggled separately from the basemap. Road popups show the source road name, class, raw one-way/lanes/speed values, municipality sides, and source identifier.
@@ -104,9 +123,9 @@ The map loads features for the current view from the public ArcGIS FeatureServer
 
 ## Not yet solved
 
-- Full snapshot acquisition and storage in AO's canonical geographic registry.
+- Import and version the generated snapshot/graph in AO's separate canonical geographic registry after review.
 - Validated centerline-to-node/link crosswalk.
-- Graph construction and edge splitting at true intersections.
+- Interior-crossing detection/splitting and validation of at-grade versus grade-separated connectivity.
 - Turn restrictions, access by travel mode, bridge/tunnel grade separation, and vertical connectivity.
 - Pedestrian sidewalks and building entrance connections.
 - Kernel-authorized movement and WorldHeart history commits.
