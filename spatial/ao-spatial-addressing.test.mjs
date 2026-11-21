@@ -33,11 +33,11 @@ test("GPS resolves to deterministic region, chunk, tile and cell identifiers", (
 });
 
 test("negative world coordinates use mathematical floor, not truncation", () => {
-  const a = resolver.resolveWorldPosition({ regionId: "houston-test", x: -0.2, y: -64.1 });
+  const a = resolver.resolveWorldPosition({ regionId: "houston-test", x: -0.2, y: 0, z: -64.1 });
   assert.equal(a.grid.chunkX, -1);
   assert.equal(a.grid.tileX, -1);
   assert.equal(a.grid.cellX, -1);
-  assert.equal(a.grid.chunkZ, 0);
+  assert.equal(a.grid.chunkY, 0);
 });
 
 test("GPS uses one unique configured region and rejects uncovered or ambiguous points", () => {
@@ -72,12 +72,12 @@ test("underground addresses retain their surface-site anchor and negative depth"
   const surface = resolver.resolveGeographic({ latitude: 29.76, longitude: -95.37, regionId: "houston-test" });
   const below = resolver.resolveUnderground({
     siteId: "utility-tunnel-9", surfaceAddress: surface,
-    x: 12, y: 8, z: -20, layer: "underground"
+    x: 12, y: -20, z: 8, layer: "underground"
   });
   assert.equal(below.layer, "underground");
   assert.equal(below.regionId, surface.regionId);
   assert.equal(below.parentLocationId, "utility-tunnel-9");
-  assert.equal(below.position.z, -20);
+  assert.equal(below.position.y, -20);
   assert.equal(below.exteriorAddressKey, spatialAddressKey(surface));
 });
 
@@ -106,7 +106,7 @@ test("aerial layer is a distinct spatial layer above the same geographic grid", 
   assert.notEqual(air.tileId, airAtGroundLevel.tileId); // different 64 m vertical tile
   assert.notEqual(air.cellId, airAtGroundLevel.cellId); // distinct 1 m vertical cell
   assert.notEqual(spatialAddressKey(air), spatialAddressKey(ground));
-  assert.equal(air.position.z, 120);
+  assert.equal(air.position.y, 120);
 });
 
 test("teleport transition records immutable origin and destination addresses", () => {
