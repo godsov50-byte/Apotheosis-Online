@@ -8,7 +8,7 @@ This is an admin prototype and exportable proposal tool. It does not write to th
 
 ## Included
 
-- Load user-supplied road centerline GeoJSON or query an ArcGIS FeatureServer layer for the current map extent, then construct a geometric graph from line segments and inferred intersections.
+- Automatically query the configured road-centerline and building-footprint ArcGIS FeatureServer sources for the initial map extent and again as the admin pans/zooms; visited extents are cached for the session. Manual GeoJSON/service imports remain available as fallbacks.
 - Display imported building footprint GeoJSON or query an ArcGIS FeatureServer layer for the current map extent as source reference geometry.
 - Draw admin-authored building footprints and record name, purpose, floor count, notes and configured interior cell size.
 - Add entrance records with access states, nearest road edge/projection and an explicit admin-confirmed connector state.
@@ -28,7 +28,7 @@ This is an admin prototype and exportable proposal tool. It does not write to th
 - Door records are adjacency-checked connections between room cells, but detailed wall thickness, door swing, locking, visibility and movement-through-opening simulation remain future work.
 - Stair records identify a stairwell and destination floor, but reciprocal stair geometry and continuous vertical movement are not yet simulated.
 - Occupants are local placement records; they do not yet have persistent autonomous movement, collision, initiative or perception.
-- The app uses Leaflet and OpenStreetMap tiles from external CDNs/services. ArcGIS service queries depend on source CORS support, service pagination and current map extent. The default H-GAC footprint source is partial-area, not citywide. Large Houston GeoJSON performance and real-device browser behavior require runtime testing.
+- Automatic source loading is viewport-based, not a complete citywide offline download. It requires browser CORS access and source-service availability; failed requests need retry/manual fallback. The default H-GAC footprint source is partial-area, not citywide, so unmapped footprints remain gaps rather than fabricated buildings. Large Houston GIS performance and real-device browser behavior require runtime testing.
 - Browser local storage is not shared persistence. Export JSON for backup and transfer.
 
 ## Data authority
