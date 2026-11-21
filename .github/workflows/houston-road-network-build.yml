@@ -1,12 +1,16 @@
-name: AO Houston citywide road graph
+name: AO Houston citywide road graph + crossing audit
 
 on:
   push:
     branches:
       - feature/houston-gps-spatial-data
+      - feature/houston-interior-crossing-audit
     paths:
       - "scripts/geography/acquire_houston_road_centerlines.py"
       - "scripts/geography/build_houston_road_graph.py"
+      - "scripts/geography/audit_houston_interior_crossings.py"
+      - "scripts/geography/acquire_houston_official_nodes_links.py"
+      - "scripts/geography/crosswalk_houston_crossings_to_official_nodes.py"
       - ".github/workflows/houston-road-network-build.yml"
   workflow_dispatch:
 
@@ -28,6 +32,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Install crossing-audit dependency
+        run: python -m pip install "shapely>=2.1,<3" "pyproj>=3.6,<4"
       - name: Verify diagnostic downloader revision
         run: |
           echo "Build commit: $(git rev-parse HEAD)"
@@ -35,18 +41,34 @@ jobs:
           grep -n "HTTP {exc.code}" scripts/geography/acquire_houston_road_centerlines.py
       - name: Test graph builder
         run: python scripts/geography/build_houston_road_graph.py --self-test
+      - name: Test interior crossing audit
+        run: python scripts/geography/audit_houston_interior_crossings.py --self-test
+      - name: Test official Nodes/Links acquisition
+        run: python scripts/geography/acquire_houston_official_nodes_links.py --self-test
+      - name: Test official node crossing crosswalk
+        run: python scripts/geography/crosswalk_houston_crossings_to_official_nodes.py --self-test
+      - name: Acquire official Houston Nodes and Links snapshot
+        run: python scripts/geography/acquire_houston_official_nodes_links.py --nodes-only --output-dir build/houston-road-network --batch-size 500 --timeout 90 --pause 0.1
       - name: Acquire complete Houston road-centerline snapshot
         run: python scripts/geography/acquire_houston_road_centerlines.py --output-dir build/houston-road-network --batch-size 500 --timeout 90 --pause 0.15
       - name: Build endpoint connectivity graph
         run: python scripts/geography/build_houston_road_graph.py --input build/houston-road-network/roads.geojson --output-dir build/houston-road-network --snap-tolerance-m 1.5
+      - name: Audit interior crossing candidates
+        run: python scripts/geography/audit_houston_interior_crossings.py --input build/houston-road-network/roads.geojson --output build/houston-road-network/interior-crossing-candidates.json --interior-threshold-m 2.0
+      - name: Cross-reference crossings to official nodes
+        run: python scripts/geography/crosswalk_houston_crossings_to_official_nodes.py --candidates build/houston-road-network/interior-crossing-candidates.json --nodes build/houston-road-network/nodes.geojson --output build/houston-road-network/official-node-crosswalk.json --radius-m 15
       - name: Upload versioned build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ao-houston-road-network-${{ github.sha }}
+          name: ao-houston-road-network-crossing-audit-${{ github.sha }}
           path: |
             build/houston-road-network/roads.geojson
             build/houston-road-network/manifest.json
             build/houston-road-network/graph.json
             build/houston-road-network/topology-report.json
+            build/houston-road-network/interior-crossing-candidates.json
+            build/houston-road-network/nodes.geojson
+            build/houston-road-network/official-nodes-links-manifest.json
+            build/houston-road-network/official-node-crosswalk.json
           if-no-files-found: error
           retention-days: 14
