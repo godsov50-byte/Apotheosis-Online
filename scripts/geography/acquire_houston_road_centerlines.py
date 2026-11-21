@@ -71,6 +71,10 @@ def atomic_write(path: Path, content: bytes) -> None:
         except FileNotFoundError: pass
         raise
 
+def canonical_feature_order(features: list[dict[str,Any]]) -> list[dict[str,Any]]:
+    """Return source features in stable OBJECTID order before hashing/serialization."""
+    return sorted(features,key=lambda feature:int((feature.get("properties") or {})["OBJECTID"]))
+
 def acquire(output_dir: Path,batch_size: int=500,timeout: int=90,pause: float=0.15) -> dict[str,Any]:
     if not 1<=batch_size<=1000: raise ValueError("batch_size must be 1..1000")
     acquired_at=dt.datetime.now(dt.timezone.utc).isoformat()
@@ -98,6 +102,7 @@ def acquire(output_dir: Path,batch_size: int=500,timeout: int=90,pause: float=0.
     edit_end=get_json(LAYER_URL+"?f=pjson",timeout).get("editingInfo",{}).get("dataLastEditDate")
     if edit_start!=edit_end: raise RuntimeError("Source changed during acquisition; refusing mixed-time snapshot.")
     if len(features)!=count or seen!=set(ids): raise RuntimeError("Final features do not match source IDs.")
+    features=canonical_feature_order(features)
     collection={"type":"FeatureCollection","name":"ao_houston_road_centerlines",
       "crs":{"type":"name","properties":{"name":"EPSG:4326"}},"features":features}
     data=(json.dumps(collection,ensure_ascii=False,separators=(",",":"))+"\n").encode()
