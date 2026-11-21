@@ -35,14 +35,23 @@ OUT_FIELDS = ",".join([
 ])
 
 
-def get_json(url: str, timeout: int, retries: int = 4) -> dict[str, Any]:
-    # Emit the exact ArcGIS request before opening it so hosted-runner failures
-    # can be diagnosed from Actions logs without reproducing the entire job.
-    print(f"ArcGIS request: {url}", file=sys.stderr, flush=True)
-    req = urllib.request.Request(
-        url,
-        headers={"User-Agent": "ApotheosisOnline-Geography/1.0 (road data acquisition)"},
-    )
+def request_json(
+    url: str,
+    timeout: int,
+    retries: int = 4,
+    data: bytes | None = None,
+) -> dict[str, Any]:
+    # ArcGIS accepts query parameters in either a URL or an x-www-form-urlencoded
+    # POST body. Geometry batches use POST so hundreds of OBJECTIDs do not create
+    # an oversized URL that IIS rejects with a misleading 404.
+    method = "POST" if data is not None else "GET"
+    print(f"ArcGIS request ({method}): {url}", file=sys.stderr, flush=True)
+    headers = {
+        "User-Agent": "ApotheosisOnline-Geography/1.0 (road data acquisition)",
+    }
+    if data is not None:
+        headers["Content-Type"] = "application/x-www-form-urlencoded"
+    req = urllib.request.Request(url, data=data, headers=headers, method=method)
     for attempt in range(retries):
         try:
             with urllib.request.urlopen(req, timeout=timeout) as response:
@@ -58,16 +67,30 @@ def get_json(url: str, timeout: int, retries: int = 4) -> dict[str, Any]:
             except Exception:
                 detail = ""
             raise RuntimeError(
-                f"HTTP {exc.code} {exc.reason} for {url}."
+                f"HTTP {exc.code} {exc.reason} for {method} {url}."
                 + (f" Response: {detail[:1200]}" if detail else "")
             ) from exc
         except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
             if attempt + 1 == retries:
                 raise RuntimeError(
-                    f"Request failed after {retries} attempts for {url}: {exc}"
+                    f"Request failed after {retries} attempts for {method} {url}: {exc}"
                 ) from exc
             time.sleep(2 ** attempt)
     raise AssertionError("unreachable")
+
+
+def get_json(url: str, timeout: int, retries: int = 4) -> dict[str, Any]:
+    return request_json(url, timeout, retries)
+
+
+def post_json(
+    url: str,
+    params: dict[str, Any],
+    timeout: int,
+    retries: int = 4,
+) -> dict[str, Any]:
+    body = urllib.parse.urlencode(params).encode("utf-8")
+    return request_json(url, timeout, retries, data=body)
 
 
 def request_url(params: dict[str, Any]) -> str:
@@ -163,13 +186,13 @@ def main() -> int:
     seen_ids: set[int] = set()
     for offset in range(0, len(object_ids), args.batch_size):
         batch = object_ids[offset:offset + args.batch_size]
-        payload = get_json(request_url({
+        payload = post_json(LAYER_URL + "/query", {
             "objectIds": ",".join(map(str, batch)),
             "outFields": OUT_FIELDS,
             "returnGeometry": "true",
             "outSR": "4326",
             "f": "geojson",
-        }), args.timeout)
+        }, args.timeout)
         page = payload.get("features")
         if not isinstance(page, list):
             raise RuntimeError(f"Batch {offset} returned no GeoJSON feature array.")
