@@ -86,7 +86,7 @@
   function pickName(properties, fallback) {
     const p = properties || {};
     return normalizeName(p.fullname || p.NAME || p.name || p.Address || p.ADDRESS ||
-      p.address || p.Parcel_ID || p.PARCEL_ID || fallback || "Unnamed source feature");
+      p.address || p.Parcel_ID || p.PARCEL_ID || p.HGAC_Parcel_Number || p.HGAC_PARCEL_NUMBER || fallback || "Unnamed source feature");
   }
   function normalizeStreetRegistry(data) {
     if (!data || !Array.isArray(data.street_segments)) throw new Error("This is not an AO street-registry JSON artifact.");
