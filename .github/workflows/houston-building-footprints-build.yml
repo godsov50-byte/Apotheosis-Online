@@ -30,7 +30,7 @@ jobs:
         run: |
           python scripts/geography/acquire_houston_building_footprints.py \
             --output-dir build/houston-building-footprints \
-            --batch-size 500 --timeout 90 --pause 0.15
+            --batch-size 200 --timeout 90 --pause 0.15
       - name: Upload building GeoJSON and provenance manifest
         uses: actions/upload-artifact@v4
         with:

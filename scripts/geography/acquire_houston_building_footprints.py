@@ -60,8 +60,11 @@ def fetch_boundary_rings(timeout: int, batch_size: int) -> tuple[list[list[list[
         raise RuntimeError("Houston city-limit boundary query returned no features.")
     rings: list[list[list[float]]] = []
     seen: set[int] = set()
-    for start in range(0, len(ids), batch_size):
-        batch = ids[start:start + batch_size]
+    # The ArcGIS boundary service returns HTTP 404 for oversized GET query strings.
+    # Keep boundary geometry batches below its observed URL-length threshold.
+    boundary_batch_size = min(batch_size, 200)
+    for start in range(0, len(ids), boundary_batch_size):
+        batch = ids[start:start + boundary_batch_size]
         data = request_json(BOUNDARY_URL + "/query", {
             "objectIds": ",".join(map(str, batch)), "outFields": "*",
             "returnGeometry": "true", "outSR": str(SOURCE_CRS), "f": "json"
