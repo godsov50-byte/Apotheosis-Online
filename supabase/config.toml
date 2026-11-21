@@ -1,0 +1,3 @@
+# Edge Functions configuration
+[functions.ao-play]
+verify_jwt = false
