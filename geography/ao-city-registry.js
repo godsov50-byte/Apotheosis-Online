@@ -153,52 +153,81 @@
     }
     await transactionDone(tx);
   }
-  async function importFile(file, kind) {
-    if (!file) return;
-    status("Reading " + file.name + "…");
+  async function* streamArrayObjects(file, targetArrayName) {
+    const reader = file.stream().getReader(), decoder = new TextDecoder();
+    let buffer="", started=false, inObject=false, depth=0, inString=false, escape=false, objectText="", searchTail="";
     try {
-      const data = JSON.parse(await file.text());
-      const sourceLabel = kind === "building" ? ($("buildingSource").value || "user-imported-building-footprints") : "";
-      const records = kind === "street" ? normalizeStreetRegistry(data) : normalizeBuildingGeoJSON(data, sourceLabel);
-      let accepted = 0, rejected = 0;
-      const valid = [];
-      for (const record of records) {
-        const bbox = geometryBBox(record.geometry);
-        if (!bbox || !record.geometry || !["LineString", "MultiLineString", "Polygon", "MultiPolygon"].includes(record.geometry.type)) {
-          rejected++;
-          continue;
+      while (true) {
+        const part=await reader.read();
+        buffer+=decoder.decode(part.value||new Uint8Array(),{stream:!part.done});
+        if(!started){
+          const scan=searchTail+buffer, marker='"'+targetArrayName+'"', at=scan.indexOf(marker);
+          if(at>=0){
+            const after=scan.slice(at+marker.length), bracket=after.indexOf("[");
+            if(bracket>=0){buffer=scan.slice(at+marker.length+bracket+1);started=true;}
+            else {searchTail=scan.slice(-marker.length-16);buffer="";}
+          } else {searchTail=scan.slice(-marker.length-16);buffer="";}
         }
-        record.bbox = bbox;
-        record.tiles = tilesForBBox(bbox);
-        if (!record.tiles.length || record.tiles.length > 500) { rejected++; continue; }
-        valid.push(record);
+        if(started){
+          let i=0;
+          for(;i<buffer.length;i++){
+            const ch=buffer[i];
+            if(!inObject){
+              if(ch==="]"){buffer=buffer.slice(i+1);return;}
+              if(ch!=="{")continue;
+              inObject=true;depth=1;inString=false;escape=false;objectText="{";continue;
+            }
+            objectText+=ch;
+            if(inString){if(escape)escape=false;else if(ch==="\\")escape=true;else if(ch==='"')inString=false;continue;}
+            if(ch==='"'){inString=true;continue;}
+            if(ch==="{")depth++;
+            else if(ch==="}"){depth--;if(depth===0){yield JSON.parse(objectText);inObject=false;objectText="";}}
+          }
+          buffer=inObject?"":buffer.slice(i);
+        }
+        if(part.done)break;
       }
-      for (let i = 0; i < valid.length; i += 200) {
-        await writeBatch(valid.slice(i, i + 200));
-        accepted += Math.min(200, valid.length - i);
-        status("Importing " + file.name + " · " + accepted.toLocaleString() + " / " + valid.length.toLocaleString());
-      }
-      const db = await openDB();
-      const tx = db.transaction("datasets", "readwrite");
-      tx.objectStore("datasets").put({
-        id: (kind === "street" ? "street:" : "building:") + sourceLabelOrDefault(kind, sourceLabel),
-        kind, name: file.name, importedAt: new Date().toISOString(),
-        sourceLabel: sourceLabelOrDefault(kind, sourceLabel),
-        accepted, rejected, fileBytes: file.size
-      });
-      await transactionDone(tx);
-      status("Imported " + accepted.toLocaleString() + " " + (kind === "street" ? "street segments" : "building footprints") +
-        (rejected ? "; skipped " + rejected.toLocaleString() + " missing/unsupported geometries." : ".") +
-        " Data is saved in this browser's IndexedDB.");
-      await updateCounts();
-      await refreshVisible();
-      if (accepted) map.fitBounds(L.latLngBounds(
-        [valid.reduce((v, r) => Math.min(v, r.bbox[1]), 90), valid.reduce((v, r) => Math.min(v, r.bbox[0]), 180)],
-        [valid.reduce((v, r) => Math.max(v, r.bbox[3]), -90), valid.reduce((v, r) => Math.max(v, r.bbox[2]), -180)]
-      ), { padding: [24, 24], maxZoom: 16 });
-    } catch (error) {
-      status("Import failed: " + (error && error.message ? error.message : String(error)));
+      if(!started)throw new Error("Could not find JSON array '"+targetArrayName+"' in selected file.");
+      if(inObject)throw new Error("Incomplete JSON object at end of file.");
+    } finally {reader.releaseLock();}
+  }
+  function normalizeStreamingItem(item,kind,sourceLabel,index){
+    if(kind==="street"){
+      const props=item.properties||item.raw_source_attributes||{}, sourceIdentity=item.identity_key||item.source_global_id||item.source_record_key||("row-"+index);
+      return {id:"street:"+String(sourceIdentity),kind:"street",dataset:item.registry_id||"ao-houston-street-registry",name:pickName(props,item.display_name),geometry:item.geometry,properties:props,rawProperties:item.raw_source_attributes||{},provenance:item.provenance||{},sourceIdentity,sourceStatus:"source-reported centerline; not a validated route edge"};
     }
+    const p=item.properties||{},sourceId=p.GlobalID||p.GLOBALID||p.globalid||p.FID||p.OBJECTID||p.OBJECTID_1||p.id||item.id||("feature-"+index);
+    return {id:"building:"+sourceLabel+":"+String(sourceId),kind:"building",dataset:sourceLabel,name:pickName(p,"Building "+sourceId),geometry:item.geometry,properties:p,rawProperties:p,provenance:{publisher:sourceLabel,source_record_id:String(sourceId)},sourceIdentity:String(sourceId),sourceStatus:"source footprint; not field-verified building truth"};
+  }
+  async function importFile(file,kind){
+    if(!file)return;
+    const sourceLabel=kind==="building"?($("buildingSource").value||"user-imported-building-footprints"):"";
+    const arrayName=kind==="street"?"street_segments":"features";
+    status("Streaming "+file.name+" — large-file mode…");
+    try{
+      let accepted=0,rejected=0,batch=[],bounds=null;
+      const db=await openDB(),datasetKey=(kind==="street"?"street:":"building:")+sourceLabelOrDefault(kind,sourceLabel);
+      const oldTx=db.transaction("datasets","readonly");
+      const old=await new Promise((resolve,reject)=>{const req=oldTx.objectStore("datasets").get(datasetKey);req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error);});
+      await transactionDone(oldTx);
+      let index=0;
+      for await(const item of streamArrayObjects(file,arrayName)){
+        const record=normalizeStreamingItem(item,kind,sourceLabel,index++),bbox=geometryBBox(record.geometry);
+        if(!bbox||!record.geometry||!["LineString","MultiLineString","Polygon","MultiPolygon"].includes(record.geometry.type)){rejected++;continue;}
+        record.bbox=bbox;record.tiles=tilesForBBox(bbox);
+        if(!record.tiles.length||record.tiles.length>500){rejected++;continue;}
+        batch.push(record);
+        if(!bounds)bounds=[...bbox];else{bounds[0]=Math.min(bounds[0],bbox[0]);bounds[1]=Math.min(bounds[1],bbox[1]);bounds[2]=Math.max(bounds[2],bbox[2]);bounds[3]=Math.max(bounds[3],bbox[3]);}
+        if(batch.length>=200){await writeBatch(batch);accepted+=batch.length;batch=[];status("Streaming import "+file.name+" · "+accepted.toLocaleString()+" accepted · "+index.toLocaleString()+" scanned");}
+      }
+      if(batch.length){await writeBatch(batch);accepted+=batch.length;}
+      const tx=db.transaction("datasets","readwrite");
+      tx.objectStore("datasets").put({id:datasetKey,kind,name:file.name,importedAt:new Date().toISOString(),sourceLabel:sourceLabelOrDefault(kind,sourceLabel),accepted:(old&&old.accepted||0)+accepted,rejected:(old&&old.rejected||0)+rejected,fileBytes:file.size,importMode:"streaming-batches"});
+      await transactionDone(tx);
+      status("Streaming import complete: "+accepted.toLocaleString()+" new "+(kind==="street"?"street segments":"building footprints")+(rejected?"; skipped "+rejected.toLocaleString()+".":".")+" Saved in IndexedDB.");
+      await updateCounts();await refreshVisible();
+      if(bounds)map.fitBounds([[bounds[1],bounds[0]],[bounds[3],bounds[2]]],{padding:[24,24],maxZoom:16});
+    }catch(error){status("Import failed: "+(error&&error.message?error.message:String(error)));}
   }
   function sourceLabelOrDefault(kind, label) {
     return kind === "street" ? "ao-houston-street-registry" : (label || "user-imported-building-footprints");
