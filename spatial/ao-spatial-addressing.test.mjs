@@ -68,6 +68,19 @@ test("interior addresses retain building, floor and exterior anchor references",
   assert.notEqual(inside.spaceId, outside.spaceId);
 });
 
+test("underground addresses retain their surface-site anchor and negative depth", () => {
+  const surface = resolver.resolveGeographic({ latitude: 29.76, longitude: -95.37, regionId: "houston-test" });
+  const below = resolver.resolveUnderground({
+    siteId: "utility-tunnel-9", surfaceAddress: surface,
+    x: 12, y: 8, z: -20, layer: "underground"
+  });
+  assert.equal(below.layer, "underground");
+  assert.equal(below.regionId, surface.regionId);
+  assert.equal(below.parentLocationId, "utility-tunnel-9");
+  assert.equal(below.position.z, -20);
+  assert.equal(below.exteriorAddressKey, spatialAddressKey(surface));
+});
+
 test("instance coordinates are separate simulation space but retain physical source", () => {
   const outside = resolver.resolveGeographic({ latitude: 29.76, longitude: -95.37, regionId: "houston-test" });
   const battle = resolver.resolveInstance({ instanceId: "battle-77", sourceAddress: outside, x: 4, y: 9 });
