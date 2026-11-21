@@ -2,6 +2,12 @@ name: AO Houston building footprint snapshot
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/houston-building-footprints-build.yml"
+      - "scripts/geography/acquire_houston_building_footprints.py"
 
 permissions:
   contents: read
@@ -28,7 +34,7 @@ jobs:
       - name: Upload building GeoJSON and provenance manifest
         uses: actions/upload-artifact@v4
         with:
-          name: ao-houston-building-footprints-\${{ github.sha }}
+          name: ao-houston-building-footprints-${{ github.sha }}
           path: |
             build/houston-building-footprints/buildings.geojson
             build/houston-building-footprints/manifest.json
