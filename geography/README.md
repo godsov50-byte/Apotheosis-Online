@@ -3,7 +3,7 @@
 This directory separates three related but different concerns:
 
 1. **Spherical geographic identity** — S2 cells identify locations on Earth and support global/regional hierarchy.
-2. **Projected physical geometry** — source datasets such as Houston roads, parcels, footprints and tunnels retain their original geometry and are adapted into a local AO coordinate frame.
+2. **Projected physical geometry** — source datasets such as Houston roads, parcels, footprints, waterways and tunnels retain their original geometry and are adapted into a local AO coordinate frame.
 3. **World state** — the AO Kernel decides which evidence becomes entities, access rules, ownership, condition, navigation connections and other persistent world facts.
 
 These layers must not be collapsed into one table or treated as interchangeable.
@@ -17,8 +17,10 @@ These layers must not be collapsed into one table or treated as interchangeable.
 | `profiles/houston-v1.json` | Machine-readable Houston coordinate profile | Draft; origin deliberately unset |
 | `adapter/coords.py` | Deterministic projected-coordinate/local-AO conversion | Implemented utility; requires approved profile |
 | `database/migrations/20261121000100_ao_houston_spatial_features.sql` | PostGIS source/canonical geometry store | Migration artifact; not applied |
-| `../docs/geography/houston-spatial-profile-and-storage.md` | Architecture walkthrough, data flow, setup and test guide | Developer documentation |
-| `../tests/geography/` | Coordinate and profile contract tests | Python standard-library tests |
+| `database/migrations/20261121000200_ao_houston_spatial_scaffold.sql` | Spatial objects, typed connections, and admin development queue | Migration artifact; not applied |
+| `../docs/geography/houston-spatial-profile-and-storage.md` | Coordinate/storage architecture and developer walkthrough | Documentation |
+| `../docs/geography/houston-admin-place-development.md` | Empty spatial scaffold and incremental admin workflow | Documentation |
+| `../tests/spatial/` | Coordinate and migration contract tests | Python standard-library tests |
 
 The S2 cell registry and its proposed `ao_geo` schema are a separate layer currently developed in other branches/PRs. This Houston feature store uses `ao_spatial`; it does not replace or duplicate S2 cell identity.
 
@@ -36,8 +38,18 @@ The S2 cell registry and its proposed `ao_geo` schema are a separate layer curre
 
 Do not use the draft profile for import. A caller must load an approved profile with an origin and explicit transformation metadata; the adapter raises `ProfileNotReadyError` otherwise.
 
+## Empty-space-first workflow
+
+The spatial import establishes geometry and stable spatial identities. It does **not** populate every building interior, entrance, business, resident, or dungeon. The new spatial scaffold lets admins develop one location at a time:
+
+- `spatial_objects` represents imported features and admin-created spaces.
+- `spatial_connections` represents typed physical/navigation relationships.
+- `admin_development_queue` tracks work to verify or flesh out a place.
+
+A building footprint can exist with no entrances, floors, rooms, businesses, or residents. Those are added only when verified or intentionally authored. See [Houston Admin Place Development](../docs/geography/houston-admin-place-development.md).
+
 ## Authority boundary
 
-GIS records are evidence. PostGIS stores source and canonical geometry. Neither the database nor the map renderer decides that a feature is a canonical AO world entity. The Kernel validates and approves world-state changes; WorldHeart persists approved current state and append-only committed history. Frontend views render authorized state and must not write around the Kernel.
+GIS records are evidence. PostGIS stores source and canonical geometry and the admin-facing spatial scaffold. Neither the database nor the map renderer decides that a feature is a canonical AO world entity. The Kernel validates and approves world-state changes; WorldHeart persists approved current state and append-only committed history. Frontend views render authorized state and must not write around the Kernel.
 
-See the developer walkthrough for the complete data path and operational steps.
+The migrations are artifacts only; they have not been applied to Supabase. No live-world data has been changed.
