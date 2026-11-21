@@ -85,6 +85,8 @@ python scripts/geography/acquire_houston_road_centerlines.py --output-dir build/
 
 The script:
 
+A live null-geometry count query on 2026-11-21 found 11 records in the selected Houston scope. These remain valid source records but have no spatial geometry; the acquisition manifest records their OBJECTIDs and the graph excludes them from edges.
+
 1. Captures the filtered source OBJECTID set and independently checks its count with short GET requests.
 2. Fetches the fixed ID set in bounded batches using form-encoded HTTP POST requests. The geometry query is sent in the request body rather than a long URL, avoiding the City GIS server's 404 response to oversized batch URLs.
 3. Requests geometry in EPSG:4326.
