@@ -32,3 +32,15 @@ Compare official node points with candidate crossings using a projected metric C
 
 ## Safety
 This acquisition tool only downloads source data to a local build directory. It does not edit source services, commit bulk GIS data, change AO world state, or write to Supabase.
+
+## Crossing-candidate crosswalk
+CI now runs `scripts/geography/crosswalk_houston_crossings_to_official_nodes.py` after the interior crossing audit. It projects candidate and node coordinates into EPSG:2278, then reports official Nodes within a configurable 15 m radius.
+
+Each crossing is labeled as:
+- `no_official_node_within_radius`
+- `single_official_node_candidate`
+- `multiple_official_nodes_candidate`
+
+The crosswalk preserves nearby node properties and distances. **It is evidence only:** node proximity does not establish road-to-road connectivity, and no crossing is auto-connected. The artifact `official-node-crosswalk.json` is produced for review.
+
+Self-test checks CRS round-trip, a positive nearby-node match, a no-match case, and that no topology decision is assumed.
