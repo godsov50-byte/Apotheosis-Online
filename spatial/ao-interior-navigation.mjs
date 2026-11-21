@@ -117,6 +117,12 @@ export function createInteriorNavigationGraph({
         const key = keyOf(floorId, row, col);
         const assignedRoom = roomByCell.get(key);
         if (assignedRoom) sourceRoomIds.add(assignedRoom);
+        else {
+          for (const adjacent of neighbors({ row, col })) {
+            const adjacentRoom = roomByCell.get(keyOf(floorId, adjacent.row, adjacent.col));
+            if (adjacentRoom && adjacentRoom !== targetRoomId) sourceRoomIds.add(adjacentRoom);
+          }
+        }
         const isVirtualDoorCell = !assignedRoom;
         if (isVirtualDoorCell) addNode({ id: key, floorId, row, col, roomId: null, kind: "door-cell" });
         for (const next of neighbors({ row, col })) {
