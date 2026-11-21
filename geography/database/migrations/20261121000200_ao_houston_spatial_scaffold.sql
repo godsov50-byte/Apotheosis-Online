@@ -53,7 +53,8 @@ create table ao_spatial.spatial_objects (
     check (
         canonical_feature_id is not null
         or local_geom is not null
-        or object_kind in ('unit', 'floor', 'room', 'corridor', 'stairwell', 'elevator')
+        or parent_spatial_object_id is not null
+        or object_kind in ('unit', 'floor', 'room', 'corridor', 'stairwell', 'elevator', 'dungeon_room')
     ),
     check (
         record_origin <> 'imported'
