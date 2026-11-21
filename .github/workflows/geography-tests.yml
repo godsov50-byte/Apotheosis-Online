@@ -5,7 +5,10 @@ on:
     paths:
       - "geography/**"
       - "tests/spatial/**"
+      - "tests/street_registry/**"
+      - "scripts/geography/**"
       - ".github/workflows/geography-tests.yml"
+      - ".github/workflows/houston-street-registry-build.yml"
   push:
     branches:
       - main
@@ -27,8 +30,10 @@ jobs:
         run: node --check geography/ao-city-console.js
       - name: Test deterministic registry helpers
         run: node tests/spatial/consistency-registry.test.js
+      - name: Test Houston street registry compiler
+        run: python scripts/geography/build_houston_street_registry.py --self-test
       - name: Compile Python modules
-        run: python -m compileall -q geography tests
+        run: python -m compileall -q geography tests scripts/geography
       - name: Run unit and migration contract tests
         run: python -m unittest discover -s tests -v
       - name: Validate Houston profile JSON
