@@ -79,14 +79,19 @@ test("instance coordinates are separate simulation space but retain physical sou
 
 test("aerial layer is a distinct spatial layer above the same geographic grid", () => {
   const ground = resolver.resolveGeographic({ latitude: 29.76, longitude: -95.37, regionId: "houston-test" });
+  const airAtGroundLevel = resolver.resolveGeographic({
+    latitude: 29.76, longitude: -95.37, altitudeM: 0,
+    regionId: "houston-test", layer: "aerial"
+  });
   const air = resolver.resolveGeographic({
     latitude: 29.76, longitude: -95.37, altitudeM: 120,
     regionId: "houston-test", layer: "aerial", coordinateSource: "flight-sensor"
   });
   assert.equal(air.layer, "aerial");
-  assert.equal(air.chunkId, ground.chunkId); // same 1,024 m vertical chunk
-  assert.notEqual(air.tileId, ground.tileId); // different 64 m vertical tile
-  assert.notEqual(air.cellId, ground.cellId); // distinct 1 m vertical cell
+  assert.notEqual(air.chunkId, ground.chunkId); // layer namespaces never collide
+  assert.equal(air.chunkId, airAtGroundLevel.chunkId); // same 1,024 m vertical chunk
+  assert.notEqual(air.tileId, airAtGroundLevel.tileId); // different 64 m vertical tile
+  assert.notEqual(air.cellId, airAtGroundLevel.cellId); // distinct 1 m vertical cell
   assert.notEqual(spatialAddressKey(air), spatialAddressKey(ground));
   assert.equal(air.position.z, 120);
 });
@@ -103,6 +108,9 @@ test("teleport transition records immutable origin and destination addresses", (
   assert.equal(event.destinationAddressKey, spatialAddressKey(to));
   assert.equal(event.kind, "teleport");
   assert.ok(Object.isFrozen(event));
+  assert.ok(Object.isFrozen(event.from));
+  assert.ok(Object.isFrozen(event.from.position));
+  assert.ok(Object.isFrozen(event.metadata));
   assert.throws(() => resolver.transition({ entityId: "character-1", from, to: from, kind: "teleport" }), /must differ/);
 });
 
