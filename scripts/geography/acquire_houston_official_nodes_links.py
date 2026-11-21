@@ -29,6 +29,14 @@ def request_json(url, post=None, timeout=90, attempts=4):
 def get_json(url, timeout=90): return request_json(url, timeout=timeout)
 def post_json(url, params, timeout=90): return request_json(url, params, timeout)
 
+def object_id_field(metadata):
+    field = metadata.get("objectIdField") or metadata.get("objectIdFieldName")
+    if field:
+        return field
+    # ArcGIS layer metadata may expose the OID only in its fields array.
+    return next((item.get("name") for item in metadata.get("fields", [])
+                 if item.get("type") == "esriFieldTypeOID" and item.get("name")), None)
+
 def acquire(name, layer_id, outdir, batch_size=500, timeout=90, pause=0.1):
     layer=f"{BASE}/{layer_id}"
     meta=get_json(layer+"?f=pjson", timeout)
@@ -40,7 +48,7 @@ def acquire(name, layer_id, outdir, batch_size=500, timeout=90, pause=0.1):
         "where":"1=1","returnCountOnly":"true","f":"json"
     }), timeout)
     expected=count_payload.get("count")
-    oid_field=meta.get("objectIdField") or meta.get("objectIdFieldName")
+    oid_field=object_id_field(meta)
     if not oid_field: raise RuntimeError(f"{name} metadata missing object ID field")
     if expected is None or len(ids)!=expected: raise RuntimeError(f"{name} ID/count mismatch: {len(ids)} vs {expected}")
     features=[]
@@ -82,7 +90,10 @@ def main():
     a=ap.parse_args()
     if a.self_test:
         assert LAYERS=={"nodes":10,"links":12}
-        print("self-test passed: official Nodes/Links layer mapping")
+        assert object_id_field({"objectIdField":"NODEID","fields":[]})=="NODEID"
+        assert object_id_field({"fields":[{"name":"OBJECTID","type":"esriFieldTypeOID"}]})=="OBJECTID"
+        assert object_id_field({"fields":[{"name":"NODEID","type":"esriFieldTypeString"}]}) is None
+        print("self-test passed: official Nodes/Links layer mapping and OID discovery")
         return
     manifest={"dataset":"Houston official Nodes and Links","status":"raw_snapshot_only_not_routing_authority",
       "source_note":"City of Houston GIS landbase/roads service. Layer IDs checked against public layer catalog.",
