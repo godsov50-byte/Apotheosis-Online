@@ -66,6 +66,12 @@ export function createNavigationGraph({ nodes, edges }) {
     if (!Array.isArray(input.modes) || input.modes.length === 0) throw new TypeError("Edge " + id + " needs at least one allowed mode");
     const modes = [...new Set(input.modes.map(x => nonEmpty(x, "edge mode")))];
     const geometry = normalizeGeometry(input, nodeMap);
+    const startNode = nodeMap.get(input.from).position;
+    const endNode = nodeMap.get(input.to).position;
+    if (distance(geometry[0], startNode) > 1e-4 ||
+        distance(geometry[geometry.length - 1], endNode) > 1e-4) {
+      throw new Error("Edge " + id + " geometry endpoints must match its directed nodes");
+    }
     const lengthM = geometryLength(geometry);
     const speedLimitMps = input.speedLimitMps ?? null;
     if (speedLimitMps !== null && (!finite(speedLimitMps) || speedLimitMps <= 0)) {
@@ -226,13 +232,15 @@ export function resolveMovementStep({
   let edgeProgressM = actor.edgeProgressM ?? 0;
   if (!Number.isInteger(edgeIndex) || edgeIndex < 0 || edgeIndex > route.edges.length) throw new RangeError("Invalid edgeIndex");
   if (!finite(edgeProgressM) || edgeProgressM < 0) throw new RangeError("edgeProgressM must be non-negative");
-  let remainingM = speed * elapsedSeconds, movedM = 0, blocker = null;
+  let remainingSeconds = elapsedSeconds, movedM = 0, blocker = null;
   const start = clonePoint(position);
   const epsilonM = 1e-6;
 
-  while (remainingM > epsilonM && edgeIndex < route.edges.length) {
+  while (remainingSeconds > epsilonM && edgeIndex < route.edges.length) {
     const edge = route.edges[edgeIndex];
-    const nextProgress = Math.min(edge.lengthM, edgeProgressM + remainingM);
+    const edgeSpeed = edge.speedLimitMps === null ? speed : Math.min(speed, edge.speedLimitMps);
+    const distanceBudget = edgeSpeed * remainingSeconds;
+    const nextProgress = Math.min(edge.lengthM, edgeProgressM + distanceBudget);
     const target = pointAtDistance(edge.geometry, nextProgress);
     const hit = firstBlocker(position, target, { ...actor, id: actorId, radiusM }, obstacles, occupants);
     if (hit) {
@@ -244,14 +252,15 @@ export function resolveMovementStep({
         z: position.z + (target.z - position.z) * safeT
       };
       const actual = distance(position, safePoint);
-      movedM += actual; edgeProgressM += actual; position = safePoint;
+      movedM += actual; edgeProgressM += actual;
+      remainingSeconds = Math.max(0, remainingSeconds - actual / edgeSpeed);
+      position = safePoint;
       blocker = Object.freeze({ id: hit.id, type: hit.type });
-      remainingM = 0;
       break;
     }
     const stepDistance = distance(position, target);
     movedM += stepDistance;
-    remainingM -= Math.min(remainingM, stepDistance);
+    remainingSeconds -= Math.min(remainingSeconds, stepDistance / edgeSpeed);
     position = target;
     edgeProgressM = nextProgress;
     if (edgeProgressM >= edge.lengthM - epsilonM) {
