@@ -58,6 +58,30 @@ test("route planner honors permissions and computes travel time from edge speeds
   assert.equal(route.estimatedSeconds, 10 / 1.2 + 10 / 0.5);
 });
 
+test("edge geometry must terminate at its directed graph nodes", () => {
+  assert.throws(() => createNavigationGraph({
+    nodes: [{ id: "A", position: { x: 0 } }, { id: "B", position: { x: 10 } }],
+    edges: [{
+      id: "misaligned", from: "A", to: "B",
+      geometry: [{ x: 0 }, { x: 9 }],
+      modes: ["walk"], routingApproved: true, status: "verified"
+    }]
+  }), /geometry endpoints must match/);
+});
+
+test("movement obeys an edge speed limit while traversing it", () => {
+  const g = graph([
+    { id: "AB", from: "A", to: "B", modes: ["walk"], routingApproved: true, status: "verified", speedLimitMps: 0.5 }
+  ]);
+  const route = planRoute(g, { fromNodeId: "A", toNodeId: "B", mode: "walk" });
+  const step = resolveMovementStep({
+    actor: { id: "p1", position: { x: 0, y: 0, z: 0 }, mode: "walk" },
+    route, elapsedSeconds: 2
+  });
+  assert.equal(step.distanceMovedM, 1);
+  assert.equal(step.position.x, 1);
+});
+
 test("Dijkstra chooses faster valid path, not merely fewer edges", () => {
   const route = planRoute(graph(), { fromNodeId: "A", toNodeId: "D", mode: "walk" });
   assert.deepEqual(route.edges.map(edge => edge.id), ["AB", "BD"]);
