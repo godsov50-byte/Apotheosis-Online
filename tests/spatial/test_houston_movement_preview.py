@@ -62,6 +62,13 @@ class HoustonMovementPreviewTests(unittest.TestCase):
         self.assertIn("insideBuilding", self.script)
         self.assertIn("no Kernel, WorldHeart or Supabase writes occur", self.html)
 
+    def test_interior_navigation_requires_explicit_doors_and_stair_landings(self):
+        for value in ("ao-interior-navigation.mjs", "createInteriorNavigationGraph", "planInteriorRoute", "advanceInteriorRoute", "previewInteriorRoute", "confirmInteriorWalk", "targetRoomId", "targetCells", "travelSeconds", "connectionState"):
+            with self.subTest(value=value):
+                self.assertIn(value, self.script)
+        self.assertIn("previewInteriorRoute", self.html)
+        self.assertIn("Destination landing cell (row:col)", self.html)
+
 
 if __name__ == "__main__":
     unittest.main()
