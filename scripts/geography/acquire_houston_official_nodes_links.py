@@ -78,6 +78,7 @@ def main():
     ap.add_argument("--timeout",type=int,default=90)
     ap.add_argument("--pause",type=float,default=0.1)
     ap.add_argument("--self-test",action="store_true")
+    ap.add_argument("--nodes-only",action="store_true",help="Acquire Nodes only; skip large Links layer")
     a=ap.parse_args()
     if a.self_test:
         assert LAYERS=={"nodes":10,"links":12}
@@ -86,7 +87,8 @@ def main():
     manifest={"dataset":"Houston official Nodes and Links","status":"raw_snapshot_only_not_routing_authority",
       "source_note":"City of Houston GIS landbase/roads service. Layer IDs checked against public layer catalog.",
       "acquired_at_utc":dt.datetime.now(dt.timezone.utc).isoformat(),"datasets":{}}
-    for name,lid in LAYERS.items():
+    selected={"nodes":LAYERS["nodes"]} if a.nodes_only else LAYERS
+    for name,lid in selected.items():
         manifest["datasets"][name]=acquire(name,lid,a.output_dir,a.batch_size,a.timeout,a.pause)
     (a.output_dir/"official-nodes-links-manifest.json").write_text(json.dumps(manifest,indent=2)+"\n",encoding="utf-8")
     print(json.dumps({k:v["feature_count"] for k,v in manifest["datasets"].items()},indent=2))
