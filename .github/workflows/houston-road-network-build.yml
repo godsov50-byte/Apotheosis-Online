@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/houston-gps-spatial-data
+      - feature/houston-snap-cluster-quality
     paths:
       - "scripts/geography/acquire_houston_road_centerlines.py"
       - "scripts/geography/build_houston_road_graph.py"
