@@ -43,7 +43,8 @@ def request_json(
 ) -> dict[str, Any]:
     # ArcGIS accepts query parameters in either a URL or an x-www-form-urlencoded
     # POST body. Geometry batches use POST so hundreds of OBJECTIDs do not create
-    # an oversized URL that IIS rejects with a misleading 404.
+    # an oversized URL that IIS rejects with a misleading 404. This method is
+    # intentionally explicit so CI can verify the diagnostic request path.
     method = "POST" if data is not None else "GET"
     print(f"ArcGIS request ({method}): {url}", file=sys.stderr, flush=True)
     headers = {
