@@ -3,14 +3,14 @@ from pathlib import Path
 import unittest
 
 PAGE = Path(__file__).parents[2] / "geography" / "ao-city-console.html"
-DOC = Path(__file__).parents[2] / "docs" / "geography" / "ao-city-console.md"
+DOC = Path(__file__).parents[2] / "docs" / "geography" / "ao-city-console.md"\nSCRIPT = Path(__file__).parents[2] / "geography" / "ao-city-console.js"
 
 
 class CityConsoleContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.html = PAGE.read_text(encoding="utf-8")
-        cls.doc = DOC.read_text(encoding="utf-8")
+        cls.doc = DOC.read_text(encoding="utf-8")\n        cls.js = SCRIPT.read_text(encoding="utf-8")
 
     def test_primary_interfaces_are_present(self):
         for label in ("Text", "GPS", "Tactical / ASCII", "Navigation", "Narration", "Admin"):
