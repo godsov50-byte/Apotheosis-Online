@@ -1,0 +1,49 @@
+name: AO Houston and Texas geography acquisition
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/geography/acquire_texas_tiger_roads.py"
+      - ".github/workflows/houston-texas-geography.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install GIS parsing dependencies
+        run: python -m pip install --disable-pip-version-check pyshp pyproj
+      - name: Validate Texas acquisition
+        run: |
+          python -m py_compile scripts/geography/acquire_texas_tiger_roads.py
+          python scripts/geography/acquire_texas_tiger_roads.py --self-test
+
+  acquire:
+    if: github.event_name == 'workflow_dispatch'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install GIS parsing dependencies
+        run: python -m pip install --disable-pip-version-check pyshp pyproj
+      - name: Acquire all 254 Texas county road files
+        run: python scripts/geography/acquire_texas_tiger_roads.py --output-dir build/texas-roads --workers 6 --timeout 180
+      - name: Upload raw source archives, WGS84 road records and manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: ao-texas-tiger-2025-roads-${{ github.sha }}
+          path: build/texas-roads/
+          if-no-files-found: error
+          retention-days: 90
