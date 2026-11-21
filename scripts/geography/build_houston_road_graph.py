@@ -42,6 +42,9 @@ def build(collection:dict[str,Any], tolerance_m:float)->tuple[dict[str,Any],dict
         oid=props.get("GlobalID") or props.get("OBJECTID")
         if oid is None: skipped+=1; continue
         paths=[geom.get("coordinates",[])] if geom.get("type")=="LineString" else geom.get("coordinates",[]) if geom.get("type")=="MultiLineString" else []
+        if not paths:
+            skipped+=1
+            continue
         for pi,coords in enumerate(paths):
             if len(coords)<2: skipped+=1; continue
             start,end=coords[0],coords[-1]
@@ -125,9 +128,12 @@ def self_test()->None:
       {"properties":{"GlobalID":"a","OBJECTID":1,"fullname":"A"},"geometry":{"type":"LineString","coordinates":[[-95.0,29.0],[-94.999,29.0]]}},
       {"properties":{"GlobalID":"b","OBJECTID":2,"fullname":"B"},"geometry":{"type":"LineString","coordinates":[[-94.999,29.0],[-94.998,29.0]]}},
       {"properties":{"GlobalID":"c","OBJECTID":3,"fullname":"C"},"geometry":{"type":"LineString","coordinates":[[-94.997,29.0],[-94.996,29.0]]}},
+      {"properties":{"GlobalID":"null-geometry","OBJECTID":4,"fullname":"SOURCED RECORD"},"geometry":None},
     ]}
     g,r=build(c,1.5)
+    assert r["source_feature_count"]==4
     assert r["edge_count"]==3 and r["node_count"]==5
+    assert r["skipped_paths_or_features"]==1
     assert r["connected_component_count"]==2
     assert next(e for e in g["edges"] if e["source_id"]=="a")["to_node"]==next(e for e in g["edges"] if e["source_id"]=="b")["from_node"]
     print("self-test passed")
