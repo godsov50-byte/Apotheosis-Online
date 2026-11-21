@@ -7,6 +7,7 @@ on:
       - "tests/spatial/**"
       - "tests/street_registry/**"
       - "scripts/geography/**"
+      - ".github/workflows/houston-building-footprints-build.yml"
       - ".github/workflows/geography-tests.yml"
       - ".github/workflows/houston-street-registry-build.yml"
   push:
@@ -28,6 +29,10 @@ jobs:
           python-version: "3.12"
       - name: Check city console JavaScript syntax
         run: node --check geography/ao-city-console.js
+      - name: Check city registry adapter JavaScript syntax
+        run: node --check geography/ao-city-registry.js
+      - name: Test Houston building footprint acquisition
+        run: python scripts/geography/acquire_houston_building_footprints.py --self-test
       - name: Test deterministic registry helpers
         run: node tests/spatial/consistency-registry.test.js
       - name: Test Houston street registry compiler
