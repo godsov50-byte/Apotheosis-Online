@@ -10,6 +10,7 @@ on:
       - "scripts/geography/build_houston_road_graph.py"
       - "scripts/geography/audit_houston_interior_crossings.py"
       - "scripts/geography/acquire_houston_official_nodes_links.py"
+      - "scripts/geography/crosswalk_houston_crossings_to_official_nodes.py"
       - ".github/workflows/houston-road-network-build.yml"
   workflow_dispatch:
 
