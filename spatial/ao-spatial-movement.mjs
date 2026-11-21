@@ -83,6 +83,7 @@ export function createNavigationGraph({ nodes, edges }) {
       lengthM, speedLimitMps, status: input.status,
       requiredPermissions: Object.freeze([...(input.requiredPermissions || [])]),
       provenance: input.provenance ? Object.freeze({ ...input.provenance }) : null,
+      addressContext: input.addressContext ? Object.freeze({ ...input.addressContext }) : null,
       kind: input.kind || "path"
     });
     edgeMap.set(id, edge);
@@ -268,7 +269,11 @@ export function resolveMovementStep({
     } else if (stepDistance <= epsilonM) break;
   }
   const status = blocker ? "blocked" : edgeIndex >= route.edges.length ? "arrived" : "moving";
-  const address = addressAtPosition ? addressAtPosition(position, actor, route) : null;
+  const activeEdgeIndex = Math.min(edgeIndex, Math.max(0, route.edges.length - 1));
+  const activeEdge = route.edges[activeEdgeIndex] || null;
+  const address = addressAtPosition ? addressAtPosition(position, actor, route, Object.freeze({
+    edgeIndex: activeEdgeIndex, edgeProgressM, edge: activeEdge
+  })) : null;
   return Object.freeze({
     actorId, status, mode: route.mode,
     fromPosition: Object.freeze(start), position: Object.freeze(position),
@@ -285,4 +290,36 @@ export function advanceAoCalendarSeconds(elapsedRealSeconds, realSecondsPerAoSec
   if (!finite(elapsedRealSeconds) || elapsedRealSeconds < 0) throw new RangeError("elapsedRealSeconds must be non-negative");
   if (!finite(realSecondsPerAoSecond) || realSecondsPerAoSecond <= 0) throw new RangeError("realSecondsPerAoSecond must be positive");
   return elapsedRealSeconds / realSecondsPerAoSecond;
+}
+const MOVEMENT_TRANSITION_KIND = Object.freeze({
+  accessible_walk: "walk", walk: "walk", brisk_walk: "walk",
+  jog: "run", bicycle: "ride", urban_bus: "ride", urban_car: "ride"
+});
+
+/**
+ * Construct (but do not persist) an immutable AO transition from a movement
+ * result. The Kernel must authorize the step first; the caller then passes
+ * this event to the spatial repository's atomic commit adapter.
+ */
+export function createMovementTransitionEvent({
+  resolver, entityId, fromAddress, movementResult, occurredAt, metadata = {}
+}) {
+  if (!resolver || typeof resolver.transition !== "function") throw new TypeError("A canonical spatial resolver is required");
+  if (!movementResult || !movementResult.spatialAddress) throw new TypeError("Movement result must include a canonical spatialAddress");
+  if (!finite(movementResult.distanceMovedM) || movementResult.distanceMovedM <= 0) {
+    throw new RangeError("A movement transition requires positive resolved displacement");
+  }
+  const kind = MOVEMENT_TRANSITION_KIND[movementResult.mode];
+  if (!kind) throw new RangeError("No AO transition kind is mapped for movement mode: " + movementResult.mode);
+  return resolver.transition({
+    entityId, from: fromAddress, to: movementResult.spatialAddress, kind, occurredAt,
+    metadata: {
+      ...metadata,
+      movementMode: movementResult.mode,
+      distanceMovedM: movementResult.distanceMovedM,
+      elapsedSeconds: movementResult.elapsedSeconds,
+      routeId: movementResult.routeId || null,
+      movementStatus: movementResult.status
+    }
+  });
 }
