@@ -32,6 +32,82 @@ test("GPS resolves to deterministic region, chunk, tile and cell identifiers", (
   assertSpatialAddress(a);
 });
 
+test("address signs inherit exact address coordinates and deterministic tile identity", () => {
+  const left = resolver.resolveAddressAnchor({
+    addressId: "houston-address-100",
+    sourceId: "COH_SiteAddresses:OBJECTID:100",
+    sourceVersion: "snapshot-2026-11-21",
+    latitude: 29.761,
+    longitude: -95.369,
+    regionId: "houston-test"
+  });
+  const same = resolver.resolveAddressAnchor({
+    addressId: "houston-address-100",
+    sourceId: "COH_SiteAddresses:OBJECTID:100",
+    sourceVersion: "snapshot-2026-11-21",
+    latitude: 29.761,
+    longitude: -95.369,
+    regionId: "houston-test"
+  });
+  assert.equal(left.id, same.id);
+  assert.equal(left.marker.id, same.marker.id);
+  assert.equal(left.coordinate.latitude, 29.761);
+  assert.equal(left.coordinate.longitude, -95.369);
+  assert.equal(left.spatialAddress.geographic.latitude, 29.761);
+  assert.equal(left.spatialAddress.geographic.longitude, -95.369);
+  assert.equal(left.marker.spatialAddressKey, left.spatialAddressKey);
+  assert.equal(left.marker.inheritsAnchorCoordinate, true);
+  assert.equal(left.marker.worldPosition, null);
+  assert.equal(left.marker.participatesInCollision, false);
+  assert.deepEqual(left.marker.renderOffset, {
+    space: "screen-pixels", x: 0, y: -24
+  });
+  assert.deepEqual(left.coordinate.verticalPosition, {
+    value: null, unit: "m", status: "unknown-from-2d-address-point"
+  });
+  assert.ok(Object.isFrozen(left));
+  assert.ok(Object.isFrozen(left.marker));
+});
+
+test("address anchors on opposite road sides remain independent source positions", () => {
+  const westSide = resolver.resolveAddressAnchor({
+    addressId: "west-address",
+    sourceId: "site-addresses:west",
+    latitude: 29.761,
+    longitude: -95.3701,
+    regionId: "houston-test"
+  });
+  const eastSide = resolver.resolveAddressAnchor({
+    addressId: "east-address",
+    sourceId: "site-addresses:east",
+    latitude: 29.761,
+    longitude: -95.3699,
+    regionId: "houston-test"
+  });
+  assert.notEqual(westSide.id, eastSide.id);
+  assert.notEqual(westSide.coordinate.longitude, eastSide.coordinate.longitude);
+  assert.equal(westSide.spatialAddress.geographic.longitude, -95.3701);
+  assert.equal(eastSide.spatialAddress.geographic.longitude, -95.3699);
+});
+
+test("address anchor rejects missing provenance and invalid visual offsets", () => {
+  assert.throws(() => resolver.resolveAddressAnchor({
+    addressId: "address-no-source",
+    sourceId: "",
+    latitude: 29.761,
+    longitude: -95.369,
+    regionId: "houston-test"
+  }), /sourceId/);
+  assert.throws(() => resolver.resolveAddressAnchor({
+    addressId: "address-bad-offset",
+    sourceId: "site-addresses:bad",
+    latitude: 29.761,
+    longitude: -95.369,
+    regionId: "houston-test",
+    markerOffsetPx: { x: 0, y: "above" }
+  }), /markerOffsetPx/);
+});
+
 test("negative world coordinates use mathematical floor, not truncation", () => {
   const a = resolver.resolveWorldPosition({ regionId: "houston-test", x: -0.2, y: 0, z: -64.1 });
   assert.equal(a.grid.chunkX, -1);
