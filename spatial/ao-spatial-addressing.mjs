@@ -304,26 +304,33 @@ export function createSpatialResolver({
       latitude, longitude, altitudeM: 0, regionId,
       layer: "ground", coordinateSource, parentLocationId: addressId
     });
-    const stableSuffix = worldId + ":" + spatialAddress.regionId + ":" + addressId;
+    const stableSuffix = worldId + ":" + addressId;
     const anchorId = "address-anchor:" + stableSuffix;
     const markerId = "address-marker:" + stableSuffix;
+    const coordinate = {
+      crs: "EPSG:4326",
+      latitude,
+      longitude,
+      verticalPosition: { value: null, unit: "m", status: "unknown-from-2d-address-point" }
+    };
+    const addressKey = spatialAddressKey(spatialAddress);
     const anchor = {
       schemaVersion: SPATIAL_SCHEMA_VERSION,
       id: anchorId,
       addressId,
       source: { sourceId, sourceVersion },
-      coordinate: {
-        crs: "EPSG:4326",
-        latitude,
-        longitude,
-        verticalPosition: { value: null, unit: "m", status: "unknown-from-2d-address-point" }
-      },
+      coordinate,
       spatialAddress,
-      spatialAddressKey: spatialAddressKey(spatialAddress),
+      spatialAddressKey: addressKey,
       marker: {
         id: markerId,
         anchorId,
-        spatialAddressKey: spatialAddressKey(spatialAddress),
+        coordinate,
+        spatialAddressKey: addressKey,
+        chunkId: spatialAddress.chunkId,
+        tileId: spatialAddress.tileId,
+        cellId: spatialAddress.cellId,
+        layer: spatialAddress.layer,
         worldPosition: null,
         inheritsAnchorCoordinate: true,
         renderOffset: { space: "screen-pixels", x: markerOffsetPx.x, y: markerOffsetPx.y },
