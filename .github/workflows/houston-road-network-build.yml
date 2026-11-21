@@ -31,7 +31,7 @@ jobs:
       - name: Verify diagnostic downloader revision
         run: |
           echo "Build commit: $(git rev-parse HEAD)"
-          grep -n "ArcGIS request:" scripts/geography/acquire_houston_road_centerlines.py
+          grep -n "ArcGIS request (" scripts/geography/acquire_houston_road_centerlines.py
           grep -n "HTTP {exc.code}" scripts/geography/acquire_houston_road_centerlines.py
       - name: Test graph builder
         run: python scripts/geography/build_houston_road_graph.py --self-test
