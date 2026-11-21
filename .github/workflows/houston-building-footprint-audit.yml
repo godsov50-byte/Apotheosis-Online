@@ -42,7 +42,7 @@ jobs:
       - name: Acquire official Houston city-limit polygons
         run: python scripts/geography/acquire_houston_city_limits.py --out build/houston-building-audit
       - name: Acquire and count intersecting building footprints
-        run: python scripts/geography/audit_houston_building_footprints.py --city-limits build/houston-building-audit/houston-city-limits.geojson --out build/houston-building-audit --pause 0.2
+        run: python scripts/geography/audit_houston_building_footprints.py --city-limits build/houston-building-audit/houston-city-limits.geojson --out build/houston-building-audit
       - name: Upload source snapshot and audit report
         uses: actions/upload-artifact@v4
         with:
@@ -50,7 +50,6 @@ jobs:
           path: |
             build/houston-building-audit/houston-city-limits.geojson
             build/houston-building-audit/acquisition-report.json
-            build/houston-building-audit/houston-building-footprints.geojson
             build/houston-building-audit/building-footprint-audit.json
             build/houston-building-audit/source-layer-metadata.json
           if-no-files-found: error
