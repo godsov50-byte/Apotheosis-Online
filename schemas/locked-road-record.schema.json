@@ -1,0 +1,266 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://godsov50-byte.github.io/Apotheosis-Online/schemas/locked-road-record.schema.json",
+  "title": "AO Locked Road Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "road_id",
+    "geometry",
+    "coordinate_reference",
+    "lock_state",
+    "source",
+    "image_references",
+    "address_references"
+  ],
+  "properties": {
+    "road_id": {
+      "type": "string",
+      "description": "Stable AO identifier; never derived from display name alone."
+    },
+    "source_feature_id": {
+      "type": [
+        "string",
+        "number",
+        "null"
+      ]
+    },
+    "names": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "geometry": {
+      "type": "object",
+      "description": "Authoritative source geometry; immutable after lock.",
+      "required": [
+        "type",
+        "coordinates"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "LineString",
+            "MultiLineString"
+          ]
+        },
+        "coordinates": {
+          "type": "array",
+          "minItems": 1
+        }
+      }
+    },
+    "coordinate_reference": {
+      "type": "object",
+      "required": [
+        "crs"
+      ],
+      "properties": {
+        "crs": {
+          "type": "string",
+          "const": "EPSG:4326"
+        },
+        "source_crs": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "lock_state": {
+      "enum": [
+        "proposed",
+        "locked",
+        "superseded"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "provider",
+        "dataset",
+        "retrieved_at"
+      ],
+      "properties": {
+        "provider": {
+          "type": "string"
+        },
+        "dataset": {
+          "type": "string"
+        },
+        "source_url": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uri"
+        },
+        "retrieved_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "source_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "image_references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "image_type",
+          "status"
+        ],
+        "properties": {
+          "image_type": {
+            "enum": [
+              "street_level",
+              "aerial",
+              "satellite",
+              "other",
+              "unresolved"
+            ]
+          },
+          "status": {
+            "enum": [
+              "unresolved",
+              "candidate",
+              "verified"
+            ]
+          },
+          "uri": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          },
+          "captured_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "viewpoint": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "license": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "verification_note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "address_references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "label",
+          "status"
+        ],
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "source_record",
+              "geocoded_candidate",
+              "verified"
+            ]
+          },
+          "parcel_id": {
+            "type": [
+              "string",
+              "number",
+              "null"
+            ]
+          },
+          "point": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        }
+      }
+    },
+    "relationships": {
+      "type": "object",
+      "properties": {
+        "intersections": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "connected_roads": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "properties": {
+        "geometry_sha256": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "locked_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "locked_by": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "supersedes": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "change_proposal_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}
