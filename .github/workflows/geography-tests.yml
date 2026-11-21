@@ -1,0 +1,31 @@
+name: Geography adapter tests
+
+on:
+  pull_request:
+    paths:
+      - "geography/**"
+      - "tests/spatial/**"
+      - ".github/workflows/geography-tests.yml"
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  python-contract-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile Python modules
+        run: python -m compileall -q geography tests
+      - name: Run unit and migration contract tests
+        run: python -m unittest discover -s tests -v
+      - name: Validate Houston profile JSON
+        run: python -m json.tool geography/profiles/houston-v1.json > /dev/null
