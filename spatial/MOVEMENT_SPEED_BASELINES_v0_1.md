@@ -18,7 +18,7 @@ The 1 m cell is selected because it is a useful human-scale spatial index: at or
 
 ## Reference movement speeds
 
-Use the following initial planning speeds, in metres per second of AO simulation time:
+Use the following initial planning speeds, in metres per second of elapsed movement time:
 
 | Movement profile | Baseline | Approx. km/h | Notes |
 |---|---:|---:|---|
@@ -55,11 +55,13 @@ Examples using the baseline speeds:
 
 These are straight-line/constant-speed illustrations only. Actual journey time is calculated along valid route edges and includes turns, intersections, crossing waits, congestion, stops, slope, surface, doors, stairs, obstacles and other delays. A route may be longer than the geometric shortest path.
 
-## Simulation and AO calendar time
+## Movement time and AO calendar time
 
-Movement speed is expressed per **AO simulation second**, not per UI frame and not per map-render tick. The Kernel integrates movement over elapsed simulation time and preserves sub-cell position. A one-second movement update is a reasonable initial integration interval, but it must not snap an entity to a whole-metre coordinate.
+Movement speeds are metres per elapsed movement-simulation second. In the online server, movement delta should be measured with a monotonic clock, so the baseline reflects real-world travel speed (for example, 1.2 metres per elapsed second for normal walking). Movement must not be multiplied or divided by the AO calendar ratio.
 
-The AO calendar rule (one AO day elapses over three real days) is a separate clock conversion. Do not multiply movement speeds by three or divide them by three inside this spatial grid. The clock service must convert wall-clock elapsed time into AO simulation elapsed time once; movement consumes that resulting simulation delta. This prevents every movement subsystem from applying the calendar multiplier independently.
+The AO calendar runs independently: one AO day (86,400 AO seconds) elapses over three real days (259,200 elapsed real seconds). Therefore AO calendar seconds = elapsed real seconds / 3. Three real seconds of normal walking advances the character 3.6 metres while the AO calendar advances by one AO second. This prevents characters from moving at one-third real-world speed merely because the fictional calendar is slower.
+
+Movement integration may run at any server tick rate; it must integrate the measured elapsed delta and preserve sub-cell position. It must not use UI frame time or snap an entity to a whole-metre coordinate.
 
 ## Authority and limitations
 
