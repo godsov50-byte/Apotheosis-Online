@@ -117,6 +117,32 @@ The City describes this as street-intersection points across Houston, with addre
 
 **Locked handling:** use as an independent intersection-reference/cross-check layer only after snapshot acquisition. Never use OBJECTID, PlusCode, names or coordinates as a permanent cross-version identity. Derive an AO-stable identity only from a documented versioned matching process and retain the source locator separately. The point layer does not establish grade separation, legal crossing, pedestrian accessibility or current signal state.
 
+
+### 2.9 Address-point entrance anchors and road-side relationships
+
+**AO placement convention (design rule):** each eligible address point supplies the default entrance-anchor coordinate. The default anchor is placed at the exact coordinate of the address point—the point itself is the anchor. It is not offset to a building footprint, parcel centroid, road centerline or guessed doorway.
+
+This is an AO spatial-placement convention, not a claim that the source address point is a surveyed physical doorway. Preserve the source address point and its status/type. Only address records eligible under the source's status/type rules may be used as active default anchors; preliminary, reverse-geocoded, abandoned, utility, out-of-range and other special records remain separately classified until explicitly accepted.
+
+**Both sides of a road:** address points and their associated parcel/address records may lie on either side of a road. AO must preserve the actual source coordinates and represent each address independently. Do not assume addresses occur on only one side, synthesize a matching address on the opposite side, force equal spacing, infer a side from odd/even numbering without source support, or move an address point merely to make a map look regular. A road-side relationship is derived spatial context, not a replacement for the address coordinate.
+
+**Road connection:** the default entrance anchor may be associated with a nearby road segment through a separately stored candidate connector. A connector does not prove a legal, pedestrian-accessible or physically traversable entrance. Route use requires the connector/access state to be validated or explicitly admin-confirmed under AO's access policy. If no defensible connection exists, retain the anchor and mark its road connection UNKNOWN rather than inventing one.
+
+**Relationship model (many-to-many where evidence requires):**
+- Road ↔ parcel: frontage, adjacency, crossing or proximity relationships; never infer ownership or strict parentage from proximity alone.
+- Parcel ↔ address point: zero or more source-backed address associations; preserve match method, confidence and source version.
+- Parcel ↔ structure footprint: zero or more structures; a parcel may be vacant, one parcel may contain multiple structures, and a structure may span multiple parcels.
+- Address point ↔ default entrance anchor: one-to-one placement by coordinate under this AO convention, with provenance to the exact address record/version.
+- Address point ↔ physical entrance / structure: only when independently supported or admin-confirmed. Do not equate an address point with a building, doorway, occupied unit or structure.
+- Entrance anchor ↔ road segment: candidate or confirmed connector with its own evidence/access state; never silently treat geometric nearness as walkable access.
+
+**Layer priority for the Houston geographic foundation:**
+1. **Road network and parcel polygons** are the primary geographic framework: roads describe movement/connectivity references; parcels describe land divisions.
+2. **Address points** are the location-identification and default entrance-anchor layer, retained on whichever side of the road the source places them.
+3. **Building footprints and interiors** are supplementary physical layers. They can refine structure/entrance relationships but are not prerequisites for an address anchor and must not redefine the parcel or address.
+
+The City site-address and multi-county parcel layers remain candidate sources until complete versioned snapshots pass the acquisition gate in §6. This design rule does not upgrade their unacquired features to source-backed or validated status.
+
 ## 3. Layers not yet established
 
 The following are not locked as complete geographic truth because the current source inventory does not demonstrate adequate acquired and validated coverage:
