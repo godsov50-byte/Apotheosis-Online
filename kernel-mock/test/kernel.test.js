@@ -98,3 +98,49 @@ test("15 fresh interface can recover state without conversation memory", async (
   assert.deepEqual(restoredFromAuthority.positions.character_anasi,{x:15,y:0,z:0});
   assert.equal(restoredFromAuthority.history.length,1);
 });
+
+test("16 request id reuse with changed payload is rejected", async () => {
+  const k = new MockKernel();
+  const original = move("same-id", 4);
+  const first = await k.handle(original);
+  const altered = move("same-id", 7);
+  const second = await k.handle(altered);
+  assert.equal(first.outcome, "committed");
+  assert.equal(second.error.code, "REQUEST_ID_REUSED");
+  assert.deepEqual(k.positions.get("character_anasi"), { x: 4, y: 0, z: 0 });
+  assert.equal(k.revision, 1);
+});
+
+test("17 idempotency key reuse with changed action is rejected", async () => {
+  const k = new MockKernel();
+  const first = move("idem-a", 5); first.payload.idempotency_key = "bound-key";
+  const second = move("idem-b", 6); second.payload.idempotency_key = "bound-key";
+  const a = await k.handle(first); const b = await k.handle(second);
+  assert.equal(a.outcome, "committed");
+  assert.equal(b.error.code, "IDEMPOTENCY_KEY_REUSED");
+  assert.equal(k.revision, 1);
+});
+
+test("18 request fingerprints ignore object key order", async () => {
+  const k = new MockKernel();
+  const a = move("order-id", 8);
+  const b = { ...a, payload: { ...a.payload, parameters: { destination: { z: 0, y: 0, x: 8 } } } };
+  const first = await k.handle(a); const second = await k.handle(b);
+  assert.equal(first.outcome, "committed");
+  assert.equal(second.outcome, "committed");
+  assert.equal(k.revision, 1);
+});
+test("19 long-running requests are idempotent and key-bound", async () => {
+  const k = new MockKernel();
+  const a = req("long-a", "action", { domain: "exploration", verb: "survey", parameters: { longRunning: true } }, { actor_id: "character_anasi" });
+  a.payload.idempotency_key = "long-key";
+  const b = req("long-b", "action", { domain: "exploration", verb: "survey", parameters: { longRunning: true } }, { actor_id: "character_anasi" });
+  b.payload.idempotency_key = "long-key";
+  const first = await k.handle(a); const replay = await k.handle(b);
+  assert.equal(first.execution_id, replay.execution_id);
+  assert.equal(k.executions.size, 1);
+  const altered = req("long-c", "action", { domain: "exploration", verb: "survey", parameters: { longRunning: true, other: true } }, { actor_id: "character_anasi" });
+  altered.payload.idempotency_key = "long-key";
+  const conflict = await k.handle(altered);
+  assert.equal(conflict.error.code, "IDEMPOTENCY_KEY_REUSED");
+});

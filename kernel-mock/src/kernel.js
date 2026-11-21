@@ -1,10 +1,28 @@
+function stableStringify(value) {
+  if (Array.isArray(value)) return '[' + value.map(stableStringify).join(',') + ']';
+  if (value && typeof value === 'object') {
+    return '{' + Object.keys(value).sort().map(key => JSON.stringify(key) + ':' + stableStringify(value[key])).join(',') + '}';
+  }
+  return JSON.stringify(value);
+}
+
+function actionFingerprint(request) {
+  const p = request.payload ?? {};
+  return stableStringify({
+    actor_id: request.actor_id ?? null, domain: p.domain ?? null, verb: p.verb ?? null,
+    target_id: p.target_id ?? null, parameters: p.parameters ?? {}, duration_mode: p.duration_mode ?? null
+  });
+}
+
 export class MockKernel {
   constructor({ failNextCommit = false } = {}) {
     this.revision = 0;
     this.positions = new Map([["character_anasi", { x: 0, y: 0, z: 0 }]]);
     this.executions = new Map();
     this.requests = new Map();
+    this.requestFingerprints = new Map();
     this.idempotency = new Map();
+    this.idempotencyFingerprints = new Map();
     this.events = [];
     this.history = [];
     this.failNextCommit = failNextCommit;
@@ -27,11 +45,19 @@ export class MockKernel {
       error: { code: "INVALID_REQUEST", message: shapeError }
     });
 
-    if (this.requests.has(request.request_id)) return structuredClone(this.requests.get(request.request_id));
+    const requestFingerprint = stableStringify(request);
+    if (this.requests.has(request.request_id)) {
+      if (this.requestFingerprints.get(request.request_id) !== requestFingerprint) {
+        return this.response(request, { request_status: 'rejected', outcome: 'rejected',
+          error: { code: 'REQUEST_ID_REUSED', message: 'Request ID was already used with a different payload.' } });
+      }
+      return structuredClone(this.requests.get(request.request_id));
+    }
     if (request.expected_world_revision && request.expected_world_revision !== this.worldRevision()) {
       const stale = this.response(request, { request_status: "rejected", outcome: "rejected",
         error: { code: "STALE_WORLD_STATE", message: "The world changed; refresh state and resubmit." } });
       this.requests.set(request.request_id, stale);
+      this.requestFingerprints.set(request.request_id, requestFingerprint);
       return structuredClone(stale);
     }
 
@@ -47,6 +73,7 @@ export class MockKernel {
     }
     const response = this.response(request, result);
     this.requests.set(request.request_id, response);
+    this.requestFingerprints.set(request.request_id, requestFingerprint);
     return structuredClone(response);
   }
 
@@ -126,7 +153,15 @@ export class MockKernel {
   async act(request) {
     const p = request.payload;
     const key = p.idempotency_key;
-    if (key && this.idempotency.has(key)) return structuredClone(this.idempotency.get(key));
+    const operationFingerprint = actionFingerprint(request);
+    if (key && this.idempotency.has(key)) {
+      if (this.idempotencyFingerprints.get(key) !== operationFingerprint) {
+        return { request_status: 'rejected', outcome: 'rejected',
+          error: { code: 'IDEMPOTENCY_KEY_REUSED', message: 'Idempotency key was already used for a different action.' },
+          events: [], history_record_ids: [] };
+      }
+      return structuredClone(this.idempotency.get(key));
+    }
     if (p.domain === "movement" && p.verb === "move") {
       const destination = p.parameters?.destination;
       if (!destination || !["x","y","z"].every(k => Number.isFinite(destination[k]))) {
@@ -138,21 +173,28 @@ export class MockKernel {
         error: { code: "PATH_BLOCKED", message: "The requested route is blocked." } };
       const actor = request.actor_id;
       const before = this.positions.get(actor) ?? { x: 0, y: 0, z: 0 };
-      return this.commit(request, actor, "position", before, destination, key);
+      return this.commit(request, actor, "position", before, destination, key, operationFingerprint);
     }
     if (p.parameters?.simulatePartial) {
-      const partial = this.commit(request, request.actor_id, "mock_progress", 0, 1, key);
-      return { ...partial, request_status: "completed", execution_status: "interrupted",
+      const partial = this.commit(request, request.actor_id, "mock_progress", 0, 1, key, operationFingerprint);
+      const interrupted = { ...partial, request_status: "completed", execution_status: "interrupted",
         outcome: "partial", result: { ...partial.result, remaining: p.parameters.remaining ?? "unfinished work",
           interruption_reason: "Mock interruption after a committed partial step." } };
+      if (key) this.idempotency.set(key, structuredClone(interrupted));
+      return interrupted;
     }
     if (p.parameters?.longRunning) {
       const execution_id = `exec_${this.nextExecution++}`;
       const execution = { execution_id, execution_status: "running", outcome: "none",
         progress: 0, remaining: p.parameters.remaining ?? "work" };
       this.executions.set(execution_id, execution);
-      return { request_status: "accepted", execution_status: "running", outcome: "none",
+      const accepted = { request_status: "accepted", execution_status: "running", outcome: "none",
         execution_id, result: { progress: 0 }, events: [], history_record_ids: [] };
+      if (key) {
+        this.idempotency.set(key, structuredClone(accepted));
+        this.idempotencyFingerprints.set(key, operationFingerprint);
+      }
+      return accepted;
     }
     if (p.parameters?.fail) return { request_status: "rejected", outcome: "failed",
       execution_status: "failed", error: { code: "CAPABILITY_INSUFFICIENT", message: "Mock capability check failed." } };
@@ -160,7 +202,7 @@ export class MockKernel {
       error: { code: "ACTION_NOT_PERMITTED", message: "The mock does not implement this action." } };
   }
 
-  commit(request, entityId, field, before, after, idempotencyKey) {
+  commit(request, entityId, field, before, after, idempotencyKey, operationFingerprint) {
     if (this.failNextCommit) {
       this.failNextCommit = false;
       return { request_status: "rejected", outcome: "failed", execution_status: "failed",
@@ -184,7 +226,10 @@ export class MockKernel {
     const result = { request_status: "completed", execution_status: "committed", outcome: "committed",
       world_revision: this.worldRevision(), result: { entity_id: entityId, [field]: structuredClone(after) },
       events: [event], history_record_ids: [historyId] };
-    if (idempotencyKey) this.idempotency.set(idempotencyKey, structuredClone(result));
+    if (idempotencyKey) {
+      this.idempotency.set(idempotencyKey, structuredClone(result));
+      this.idempotencyFingerprints.set(idempotencyKey, operationFingerprint);
+    }
     return result;
   }
 }
