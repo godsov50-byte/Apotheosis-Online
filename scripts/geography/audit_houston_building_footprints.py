@@ -23,7 +23,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 try:
-    from shapely.geometry import shape
+    from shapely.geometry import shape, mapping, Polygon, MultiPolygon
+    from shapely.geometry.polygon import orient
     from shapely.prepared import prep
 except ImportError as exc:  # pragma: no cover - exercised in workflow
     raise SystemExit("Install requirements: pip install shapely") from exc
@@ -112,15 +113,20 @@ def validate_footprint_source(metadata: dict) -> str:
 
 
 def esri_geometry(geojson_geometry: dict) -> dict:
-    """Convert a GeoJSON Polygon/MultiPolygon to an Esri rings geometry."""
-    kind = geojson_geometry.get("type")
-    coordinates = geojson_geometry.get("coordinates", [])
-    if kind == "Polygon":
-        rings = coordinates
-    elif kind == "MultiPolygon":
-        rings = [ring for polygon in coordinates for ring in polygon]
+    """Convert GeoJSON polygons to Esri rings with required shell/hole winding."""
+    geometry = shape(geojson_geometry)
+    if isinstance(geometry, Polygon):
+        polygons = [geometry]
+    elif isinstance(geometry, MultiPolygon):
+        polygons = list(geometry.geoms)
     else:
-        raise RuntimeError(f"Unsupported city boundary geometry: {kind}")
+        raise RuntimeError(f"Unsupported city boundary geometry: {geometry.geom_type}")
+    rings = []
+    for polygon in polygons:
+        # Esri JSON expects clockwise exterior rings and counter-clockwise holes.
+        oriented = orient(polygon, sign=-1.0)
+        polygon_mapping = mapping(oriented)
+        rings.extend([list(ring) for ring in polygon_mapping["coordinates"]])
     return {"rings": rings, "spatialReference": {"wkid": 4326}}
 
 
@@ -224,8 +230,10 @@ def main():
     args = parser.parse_args()
 
     if args.self_test:
-        assert esri_geometry({"type": "Polygon", "coordinates": [[[0, 0], [1, 0], [1, 1], [0, 0]]]})["rings"]
-        assert esri_geometry({"type": "MultiPolygon", "coordinates": [[[[0, 0], [1, 0], [0, 0]]]]})["rings"]
+        polygon_rings = esri_geometry({"type": "Polygon", "coordinates": [[[0, 0], [1, 0], [1, 1], [0, 0]]]})["rings"]
+        multi_rings = esri_geometry({"type": "MultiPolygon", "coordinates": [[[[0, 0], [1, 0], [0, 0]]]]})["rings"]
+        assert polygon_rings and multi_rings
+        assert len(polygon_rings[0]) >= 4
         assert normalized_service_type({"SERVICE_TY": " full service "}) == "FULL SERVICE"
         print("Building footprint audit self-test passed.")
         return
