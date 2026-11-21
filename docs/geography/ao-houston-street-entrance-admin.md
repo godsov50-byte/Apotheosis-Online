@@ -10,6 +10,7 @@ A single admin workspace for loading Houston road-centerline GeoJSON, building a
 - Live viewport-based City of Houston multi-county parcel polygons, rendered as a selectable GIS layer.
 - Live viewport-based City Parcel Layer / Structures building-footprint queries, rendered as a separate selectable layer.
 - Street-map and aerial/satellite basemap switching; independent layer visibility controls.
+- Optional MapLibre 3D inspection view that extrudes loaded building footprints into simple massing blocks; the preview uses an illustrative 8 m height, not surveyed building heights. Return to the 2D map for admin editing.
 - Road GeoJSON loader and 2D graph builder with endpoint clustering and inferred interior line intersections.
 - Connected-component, source-segment and graph-node counts.
 - Admin avatar placement on nearest road segment and Dijkstra route preview along graph edges.
@@ -29,7 +30,7 @@ A single admin workspace for loading Houston road-centerline GeoJSON, building a
 
 ## Important truth and safety boundaries
 - This is a Houston test/admin tool only. It does not write to the live AO world, Kernel, WorldHeart, Supabase or canonical geography.
-- Live parcel and building geometry is rendered as 2D footprint data in this iteration. True 3D building extrusion/mesh rendering, complete citywide bulk ingestion, source snapshotting and durable shared persistence are not yet implemented.
+- The 3D preview uses simple 8 m illustrative extrusions for building massing. It is not a photogrammetric mesh and does not claim accurate building-specific heights. True measured-height extrusion, roof detail, façade detail, complete citywide bulk ingestion, source snapshotting and durable shared persistence are not yet implemented.
 - Road topology is inferred from 2D geometry. It does not yet model one-way restrictions, turn restrictions, sidewalks, pedestrian permissions, grade-separated bridges/tunnels, access restrictions or verified crossings.
 - An entrance being near a road does not prove that the building is reachable. The route preview is a geometric candidate, not proof of legal or physical pedestrian access.
 - “Verified by admin” means an admin manually asserted the entrance state; it is not third-party verification.
