@@ -59,7 +59,7 @@ class HoustonMovementPreviewTests(unittest.TestCase):
             with self.subTest(value=value):
                 self.assertIn(value, self.script)
         self.assertIn("insideBuilding", self.script)
-        self.assertIn("No Kernel, WorldHeart or Supabase writes occur", self.html)
+        self.assertIn("no Kernel, WorldHeart or Supabase writes occur", self.html)
 
 
 if __name__ == "__main__":
