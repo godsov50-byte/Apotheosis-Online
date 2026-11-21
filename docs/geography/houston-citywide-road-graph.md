@@ -39,3 +39,7 @@ Outputs are local build artifacts and are not automatically committed, uploaded 
 ## Geographic hierarchy
 
 The Houston street graph is the citywide geographic substrate. Downtown remains the first detailed construction zone. Buildings, parcels, entrances, sidewalks, interior doors, corridors and stairs are separate connected layers attached to this shared geography. This work does not alter the Grand Meridian experimental world or the existing live world.
+
+## Cloud build
+
+The repository workflow `.github/workflows/houston-road-network-build.yml` runs the self-test, downloads the full filtered Houston snapshot, builds the endpoint graph, and uploads the four outputs as a 14-day GitHub Actions artifact. It runs on relevant pushes to `feature/houston-gps-spatial-data` and supports manual dispatch. The workflow uses read-only repository permissions and does not write to Supabase or AO world state.
