@@ -20,11 +20,11 @@ Outputs are local build artifacts and are not automatically committed, uploaded 
 ## Graph rules
 
 - Every source line path becomes an edge with source GlobalID, OBJECTID, centerline ID, name, class, raw direction/speed/lanes, jurisdiction sides, full geometry, and measured length.
-- Endpoint pairs within the configured 1.5 m default tolerance are grouped into candidate junction nodes. IDs are deterministic from rounded node coordinates and source identity for edges.
+- Endpoint pairs within the configured 1.5 m default tolerance are grouped into candidate junction nodes. The clustering is transitive, so chains of pairwise-close endpoints can produce clusters whose overall spread exceeds the tolerance. Each node now reports a bounding-box diameter upper bound and a warning flag for oversized clusters; these are diagnostics only and do not change connectivity. IDs are deterministic from rounded node coordinates and source identity for edges.
 - The graph is initially undirected. Source direction values remain raw. No driving or walking route is authorized by this build.
 - Interior crossings are intentionally not joined. A visual crossing may be a bridge, tunnel, rail crossing, or other grade-separated feature. Do not infer at-grade connectivity from line intersection alone.
 - City Nodes and Links layers remain independent reference data until a defensible geometry/ID crosswalk and special-node semantics are verified.
-- The report exposes connected components and degree distribution. A large component is not proof of completeness; isolated components and degree-1 nodes require review.
+- The report exposes connected components and degree distribution. A large component is not proof of completeness; isolated components and degree-1 nodes require review. `snap_clusters_exceeding_tolerance` and `max_snap_cluster_bbox_diameter_upper_bound_m` flag transitive-clustering spread that deserves review. The diameter is a conservative bounding-box upper bound, not an exact farthest-pair measurement.
 
 ## Required next validation before operational routing
 
