@@ -15,7 +15,7 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-BOUNDARY_URL = "https://services.arcgis.com/NummVBqZSIJKUeVR/ArcGIS/rest/services/City_of_Houston_Boundaries/FeatureServer/0"
+BOUNDARY_URL = "https://services.arcgis.com/NummVBqZSIJKUeVR/arcgis/rest/services/COH_City_Limit_view/FeatureServer/0"
 FOOTPRINT_URL = "https://www.gis.hctx.net/arcgishcpid/rest/services/HCFCD/Building_Footprints_2018/MapServer/0"
 SOURCE_ID = "hgac-harris-county-building-footprints-2018"
 SOURCE_CRS = 2278
@@ -68,7 +68,7 @@ def fetch_boundary_rings(timeout: int, batch_size: int) -> tuple[list[list[list[
         }, timeout)
         for feature in data.get("features", []):
             attrs = feature.get("attributes") or {}
-            oid = attrs.get("OBJECTID", attrs.get("FID"))
+            oid = attrs.get("OBJECTID", attrs.get("OBJECTID_1", attrs.get("FID")))
             if oid is not None:
                 seen.add(int(oid))
             geometry = feature.get("geometry") or {}
