@@ -42,6 +42,8 @@ jobs:
         run: node --test spatial/ao-spatial-addressing.test.mjs
       - name: Test AO spatial movement kernel
         run: node --test spatial/ao-spatial-movement.test.mjs
+      - name: Test AO building portal transitions and persistence contract
+        run: node --test spatial/ao-building-transitions.test.mjs
       - name: Compile Python modules
         run: python -m compileall -q geography tests scripts/geography
       - name: Run unit and migration contract tests
