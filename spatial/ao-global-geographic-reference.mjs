@@ -56,6 +56,9 @@ function distanceMeters(lat1, lon1, lat2, lon2) {
 }
 
 function normalizeObservation(input, defaults = {}) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    throw new TypeError("A geographic observation object is required");
+  }
   const latitude = input.latitude;
   const longitude = input.longitude;
   validateWgs84(latitude, longitude);
@@ -79,18 +82,26 @@ function normalizeObservation(input, defaults = {}) {
     throw new TypeError("observedAt must be a valid ISO-compatible timestamp");
   }
   const source = requiredString(input.source ?? defaults.source ?? "unspecified", "source");
+  const sourceRecordId = input.sourceRecordId ?? null;
+  if (sourceRecordId !== null && typeof sourceRecordId !== "string") {
+    throw new TypeError("sourceRecordId must be a string or null");
+  }
+  const verticalDatum = input.verticalDatum ?? null;
+  if (verticalDatum !== null && typeof verticalDatum !== "string") {
+    throw new TypeError("verticalDatum must be a string or null");
+  }
   return Object.freeze({
     crs: "EPSG:4326",
     datum: "WGS84",
     latitude,
     longitude,
     altitudeM,
-    verticalDatum: input.verticalDatum ?? null,
+    verticalDatum,
     verticalAccuracyM,
     horizontalAccuracyM,
     observedAt: new Date(observedAt).toISOString(),
     source,
-    sourceRecordId: input.sourceRecordId ?? null
+    sourceRecordId
   });
 }
 
@@ -107,35 +118,55 @@ export function createGlobalGeographicResolver({
   maxRegionRadiusKm = 250
 }) {
   worldId = requiredString(worldId, "worldId");
+  if (!finite(maxRegionRadiusKm) || maxRegionRadiusKm <= 0) {
+    throw new RangeError("maxRegionRadiusKm must be a positive finite number");
+  }
   if (!Array.isArray(regions) || regions.length === 0) {
     throw new TypeError("A configured global AO region registry is required");
   }
   const seen = new Set();
-  for (const region of regions) {
-    requiredString(region.id, "region.id");
-    if (seen.has(region.id)) throw new Error("Duplicate AO region id: " + region.id);
-    seen.add(region.id);
-    if (!region.bounds ||
-        ![region.bounds.south, region.bounds.north, region.bounds.west, region.bounds.east].every(finite)) {
-      throw new TypeError("Region " + region.id + " requires explicit WGS84 bounds");
+  const registry = regions.map(inputRegion => {
+    if (!inputRegion || typeof inputRegion !== "object") {
+      throw new TypeError("Every AO region must be an object");
     }
-    validateWgs84(region.originLat, region.originLon);
-    const radius = region.maxRadiusKm ?? maxRegionRadiusKm;
+    const id = requiredString(inputRegion.id, "region.id");
+    if (seen.has(id)) throw new Error("Duplicate AO region id: " + id);
+    seen.add(id);
+    const bounds = inputRegion.bounds;
+    if (!bounds ||
+        ![bounds.south, bounds.north, bounds.west, bounds.east].every(finite) ||
+        bounds.south < -90 || bounds.north > 90 || bounds.south > bounds.north ||
+        bounds.west < -180 || bounds.west > 180 ||
+        bounds.east < -180 || bounds.east > 180) {
+      throw new RangeError("Region " + id + " requires valid explicit WGS84 bounds");
+    }
+    const originLat = inputRegion.originLat;
+    const originLon = inputRegion.originLon;
+    validateWgs84(originLat, originLon);
+    const radius = inputRegion.maxRadiusKm ?? maxRegionRadiusKm;
     if (!finite(radius) || radius <= 0 || radius > maxRegionRadiusKm) {
-      throw new RangeError("Region " + region.id + " local frame radius must be >0 and <= " + maxRegionRadiusKm + " km");
+      throw new RangeError("Region " + id + " local frame radius must be >0 and <= " + maxRegionRadiusKm + " km");
     }
-  }
+    return Object.freeze({
+      ...inputRegion,
+      id,
+      originLat,
+      originLon,
+      maxRadiusKm: radius,
+      bounds: Object.freeze({ ...bounds })
+    });
+  });
 
   const resolver = createSpatialResolver({
     worldId,
-    regions,
+    regions: registry,
     grid,
     maxRegionRadiusKm
   });
 
   function findRegion(latitude, longitude) {
     validateWgs84(latitude, longitude);
-    const matches = regions.filter(region => contains(region.bounds, latitude, longitude));
+    const matches = registry.filter(region => contains(region.bounds, latitude, longitude));
     if (matches.length === 0) {
       throw new RangeError("Coordinate is not covered by a configured AO geographic region");
     }
@@ -143,7 +174,7 @@ export function createGlobalGeographicResolver({
       throw new RangeError("Coordinate matches multiple AO regions; resolve the region-boundary overlap explicitly");
     }
     const region = matches[0];
-    const radius = (region.maxRadiusKm ?? maxRegionRadiusKm) * 1000;
+    const radius = region.maxRadiusKm * 1000;
     const distance = distanceMeters(region.originLat, region.originLon, latitude, longitude);
     if (distance > radius) {
       throw new RangeError("Coordinate exceeds this region's local metric frame; configure a smaller AO region cell");
@@ -165,6 +196,29 @@ export function createGlobalGeographicResolver({
       coordinateSource: observation.source
     });
     assertSpatialAddress(address);
+    const horizontalAccuracyM = observation.horizontalAccuracyM;
+    const cellSizeM = grid?.cellSizeM ?? 1;
+    const accuracyResolution = horizontalAccuracyM === null
+      ? "unknown"
+      : horizontalAccuracyM <= cellSizeM
+        ? "cell-scale-candidate"
+        : "coarser-than-cell";
+    const latitudeBoundaryM = Math.min(
+      observation.latitude - region.bounds.south,
+      region.bounds.north - observation.latitude
+    ) * Math.PI / 180 * EARTH_RADIUS_M;
+    const longitudeBoundaryDegrees = Math.min(
+      Math.abs(observation.longitude - region.bounds.west),
+      Math.abs(observation.longitude - region.bounds.east)
+    );
+    const longitudeBoundaryM = longitudeBoundaryDegrees * Math.PI / 180 *
+      EARTH_RADIUS_M * Math.max(0, Math.cos(observation.latitude * Math.PI / 180));
+    const boundaryDistanceM = Math.min(latitudeBoundaryM, longitudeBoundaryM);
+    const regionBoundaryConfidence = horizontalAccuracyM === null
+      ? "unknown"
+      : horizontalAccuracyM >= boundaryDistanceM
+        ? "accuracy-may-cross-region-boundary"
+        : "within-reported-accuracy";
     return Object.freeze({
       kind: "ao.geographic-observation",
       worldId,
@@ -173,6 +227,12 @@ export function createGlobalGeographicResolver({
       regionId: region.id,
       address,
       addressKey: spatialAddressKey(address),
+      quality: Object.freeze({
+        horizontalAccuracyM,
+        spatialResolution: accuracyResolution,
+        regionBoundary: regionBoundaryConfidence,
+        boundaryDistanceM
+      }),
       requiresKernelValidation: true,
       mayMoveEnvoy: false,
       mayCommitWorldState: false
@@ -205,7 +265,7 @@ export function createGlobalGeographicResolver({
     worldId,
     crs: "EPSG:4326",
     datum: "WGS84",
-    regions: Object.freeze(regions.map(region => region.id)),
+    regions: Object.freeze(registry.map(region => region.id)),
     findRegion,
     resolveObservation,
     resolveGpsFix,
