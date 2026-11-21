@@ -50,6 +50,7 @@ jobs:
           path: |
             build/houston-building-audit/houston-city-limits.geojson
             build/houston-building-audit/acquisition-report.json
+            build/houston-building-audit/houston-building-footprints.geojson
             build/houston-building-audit/building-footprint-audit.json
             build/houston-building-audit/source-layer-metadata.json
           if-no-files-found: error
