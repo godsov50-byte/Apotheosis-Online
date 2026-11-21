@@ -4,7 +4,7 @@
  const state={position:{lat:START[0],lng:START[1]},positionSource:'Demo starting anchor',selected:null,destination:null,insideBuilding:null,mode:'select',objects:[],connections:[],route:null};
  const map=L.map('map',{preferCanvas:true}).setView(START,16);
  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:20,attribution:'© OpenStreetMap contributors'}).addTo(map);
- const layers=L.layerGroup().addTo(map);let envoyMarker=null,routeLine=null;
+ const layers=L.layerGroup().addTo(map);window.AOCityConsoleMap=map;window.AOCityConsoleLocalLayers=layers;let envoyMarker=null,routeLine=null;
  function id(prefix){return prefix+'-'+(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,9))}
  function safe(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
  function save(){try{localStorage.setItem(STORE,JSON.stringify({objects:state.objects,connections:state.connections}))}catch{}}
