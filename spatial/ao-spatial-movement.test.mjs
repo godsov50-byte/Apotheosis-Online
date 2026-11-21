@@ -150,7 +150,7 @@ test("AO calendar runs at one third of elapsed real time, independently of movem
     actor: { id: "p1", position: { x: 0, y: 0, z: 0 }, mode: "walk" },
     route, elapsedSeconds: 3
   });
-  assert.equal(step.distanceMovedM, 3.6);
+  assert.ok(Math.abs(step.distanceMovedM - 3.6) < 1e-9);
 });
 
 test("movement validates elapsed time and route cursor", () => {
