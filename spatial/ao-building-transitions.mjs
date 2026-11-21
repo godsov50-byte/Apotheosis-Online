@@ -198,10 +198,10 @@ export function createBrowserStagingSpatialAdapter(storage, {
   }
   const read = () => {
     const raw = storage.getItem(key);
-    if (!raw) return { schema: "ao-spatial-staging-ledger/v1", baselines: {}, positions: {}, events: [] };
+    if (!raw) return { schema: "ao-spatial-staging-ledger/v1", baselines: {}, positions: {}, chunks: {}, events: [] };
     const value = JSON.parse(raw);
     if (value.schema !== "ao-spatial-staging-ledger/v1" ||
-        !value.baselines || !value.positions || !Array.isArray(value.events)) {
+        !value.baselines || !value.positions || !value.chunks || !Array.isArray(value.events)) {
       throw new Error("Unsupported local spatial staging ledger");
     }
     return value;
@@ -227,18 +227,19 @@ export function createBrowserStagingSpatialAdapter(storage, {
     },
     async commitTransitionAtomic({ event, destinationAddress, destinationChunk, expectedOriginAddressKey }) {
       const state = read();
-      const current = state.positions[event.entityId];
-      if (!current || spatialAddressKey(current) !== expectedOriginAddressKey ||
-          expectedOriginAddressKey !== event.originAddressKey) {
-        throw new Error("Atomic staging commit rejected: expected origin does not match current position");
-      }
       const prior = state.events.find(item => item.id === event.id);
       if (prior) {
         if (JSON.stringify(prior) === JSON.stringify(event)) return;
         throw new Error("Transition ID collision with different event content");
       }
-      // A single-key write makes event append and current-position replacement
-      // one storage operation for this local, single-browser prototype.
+      const current = state.positions[event.entityId];
+      if (!current || spatialAddressKey(current) !== expectedOriginAddressKey ||
+          expectedOriginAddressKey !== event.originAddressKey) {
+        throw new Error("Atomic staging commit rejected: expected origin does not match current position");
+      }
+      // A single-key write makes event append, destination-chunk registration
+      // and current-position replacement one storage operation in this prototype.
+      if (destinationChunk?.id) state.chunks[destinationChunk.id] = clone(destinationChunk);
       state.events.push(clone(event));
       state.positions[event.entityId] = clone(destinationAddress);
       write(state);
