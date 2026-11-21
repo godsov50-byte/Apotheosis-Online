@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - "geography/**"
-      - "tests/geography/**"
+      - "tests/spatial/**"
       - ".github/workflows/geography-tests.yml"
   push:
     branches:
