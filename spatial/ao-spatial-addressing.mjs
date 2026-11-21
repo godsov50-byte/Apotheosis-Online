@@ -69,7 +69,11 @@ function regionContains(region, lat, lon) {
 function projectGeographic(region, lat, lon, altitudeM = 0) {
   const lat0 = region.originLat * Math.PI / 180;
   const dLat = (lat - region.originLat) * Math.PI / 180;
-  const dLon = (lon - region.originLon) * Math.PI / 180;
+  // Normalize longitude delta across the antimeridian before projection.
+  let dLonDegrees = lon - region.originLon;
+  if (dLonDegrees > 180) dLonDegrees -= 360;
+  if (dLonDegrees < -180) dLonDegrees += 360;
+  const dLon = dLonDegrees * Math.PI / 180;
   return {
     x: EARTH_RADIUS_M * dLon * Math.cos(lat0), // east/west
     y: altitudeM, // AO vertical axis
@@ -264,7 +268,8 @@ export function createSpatialResolver({
       throw new RangeError("GPS coordinate is outside explicitly selected region " + region.id);
     }
     const projected = projectGeographic(region, latitude, longitude, altitudeM);
-    const radiusKm = Math.hypot(projected.x, projected.y) / 1000;
+    // The regional radius is horizontal: AO's ground plane is X/Z and Y is altitude.
+    const radiusKm = Math.hypot(projected.x, projected.z) / 1000;
     if (radiusKm > region.maxRadiusKm) {
       throw new RangeError("Coordinate exceeds region local-frame radius; resolve through another region");
     }
