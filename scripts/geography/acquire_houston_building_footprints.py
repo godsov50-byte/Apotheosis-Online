@@ -24,7 +24,15 @@ OUTPUT_CRS = 4326
 def request_json(url: str, params: dict[str, Any] | None = None, timeout: int = 90) -> dict[str, Any]:
     query = urllib.parse.urlencode(params or {})
     target = url + ("?" + query if query else "")
-    req = urllib.request.Request(target, headers={"User-Agent": "Apotheosis-Online-Geography/1.0"})
+    headers = {"User-Agent": "Apotheosis-Online-Geography/1.0"}
+    # ArcGIS rejects or resets oversized GET requests, especially the full
+    # Houston boundary polygon used by the spatial-intersection query.
+    # Send long parameter sets as form-encoded POST requests instead.
+    if len(target) > 1800:
+        headers["Content-Type"] = "application/x-www-form-urlencoded"
+        req = urllib.request.Request(url, data=query.encode("ascii"), headers=headers)
+    else:
+        req = urllib.request.Request(target, headers=headers)
     with urllib.request.urlopen(req, timeout=timeout) as response:
         data = json.loads(response.read().decode("utf-8"))
     if "error" in data:
@@ -50,15 +58,19 @@ def query_ids(url: str, where: str, timeout: int, **spatial: Any) -> list[int]:
         "f": "json", **spatial
     }, timeout)
     ids = data.get("objectIds")
+    # ArcGIS returns objectIds: null when a polygon has no intersecting
+    # footprints; treat that as an empty result rather than a malformed reply.
+    if ids is None:
+        return []
     if not isinstance(ids, list):
         raise RuntimeError("ArcGIS did not return an objectIds list.")
     return sorted(int(value) for value in ids)
 
-def fetch_boundary_rings(timeout: int, batch_size: int) -> tuple[list[list[list[float]]], dict[str, Any]]:
+def fetch_boundary_rings(timeout: int, batch_size: int) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     ids = query_ids(BOUNDARY_URL, "1=1", timeout)
     if not ids:
         raise RuntimeError("Houston city-limit boundary query returned no features.")
-    rings: list[list[list[float]]] = []
+    geometries: list[dict[str, Any]] = []
     seen: set[int] = set()
     # The ArcGIS boundary service returns HTTP 404 for oversized GET query strings.
     # Keep boundary geometry batches below its observed URL-length threshold.
@@ -75,12 +87,14 @@ def fetch_boundary_rings(timeout: int, batch_size: int) -> tuple[list[list[list[
             if oid is not None:
                 seen.add(int(oid))
             geometry = feature.get("geometry") or {}
-            rings.extend(geometry.get("rings") or [])
+            if geometry.get("rings"):
+                geometries.append({"rings": geometry["rings"], "spatialReference": {"wkid": SOURCE_CRS}})
     if seen and seen != set(ids):
         raise RuntimeError("Houston boundary acquisition did not return the complete object ID set.")
-    if not rings:
-        raise RuntimeError("Houston boundary geometry contains no polygon rings.")
-    return rings, {"object_ids": ids, "feature_count": len(ids), "ring_count": len(rings)}
+    if not geometries:
+        raise RuntimeError("Houston boundary geometry contains no polygon features.")
+    ring_count = sum(len(geometry["rings"]) for geometry in geometries)
+    return geometries, {"object_ids": ids, "feature_count": len(ids), "polygon_count": len(geometries), "ring_count": ring_count}
 
 def validate_geometry(geometry: Any) -> str:
     if geometry is None:
@@ -117,15 +131,26 @@ def atomic_json(path: Path, value: Any) -> None:
 
 def acquire(output_dir: Path, batch_size: int = 500, timeout: int = 90, pause: float = 0.15) -> dict[str, Any]:
     before = layer_metadata(FOOTPRINT_URL, timeout)
-    rings, boundary_manifest = fetch_boundary_rings(timeout, batch_size)
-    polygon = {"rings": rings, "spatialReference": {"wkid": SOURCE_CRS}}
-    spatial = {
-        "geometry": json.dumps(polygon, separators=(",", ":")),
-        "geometryType": "esriGeometryPolygon",
-        "inSR": str(SOURCE_CRS),
-        "spatialRel": "esriSpatialRelIntersects",
-    }
-    ids = query_ids(FOOTPRINT_URL, "1=1", timeout, **spatial)
+    boundary_geometries, boundary_manifest = fetch_boundary_rings(timeout, batch_size)
+    # Query each boundary polygon independently. Sending the entire 835-ring
+    # city-limit geometry at once causes the county footprint service to time out.
+    # Individual polygons keep each spatial request small; IDs are deduplicated.
+    footprint_ids: set[int] = set()
+    for index, polygon in enumerate(boundary_geometries, start=1):
+        spatial = {
+            "geometry": json.dumps(polygon, separators=(",", ":")),
+            "geometryType": "esriGeometryPolygon",
+            "inSR": str(SOURCE_CRS),
+            "spatialRel": "esriSpatialRelIntersects",
+        }
+        footprint_ids.update(query_ids(FOOTPRINT_URL, "1=1", timeout, **spatial))
+        if pause:
+            time.sleep(pause)
+        if index % 50 == 0:
+            print(f"Queried {index}/{len(boundary_geometries)} Houston boundary polygons; unique footprint IDs: {len(footprint_ids)}")
+    ids = sorted(footprint_ids)
+    if not ids:
+        raise RuntimeError("Houston city-limit polygons did not intersect any building footprints.")
     features: list[dict[str, Any]] = []
     seen: set[int] = set()
     for start in range(0, len(ids), batch_size):
@@ -133,7 +158,7 @@ def acquire(output_dir: Path, batch_size: int = 500, timeout: int = 90, pause: f
         data = request_json(FOOTPRINT_URL + "/query", {
             "objectIds": ",".join(map(str, batch)),
             "outFields": "*", "returnGeometry": "true",
-            "outSR": str(OUTPUT_CRS), "f": "geojson", **spatial
+            "outSR": str(OUTPUT_CRS), "f": "geojson"
         }, timeout)
         returned = data.get("features", [])
         returned_ids = []
