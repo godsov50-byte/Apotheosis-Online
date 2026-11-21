@@ -99,6 +99,10 @@ class SpatialProfile:
             raise ProfileNotReadyError("Chunk size must be positive.")
         if self.rounding != "decimal_round_half_away_from_zero":
             raise ProfileNotReadyError("Unsupported or non-deterministic rounding rule.")
+        if not self.source_to_working_crs_pipeline:
+            raise ProfileNotReadyError(
+                "An explicit source-to-working-CRS operation (or identity declaration) is required."
+            )
         if not self.working_crs_to_ao_pipeline:
             raise ProfileNotReadyError("A versioned local-coordinate transform is required.")
 
