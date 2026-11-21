@@ -119,7 +119,7 @@ test("regional frame radius measures horizontal X/Z distance, not altitude", () 
   }]);
   assert.throws(() => resolver.resolveGisPoint({
     latitude: 0.11, longitude: 0, source: "radius-test"
-  }), /exceeds region local-frame radius/);
+  }), /exceeds this region's local metric frame/);
   const samePoint = resolver.resolveGisPoint({
     latitude: 0, longitude: 0, altitudeM: 2000, source: "altitude-test"
   });
