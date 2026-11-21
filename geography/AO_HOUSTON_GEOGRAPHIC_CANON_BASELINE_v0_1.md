@@ -87,6 +87,34 @@ The working manifest identifies possible tunnel businesses, access points, ingre
 
 **Status:** candidate source only. Validate live layer schemas, feature coverage, access states, levels and connectivity before import. Do not assume every mapped tunnel or building connection is currently open.
 
+
+### 2.6 Official site-address points
+
+**Reference source:** City of Houston COH_SiteAddresses, FeatureServer layer 0  
+https://services.arcgis.com/NummVBqZSIJKUeVR/ArcGIS/rest/services/COH_SiteAddresses/FeatureServer/0
+
+The City describes this as its most complete and official address repository. The layer is point geometry in EPSG:2278 (US survey feet), supports GeoJSON queries and has a 2,000-record service limit. The publisher explicitly warns that the dataset still requires cleanup and is continuously maintained. Address statuses distinguish permanent City addresses (COH), preliminary (PRE), reverse-geocoded (RVSG), utility (UTA), abandoned (ABD), county (CNTY), out-of-range (OOR) and CenterPoint (CP) addresses. Address types also distinguish residential, commercial, industrial, non-structural, parcel, park, vacant and other records.
+
+**Locked handling:** candidate reference layer for address matching and geocoding only after a versioned full snapshot is acquired. Preserve status and type as separate fields. Do not treat every point as a building, inhabited location, entrance or valid current address. Preliminary, reverse-geocoded, abandoned and utility records must not be silently treated as permanent occupied addresses.
+
+### 2.7 Multi-county parcel polygons
+
+**Reference source:** City of Houston EGIS/HOUSTON_CITYINFO, COH_MULTI_COUNTY_PARCELS, MapServer layer 2  
+https://mycity2.houstontx.gov/gisweb01/rest/services/EGIS/HOUSTON_CITYINFO/MapServer/2
+
+The service describes the layer as full HCAD parcels plus partial parcels from FBCAD, MCAD and WCAD. It reports a quarterly maintenance cycle and a most recent update completed September 2026. The layer is polygon geometry in EPSG:3857, supports pagination and has a 2,000-record service limit. Its description says it is intended for GIS mapping and requires independent verification for specific applications.
+
+**Locked handling:** source candidate for parcel context and spatial association. It is not automatically a legal boundary, ownership authority, building footprint or proof of access. Preserve county, tax ID, source date and coverage distinctions; do not imply full neighbouring-county coverage from the phrase “multi-county.” Acquire and validate a complete snapshot before accepting individual parcel geometries as source-backed features.
+
+### 2.8 City street-intersection reference points
+
+**Reference source:** City of Houston EGIS/HOUSTON_CITYINFO, COH_STREET_INTERSECTIONS, MapServer layer 3  
+https://mycity2.houstontx.gov/gisweb01/rest/services/EGIS/HOUSTON_CITYINFO/MapServer/3
+
+The City describes this as street-intersection points across Houston, with address-verification and city-service attributes. It reports an annual update cycle, most recently October 8, 2026. The publisher explicitly warns that the layer has no permanent unique ID; the PlusCode is unique only within a given layer snapshot and can change when an intersection shifts. The layer is point geometry in EPSG:3857.
+
+**Locked handling:** use as an independent intersection-reference/cross-check layer only after snapshot acquisition. Never use OBJECTID, PlusCode, names or coordinates as a permanent cross-version identity. Derive an AO-stable identity only from a documented versioned matching process and retain the source locator separately. The point layer does not establish grade separation, legal crossing, pedestrian accessibility or current signal state.
+
 ## 3. Layers not yet established
 
 The following are not locked as complete geographic truth because the current source inventory does not demonstrate adequate acquired and validated coverage:
@@ -98,7 +126,7 @@ The following are not locked as complete geographic truth because the current so
 - Complete underground and tunnel connections.
 - Water boundaries, bridges, culverts and navigable airspace.
 - A complete parcel snapshot with licence, date, CRS and coverage validation.
-- Actual device GPS tracks or surveyed control points.
+- Actual device GPS tracks or surveyed control points.\n- Acquired, checksummed full snapshots of the official site-address, parcel and street-intersection candidate layers above.
 
 ## 4. Coordinate and spatial-addressing policy
 
