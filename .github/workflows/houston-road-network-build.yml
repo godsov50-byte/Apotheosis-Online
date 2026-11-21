@@ -67,7 +67,6 @@ jobs:
             build/houston-road-network/topology-report.json
             build/houston-road-network/interior-crossing-candidates.json
             build/houston-road-network/nodes.geojson
-            build/houston-road-network/links.geojson
             build/houston-road-network/official-nodes-links-manifest.json
             build/houston-road-network/official-node-crosswalk.json
           if-no-files-found: error
