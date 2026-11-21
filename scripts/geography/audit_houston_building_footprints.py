@@ -54,6 +54,24 @@ def get_json(url: str, params: dict[str, str] | None = None) -> dict:
     return payload
 
 
+def post_json(url: str, params: dict[str, str]) -> dict:
+    data = urllib.parse.urlencode(params).encode("utf-8")
+    request = urllib.request.Request(
+        url,
+        data=data,
+        headers={
+            "User-Agent": "ApotheosisOnline-BuildingAudit/1.0",
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(request, timeout=180) as response:
+        payload = json.load(response)
+    if not isinstance(payload, dict) or "error" in payload:
+        raise RuntimeError(f"ArcGIS POST request failed: {payload}")
+    return payload
+
+
 def normalized_service_type(properties: dict) -> str:
     value = properties.get("SERVICE_TY") or properties.get("SERVICE_TYPE") or ""
     return " ".join(str(value).strip().upper().split())
@@ -135,7 +153,7 @@ def query_footprints(oid_field: str, raw_polygons: list[dict], pause: float):
     for polygon_number, geometry in enumerate(raw_polygons, start=1):
         offset = 0
         while True:
-            page = get_json(
+            page = post_json(
                 FOOTPRINT_LAYER + "/query",
                 {
                     "where": "1=1",
@@ -155,11 +173,11 @@ def query_footprints(oid_field: str, raw_polygons: list[dict], pause: float):
             batch = page.get("features")
             if not isinstance(batch, list):
                 raise RuntimeError(f"No feature array at polygon {polygon_number}, offset {offset}.")
-            if page.get("exceededTransferLimit") is True:
-                raise RuntimeError(
-                    f"Transfer limit exceeded at polygon {polygon_number}, offset {offset}."
-                )
             if not batch:
+                if page.get("exceededTransferLimit") is True:
+                    raise RuntimeError(
+                        f"Transfer limit reported with empty page at polygon {polygon_number}, offset {offset}."
+                    )
                 break
             for feature in batch:
                 properties = feature.get("properties") or {}
