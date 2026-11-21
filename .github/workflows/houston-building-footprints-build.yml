@@ -1,4 +1,5 @@
 name: AO Houston building footprint snapshot
+# Touching this workflow config triggers a one-time source snapshot refresh.
 
 on:
   workflow_dispatch:
