@@ -219,11 +219,13 @@ export function createSpatialResolver({
         throw new RangeError("Region " + id + " has invalid WGS84 bounds");
       }
     }
+    const radius = input.maxRadiusKm ?? maxRegionRadiusKm;
+    if (!finite(radius) || radius <= 0) throw new RangeError("Region " + id + " maxRadiusKm must be positive");
     regionMap.set(id, Object.freeze({
       ...input,
       id,
       coordinateSystem: input.coordinateSystem || "local-equirectangular-wgs84",
-      maxRadiusKm: input.maxRadiusKm ?? maxRegionRadiusKm
+      maxRadiusKm: radius
     }));
   }
 
@@ -285,6 +287,7 @@ export function createSpatialResolver({
     roomId = null, coordinateSource = "admin-or-source-interior"
   }) {
     buildingId = requiredString(buildingId, "buildingId");
+    if (floorId === null || floorId === undefined) throw new TypeError("floorId must be supplied");
     floorId = requiredString(String(floorId), "floorId");
     if (exteriorAddress) {
       assertSpatialAddress(exteriorAddress);
