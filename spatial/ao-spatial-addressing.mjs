@@ -304,12 +304,12 @@ export function createSpatialResolver({
     }
     regionId = requiredString(regionId, "regionId");
     getRegion(regionId);
-    const spaceId = "building:" + buildingId + ":floor:" + floorId;
+    const spaceId = "building:" + regionId + ":" + buildingId + ":floor:" + floorId;
     return makeGridAddress({
       worldId, regionId, spaceId, x, y, z, layer: "interior", grid: g,
       parentLocationId: buildingId,
       exteriorAddressKey: exteriorAddress ? spatialAddressKey(exteriorAddress) : null,
-      physicalAddressKey: "building:" + buildingId + ":floor:" + floorId,
+      physicalAddressKey: "building:" + regionId + ":" + buildingId + ":floor:" + floorId,
       floorId, roomId, coordinateSource
     });
   }
@@ -327,10 +327,10 @@ export function createSpatialResolver({
     }
     getRegion(regionId);
     return makeGridAddress({
-      worldId, regionId, spaceId: "site:" + siteId, x, y, z, layer, grid: g,
+      worldId, regionId, spaceId: "site:" + regionId + ":" + siteId, x, y, z, layer, grid: g,
       parentLocationId: siteId,
       exteriorAddressKey: surfaceAddress ? spatialAddressKey(surfaceAddress) : null,
-      physicalAddressKey: "site:" + siteId,
+      physicalAddressKey: "site:" + regionId + ":" + siteId,
       coordinateSource
     });
   }
@@ -347,7 +347,7 @@ export function createSpatialResolver({
     }
     return makeGridAddress({
       worldId, regionId: sourceAddress.regionId,
-      spaceId: "instance:" + instanceId, x, y, z, layer, grid: g,
+      spaceId: "instance:" + sourceAddress.regionId + ":" + instanceId, x, y, z, layer, grid: g,
       parentLocationId: sourceAddress.parentLocationId,
       instanceId,
       physicalAddressKey: sourceAddress.physicalAddressKey || spatialAddressKey(sourceAddress),
