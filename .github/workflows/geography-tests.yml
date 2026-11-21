@@ -40,6 +40,8 @@ jobs:
         run: python scripts/geography/build_houston_street_registry.py --self-test
       - name: Test AO spatial address resolver
         run: node --test spatial/ao-spatial-addressing.test.mjs
+      - name: Test AO spatial movement kernel
+        run: node --test spatial/ao-spatial-movement.test.mjs
       - name: Compile Python modules
         run: python -m compileall -q geography tests scripts/geography
       - name: Run unit and migration contract tests
