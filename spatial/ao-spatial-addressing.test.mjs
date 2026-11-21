@@ -37,6 +37,7 @@ test("negative world coordinates use mathematical floor, not truncation", () => 
   assert.equal(a.grid.chunkX, -1);
   assert.equal(a.grid.tileX, -1);
   assert.equal(a.grid.cellX, -1);
+  assert.equal(a.grid.chunkZ, 0);
 });
 
 test("GPS uses one unique configured region and rejects uncovered or ambiguous points", () => {
@@ -83,7 +84,9 @@ test("aerial layer is a distinct spatial layer above the same geographic grid", 
     regionId: "houston-test", layer: "aerial", coordinateSource: "flight-sensor"
   });
   assert.equal(air.layer, "aerial");
-  assert.equal(air.chunkId, ground.chunkId);
+  assert.equal(air.chunkId, ground.chunkId); // same 1,024 m vertical chunk
+  assert.notEqual(air.tileId, ground.tileId); // different 64 m vertical tile
+  assert.notEqual(air.cellId, ground.cellId); // distinct 1 m vertical cell
   assert.notEqual(spatialAddressKey(air), spatialAddressKey(ground));
   assert.equal(air.position.z, 120);
 });
