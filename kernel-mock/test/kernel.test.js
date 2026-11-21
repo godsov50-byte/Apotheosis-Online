@@ -124,7 +124,7 @@ test("17 idempotency key reuse with changed action is rejected", async () => {
 test("18 request fingerprints ignore object key order", async () => {
   const k = new MockKernel();
   const a = move("order-id", 8);
-  const b = { ...a, payload: { ...a.payload, parameters: { blocked: false, destination: { z: 0, y: 0, x: 8 } } } };
+  const b = { ...a, payload: { ...a.payload, parameters: { destination: { z: 0, y: 0, x: 8 } } } };
   const first = await k.handle(a); const second = await k.handle(b);
   assert.equal(first.outcome, "committed");
   assert.equal(second.outcome, "committed");
