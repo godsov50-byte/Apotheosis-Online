@@ -442,8 +442,7 @@ export function samePhysicalPlace(a, b) {
   assertSpatialAddress(a);
   assertSpatialAddress(b);
   if (a.worldId !== b.worldId) return false;
-  if (a.physicalAddressKey && b.physicalAddressKey) {
-    return a.physicalAddressKey === b.physicalAddressKey;
-  }
-  return spatialAddressKey(a) === spatialAddressKey(b);
+  const physicalA = a.physicalAddressKey || spatialAddressKey(a);
+  const physicalB = b.physicalAddressKey || spatialAddressKey(b);
+  return physicalA === physicalB;
 }
