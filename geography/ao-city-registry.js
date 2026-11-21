@@ -162,7 +162,7 @@
     const marker = JSON.stringify(targetKey);
     try {
       while (!done || cursor < buffer.length) {
-        if (!done && (cursor > 65536 || buffer.length - cursor < 8192)) {
+        if (!done && depth === 0 && (cursor > 65536 || buffer.length - cursor < 8192)) {
           buffer = buffer.slice(cursor); cursor = 0;
           const part = await reader.read();
           done = part.done;
