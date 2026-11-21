@@ -62,14 +62,30 @@ def post_json(url: str, params: dict[str, str]) -> dict:
         headers={
             "User-Agent": "ApotheosisOnline-BuildingAudit/1.0",
             "Content-Type": "application/x-www-form-urlencoded",
+            "Accept": "application/json",
         },
         method="POST",
     )
-    with urllib.request.urlopen(request, timeout=180) as response:
-        payload = json.load(response)
-    if not isinstance(payload, dict) or "error" in payload:
-        raise RuntimeError(f"ArcGIS POST request failed: {payload}")
-    return payload
+    last_error = None
+    for attempt in range(4):
+        try:
+            with urllib.request.urlopen(request, timeout=180) as response:
+                raw = response.read()
+            try:
+                payload = json.loads(raw)
+            except json.JSONDecodeError as exc:
+                raise RuntimeError(
+                    f"ArcGIS returned a non-JSON response: {raw[:300]!r}"
+                ) from exc
+            if not isinstance(payload, dict) or "error" in payload:
+                raise RuntimeError(f"ArcGIS POST request failed: {payload}")
+            return payload
+        except Exception as exc:
+            last_error = exc
+            if attempt == 3:
+                break
+            time.sleep(2 ** (attempt + 1))
+    raise RuntimeError(f"ArcGIS POST failed after retries: {last_error}")
 
 
 def normalized_service_type(properties: dict) -> str:
