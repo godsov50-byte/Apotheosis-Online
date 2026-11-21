@@ -19,65 +19,969 @@
       "name": "Houston",
       "countryCode": "USA",
       "admin1": "Texas",
-      "coordinates": { "latitude": 29.7604, "longitude": -95.3698 },
-      "source": { "name": "AO Houston test reference", "status": "test-coordinate" }
+      "coordinates": {
+        "latitude": 29.7604,
+        "longitude": -95.3698
+      },
+      "source": {
+        "name": "AO Houston test reference",
+        "status": "test-coordinate"
+      }
     },
     {
       "id": "admin1:texas-us",
       "type": "admin1",
       "name": "Texas",
       "countryCode": "USA",
-      "source": { "name": "Administrative geography", "status": "identity-reference; geometry-pending" }
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending",
+        "fips": "48"
+      }
     },
     {
       "id": "country:USA",
       "type": "country",
       "name": "United States",
       "countryCode": "USA",
-      "source": { "name": "ISO 3166-1", "status": "identity-reference; geometry-pending" }
+      "source": {
+        "name": "ISO 3166-1",
+        "status": "identity-reference; geometry-pending"
+      }
     },
     {
       "id": "country:CAN",
       "type": "country",
       "name": "Canada",
       "countryCode": "CAN",
-      "source": { "name": "ISO 3166-1", "status": "identity-reference; geometry-pending" }
+      "source": {
+        "name": "ISO 3166-1",
+        "status": "identity-reference; geometry-pending"
+      }
     },
     {
       "id": "country:MEX",
       "type": "country",
       "name": "Mexico",
       "countryCode": "MEX",
-      "source": { "name": "ISO 3166-1", "status": "identity-reference; geometry-pending" }
+      "source": {
+        "name": "ISO 3166-1",
+        "status": "identity-reference; geometry-pending"
+      }
     },
     {
       "id": "country:BLZ",
       "type": "country",
       "name": "Belize",
       "countryCode": "BLZ",
-      "source": { "name": "ISO 3166-1", "status": "identity-reference; geometry-pending" }
+      "source": {
+        "name": "ISO 3166-1",
+        "status": "identity-reference; geometry-pending"
+      }
     },
     {
       "id": "country:GTM",
       "type": "country",
       "name": "Guatemala",
       "countryCode": "GTM",
-      "source": { "name": "ISO 3166-1", "status": "identity-reference; geometry-pending" }
+      "source": {
+        "name": "ISO 3166-1",
+        "status": "identity-reference; geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:al-us",
+      "type": "admin1",
+      "name": "Alabama",
+      "countryCode": "USA",
+      "stateCode": "AL",
+      "fips": "01",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:ak-us",
+      "type": "admin1",
+      "name": "Alaska",
+      "countryCode": "USA",
+      "stateCode": "AK",
+      "fips": "02",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:az-us",
+      "type": "admin1",
+      "name": "Arizona",
+      "countryCode": "USA",
+      "stateCode": "AZ",
+      "fips": "04",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:ar-us",
+      "type": "admin1",
+      "name": "Arkansas",
+      "countryCode": "USA",
+      "stateCode": "AR",
+      "fips": "05",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:ca-us",
+      "type": "admin1",
+      "name": "California",
+      "countryCode": "USA",
+      "stateCode": "CA",
+      "fips": "06",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:co-us",
+      "type": "admin1",
+      "name": "Colorado",
+      "countryCode": "USA",
+      "stateCode": "CO",
+      "fips": "08",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:ct-us",
+      "type": "admin1",
+      "name": "Connecticut",
+      "countryCode": "USA",
+      "stateCode": "CT",
+      "fips": "09",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:de-us",
+      "type": "admin1",
+      "name": "Delaware",
+      "countryCode": "USA",
+      "stateCode": "DE",
+      "fips": "10",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:fl-us",
+      "type": "admin1",
+      "name": "Florida",
+      "countryCode": "USA",
+      "stateCode": "FL",
+      "fips": "12",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:ga-us",
+      "type": "admin1",
+      "name": "Georgia",
+      "countryCode": "USA",
+      "stateCode": "GA",
+      "fips": "13",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:hi-us",
+      "type": "admin1",
+      "name": "Hawaii",
+      "countryCode": "USA",
+      "stateCode": "HI",
+      "fips": "15",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:id-us",
+      "type": "admin1",
+      "name": "Idaho",
+      "countryCode": "USA",
+      "stateCode": "ID",
+      "fips": "16",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:il-us",
+      "type": "admin1",
+      "name": "Illinois",
+      "countryCode": "USA",
+      "stateCode": "IL",
+      "fips": "17",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:in-us",
+      "type": "admin1",
+      "name": "Indiana",
+      "countryCode": "USA",
+      "stateCode": "IN",
+      "fips": "18",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:ia-us",
+      "type": "admin1",
+      "name": "Iowa",
+      "countryCode": "USA",
+      "stateCode": "IA",
+      "fips": "19",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:ks-us",
+      "type": "admin1",
+      "name": "Kansas",
+      "countryCode": "USA",
+      "stateCode": "KS",
+      "fips": "20",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:ky-us",
+      "type": "admin1",
+      "name": "Kentucky",
+      "countryCode": "USA",
+      "stateCode": "KY",
+      "fips": "21",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:la-us",
+      "type": "admin1",
+      "name": "Louisiana",
+      "countryCode": "USA",
+      "stateCode": "LA",
+      "fips": "22",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:me-us",
+      "type": "admin1",
+      "name": "Maine",
+      "countryCode": "USA",
+      "stateCode": "ME",
+      "fips": "23",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:md-us",
+      "type": "admin1",
+      "name": "Maryland",
+      "countryCode": "USA",
+      "stateCode": "MD",
+      "fips": "24",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:ma-us",
+      "type": "admin1",
+      "name": "Massachusetts",
+      "countryCode": "USA",
+      "stateCode": "MA",
+      "fips": "25",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:mi-us",
+      "type": "admin1",
+      "name": "Michigan",
+      "countryCode": "USA",
+      "stateCode": "MI",
+      "fips": "26",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:mn-us",
+      "type": "admin1",
+      "name": "Minnesota",
+      "countryCode": "USA",
+      "stateCode": "MN",
+      "fips": "27",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:ms-us",
+      "type": "admin1",
+      "name": "Mississippi",
+      "countryCode": "USA",
+      "stateCode": "MS",
+      "fips": "28",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:mo-us",
+      "type": "admin1",
+      "name": "Missouri",
+      "countryCode": "USA",
+      "stateCode": "MO",
+      "fips": "29",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:mt-us",
+      "type": "admin1",
+      "name": "Montana",
+      "countryCode": "USA",
+      "stateCode": "MT",
+      "fips": "30",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:ne-us",
+      "type": "admin1",
+      "name": "Nebraska",
+      "countryCode": "USA",
+      "stateCode": "NE",
+      "fips": "31",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:nv-us",
+      "type": "admin1",
+      "name": "Nevada",
+      "countryCode": "USA",
+      "stateCode": "NV",
+      "fips": "32",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:nh-us",
+      "type": "admin1",
+      "name": "New Hampshire",
+      "countryCode": "USA",
+      "stateCode": "NH",
+      "fips": "33",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:nj-us",
+      "type": "admin1",
+      "name": "New Jersey",
+      "countryCode": "USA",
+      "stateCode": "NJ",
+      "fips": "34",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:nm-us",
+      "type": "admin1",
+      "name": "New Mexico",
+      "countryCode": "USA",
+      "stateCode": "NM",
+      "fips": "35",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:ny-us",
+      "type": "admin1",
+      "name": "New York",
+      "countryCode": "USA",
+      "stateCode": "NY",
+      "fips": "36",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:nc-us",
+      "type": "admin1",
+      "name": "North Carolina",
+      "countryCode": "USA",
+      "stateCode": "NC",
+      "fips": "37",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:nd-us",
+      "type": "admin1",
+      "name": "North Dakota",
+      "countryCode": "USA",
+      "stateCode": "ND",
+      "fips": "38",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:oh-us",
+      "type": "admin1",
+      "name": "Ohio",
+      "countryCode": "USA",
+      "stateCode": "OH",
+      "fips": "39",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:ok-us",
+      "type": "admin1",
+      "name": "Oklahoma",
+      "countryCode": "USA",
+      "stateCode": "OK",
+      "fips": "40",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:or-us",
+      "type": "admin1",
+      "name": "Oregon",
+      "countryCode": "USA",
+      "stateCode": "OR",
+      "fips": "41",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:pa-us",
+      "type": "admin1",
+      "name": "Pennsylvania",
+      "countryCode": "USA",
+      "stateCode": "PA",
+      "fips": "42",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:ri-us",
+      "type": "admin1",
+      "name": "Rhode Island",
+      "countryCode": "USA",
+      "stateCode": "RI",
+      "fips": "44",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:sc-us",
+      "type": "admin1",
+      "name": "South Carolina",
+      "countryCode": "USA",
+      "stateCode": "SC",
+      "fips": "45",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:sd-us",
+      "type": "admin1",
+      "name": "South Dakota",
+      "countryCode": "USA",
+      "stateCode": "SD",
+      "fips": "46",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:tn-us",
+      "type": "admin1",
+      "name": "Tennessee",
+      "countryCode": "USA",
+      "stateCode": "TN",
+      "fips": "47",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:tx-us",
+      "type": "admin1",
+      "name": "Texas",
+      "countryCode": "USA",
+      "stateCode": "TX",
+      "fips": "48",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:ut-us",
+      "type": "admin1",
+      "name": "Utah",
+      "countryCode": "USA",
+      "stateCode": "UT",
+      "fips": "49",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:vt-us",
+      "type": "admin1",
+      "name": "Vermont",
+      "countryCode": "USA",
+      "stateCode": "VT",
+      "fips": "50",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:va-us",
+      "type": "admin1",
+      "name": "Virginia",
+      "countryCode": "USA",
+      "stateCode": "VA",
+      "fips": "51",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:wa-us",
+      "type": "admin1",
+      "name": "Washington",
+      "countryCode": "USA",
+      "stateCode": "WA",
+      "fips": "53",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:wv-us",
+      "type": "admin1",
+      "name": "West Virginia",
+      "countryCode": "USA",
+      "stateCode": "WV",
+      "fips": "54",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:wi-us",
+      "type": "admin1",
+      "name": "Wisconsin",
+      "countryCode": "USA",
+      "stateCode": "WI",
+      "fips": "55",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
+    },
+    {
+      "id": "admin1:wy-us",
+      "type": "admin1",
+      "name": "Wyoming",
+      "countryCode": "USA",
+      "stateCode": "WY",
+      "fips": "56",
+      "source": {
+        "name": "U.S. Census state identity / FIPS reference",
+        "status": "identity-reference; boundary-geometry-pending"
+      }
     }
   ],
   "placeRelations": [
-    { "from": "city:houston-us-tx", "to": "admin1:texas-us", "type": "located-in" },
-    { "from": "admin1:texas-us", "to": "country:USA", "type": "located-in" },
-    { "from": "country:USA", "to": "country:CAN", "type": "shares-land-border-with" },
-    { "from": "country:USA", "to": "country:MEX", "type": "shares-land-border-with" },
-    { "from": "country:MEX", "to": "country:BLZ", "type": "shares-land-border-with" },
-    { "from": "country:MEX", "to": "country:GTM", "type": "shares-land-border-with" },
-    { "from": "country:BLZ", "to": "country:GTM", "type": "shares-land-border-with" }
+    {
+      "from": "city:houston-us-tx",
+      "to": "admin1:texas-us",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:texas-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "country:USA",
+      "to": "country:CAN",
+      "type": "shares-land-border-with"
+    },
+    {
+      "from": "country:USA",
+      "to": "country:MEX",
+      "type": "shares-land-border-with"
+    },
+    {
+      "from": "country:MEX",
+      "to": "country:BLZ",
+      "type": "shares-land-border-with"
+    },
+    {
+      "from": "country:MEX",
+      "to": "country:GTM",
+      "type": "shares-land-border-with"
+    },
+    {
+      "from": "country:BLZ",
+      "to": "country:GTM",
+      "type": "shares-land-border-with"
+    },
+    {
+      "from": "admin1:al-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:ak-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:az-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:ar-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:ca-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:co-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:ct-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:de-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:fl-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:ga-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:hi-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:id-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:il-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:in-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:ia-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:ks-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:ky-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:la-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:me-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:md-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:ma-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:mi-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:mn-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:ms-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:mo-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:mt-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:ne-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:nv-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:nh-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:nj-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:nm-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:ny-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:nc-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:nd-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:oh-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:ok-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:or-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:pa-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:ri-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:sc-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:sd-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:tn-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:ut-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:vt-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:va-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:wa-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:wv-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:wi-us",
+      "to": "country:USA",
+      "type": "located-in"
+    },
+    {
+      "from": "admin1:wy-us",
+      "to": "country:USA",
+      "type": "located-in"
+    }
   ],
   "transportConnections": [],
   "coverage": {
     "rootCity": "Houston, Texas, United States",
-    "seededCountryNodes": ["USA", "CAN", "MEX", "BLZ", "GTM"],
+    "seededCountryNodes": [
+      "USA",
+      "CAN",
+      "MEX",
+      "BLZ",
+      "GTM"
+    ],
     "globalCountryInventoryLoaded": false,
     "globalBoundaryGeometryLoaded": false,
     "crossingAndTransportGraphLoaded": false,
@@ -85,7 +989,15 @@
       "This is a deliberately small North America starter graph, not a complete world country registry.",
       "Shared land borders establish geographic adjacency only; they do not assert a legal crossing, open border, pedestrian route, road connection, or travel permission.",
       "Island and non-contiguous countries require separately sourced ferry, maritime, air, bridge, tunnel, or other transport edges.",
-      "Do not create AO room geometry from these identity records until source boundary and street geometry are imported and validated."
-    ]
+      "Do not create AO room geometry from these identity records until source boundary and street geometry are imported and validated.",
+      "All 50 U.S. state identities are seeded as administrative children of the United States; this does not mean their boundary geometries or roads have been imported.",
+      "Texas is the first statewide road-ingestion target after Houston; statewide and national street coverage must be measured by source, date, feature count, missing geometry, and geographic gaps.",
+      "Use authoritative state/local road sources where available and a consistent national road-centerline backbone for continuity; retain source-specific IDs and never merge records solely by matching street names.",
+      "Federal/state highways, local streets, private roads, pedestrian paths, crossings, and rail/air/maritime transport are distinct feature classes and must not be conflated."
+    ],
+    "usStateIdentityCount": 50,
+    "usStateBoundaryGeometryLoaded": false,
+    "texasRoadCoverageLoaded": false,
+    "nationalRoadCoverageLoaded": false
   }
 }
