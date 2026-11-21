@@ -4,19 +4,27 @@
 Diagnostic evidence only; does not modify the road graph or assert routing connectivity.
 """
 from __future__ import annotations
-import argparse, datetime as dt, json, time, urllib.parse, urllib.request
+import argparse, datetime as dt, json, time, urllib.parse, urllib.request, urllib.error
 from pathlib import Path
 
 BASE = "https://geogimsms.houstontx.gov/arcgis/rest/services/HPC/LandbaseAndRoads_hpc/MapServer"
 LAYERS = {"nodes": 10, "links": 12}
 
-def request_json(url, post=None, timeout=90):
+def request_json(url, post=None, timeout=90, attempts=4):
     data = urllib.parse.urlencode(post).encode() if post is not None else None
     req = urllib.request.Request(url, data=data, headers={"User-Agent":"AO-Houston-Topology-Audit/1.0"})
-    with urllib.request.urlopen(req, timeout=timeout) as res:
-        obj=json.loads(res.read())
-    if "error" in obj: raise RuntimeError(f"ArcGIS error: {obj['error']}")
-    return obj
+    last_error = None
+    for attempt in range(attempts):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as res:
+                obj=json.loads(res.read())
+            if "error" in obj: raise RuntimeError(f"ArcGIS error: {obj['error']}")
+            return obj
+        except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+            last_error = exc
+            if attempt+1 < attempts:
+                time.sleep(min(2**attempt, 8))
+    raise RuntimeError(f"ArcGIS request failed after {attempts} attempts: {last_error}")
 
 def get_json(url, timeout=90): return request_json(url, timeout=timeout)
 def post_json(url, params, timeout=90): return request_json(url, params, timeout)
@@ -32,7 +40,9 @@ def acquire(name, layer_id, outdir, batch_size=500, timeout=90, pause=0.1):
         "where":"1=1","returnCountOnly":"true","f":"json"
     }), timeout)
     expected=count_payload.get("count")
-    if expected is None or len(ids)!=expected: raise RuntimeError(f"{name} ID/count mismatch: {len(ids)} vs {expected}")
+    oid_field=meta.get("objectIdField") or meta.get("objectIdFieldName")
+    if not oid_field: raise RuntimeError(f"{name} metadata missing object ID field")
+    if expected is None or len(ids)!=expected: raise RuntimeError(f"{name} ID/count mismatch: {len(ids)} vs {expected")}
     features=[]
     seen=set()
     for off in range(0,len(ids),batch_size):
@@ -44,8 +54,9 @@ def acquire(name, layer_id, outdir, batch_size=500, timeout=90, pause=0.1):
         page=payload.get("features")
         if not isinstance(page,list) or len(page)!=len(batch): raise RuntimeError(f"{name} incomplete batch at {off}")
         for f in page:
-            oid=f.get("properties",{}).get("OBJECTID")
-            if oid is None or oid in seen: raise RuntimeError(f"{name} missing/duplicate OBJECTID {oid}")
+            props=f.get("properties") or {}
+            oid=props.get(oid_field)
+            if oid is None or oid in seen: raise RuntimeError(f"{name} missing/duplicate {oid_field} {oid}")
             seen.add(oid)
             features.append(f)
         print(f"{name}: {len(features):,}/{len(ids):,}")
@@ -55,7 +66,7 @@ def acquire(name, layer_id, outdir, batch_size=500, timeout=90, pause=0.1):
     outdir.mkdir(parents=True,exist_ok=True)
     (outdir/f"{name}.geojson").write_text(json.dumps(collection),encoding="utf-8")
     return {"layer_id":layer_id,"service_url":BASE,"feature_count":len(features),
-            "object_id_field":meta.get("objectIdField"),"global_id_field":meta.get("globalIdField"),
+            "object_id_field":oid_field,"global_id_field":meta.get("globalIdField"),
             "fields":[{"name":x["name"],"type":x["type"]} for x in meta.get("fields",[])],
             "source_spatial_reference":meta.get("spatialReference") or meta.get("extent",{}).get("spatialReference"),
             "output_spatial_reference":"EPSG:4326","snapshot_utc":dt.datetime.now(dt.timezone.utc).isoformat()}
