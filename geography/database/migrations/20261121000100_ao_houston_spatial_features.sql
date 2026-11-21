@@ -58,6 +58,25 @@ create table ao_spatial.spatial_profiles (
 comment on table ao_spatial.spatial_profiles is
 'Versioned coordinate contracts. Changing origin, CRS, axis, unit or scale requires a new profile version and migration plan.';
 
+-- Register the matching machine-readable draft profile. Null origin is intentional.
+insert into ao_spatial.spatial_profiles (
+    profile_key, profile_version, profile_state, horizontal_working_crs,
+    horizontal_unit, metres_per_unit_numerator, metres_per_unit_denominator,
+    origin_easting, origin_northing, ao_axis_x, ao_axis_y, ao_axis_z,
+    ao_subunits_per_metre, surface_cell_size_mm, chunk_size_cells,
+    rounding_rule, source_to_working_crs_pipeline,
+    working_crs_to_ao_pipeline, vertical_crs, vertical_unit,
+    horizontal_accuracy_budget_m, approval_record
+) values (
+    'houston', 1, 'draft', 'EPSG:2278',
+    'US survey foot', 1200, 3937,
+    null, null, 'east', 'south', 'up',
+    1000, 1000, 64,
+    'decimal_round_half_away_from_zero', null,
+    'local-origin-and-axis-conversion-v1', null, null,
+    null, '{"status":"not_approved","kernel_approved":false}'::jsonb
+);
+
 create or replace function ao_spatial.guard_approved_profile_update()
 returns trigger
 language plpgsql
