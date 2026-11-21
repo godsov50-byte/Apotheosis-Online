@@ -192,7 +192,8 @@ begin
   v_to := p_event->'to';
 
   if v_world_id is null or v_entity_id is null or
-     jsonb_typeof(v_from) <> 'object' or jsonb_typeof(v_to) <> 'object' then
+     jsonb_typeof(v_from) is distinct from 'object'
+     or jsonb_typeof(v_to) is distinct from 'object' then
     raise exception 'Transition is missing world, entity, origin or destination';
   end if;
 
@@ -200,7 +201,8 @@ begin
     raise exception 'Destination address does not match transition payload';
   end if;
 
-  if v_from->>'worldId' <> v_world_id or v_to->>'worldId' <> v_world_id then
+  if v_from->>'worldId' is distinct from v_world_id
+     or v_to->>'worldId' is distinct from v_world_id then
     raise exception 'Transition address belongs to another world';
   end if;
 
@@ -222,7 +224,7 @@ begin
 
   v_chunk_id := p_destination_chunk->>'id';
   if v_chunk_id is null
-     or v_chunk_id <> p_destination_address->>'chunkId'
+     or v_chunk_id is distinct from p_destination_address->>'chunkId'
      or p_destination_chunk->>'worldId' is distinct from v_world_id
      or p_destination_chunk->>'regionId' is distinct from p_destination_address->>'regionId'
      or p_destination_chunk->>'layer' is distinct from p_destination_address->>'layer' then
