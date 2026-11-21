@@ -446,7 +446,8 @@ export function createSpatialRepository(adapter) {
         event.destinationAddressKey !== spatialAddressKey(event.to)) {
       throw new Error("Transition address keys do not match their address payloads");
     }
-    const destinationChunk = await loadChunk(event.to);
+    const existingChunk = await adapter.getChunk(event.to.chunkId);
+    const destinationChunk = existingChunk || createChunkRecord(event.to);
     await adapter.commitTransitionAtomic({
       event: clone(event),
       destinationAddress: clone(event.to),
