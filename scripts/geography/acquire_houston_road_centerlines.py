@@ -47,9 +47,22 @@ def get_json(url: str, timeout: int, retries: int = 4) -> dict[str, Any]:
             if "error" in payload:
                 raise RuntimeError(f"ArcGIS error: {payload['error']}")
             return payload
+        except urllib.error.HTTPError as exc:
+            # A 4xx response is deterministic; retrying it only wastes time and
+            # hides the actual ArcGIS endpoint/query that failed.
+            try:
+                detail = exc.read(1200).decode("utf-8", errors="replace")
+            except Exception:
+                detail = ""
+            raise RuntimeError(
+                f"HTTP {exc.code} {exc.reason} for {url}."
+                + (f" Response: {detail[:1200]}" if detail else "")
+            ) from exc
         except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
             if attempt + 1 == retries:
-                raise RuntimeError(f"Request failed after {retries} attempts: {exc}") from exc
+                raise RuntimeError(
+                    f"Request failed after {retries} attempts for {url}: {exc}"
+                ) from exc
             time.sleep(2 ** attempt)
     raise AssertionError("unreachable")
 
