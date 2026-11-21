@@ -208,8 +208,8 @@ export function createBrowserStagingSpatialAdapter(storage, {
   };
   const write = state => storage.setItem(key, JSON.stringify(state));
   return Object.freeze({
-    async getChunk() { return null; },
-    async putChunk() {},
+    async getChunk(chunkId) { return read().chunks[chunkId] || null; },
+    async putChunk(chunk) { const state = read(); state.chunks[chunk.id] = clone(chunk); write(state); },
     async getEntityAddress(entityId) { return read().positions[entityId] || null; },
     async seedEntityAddress(entityId, address) {
       entityId = nonEmpty(entityId, "entityId");
