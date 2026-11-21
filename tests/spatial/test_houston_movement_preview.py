@@ -54,6 +54,13 @@ class HoustonMovementPreviewTests(unittest.TestCase):
         self.assertIn("function selectBuilding(bid){clearMovementPreview();", self.script)
         self.assertIn("function clearMovementPreview", self.script)
 
+    def test_exterior_interior_portal_and_local_persistence_are_wired(self):
+        for value in ("ao-building-transitions.mjs", "bindInteriorThreshold", "createBuildingPortal", "resolveBuildingPortalTransition", "createSpatialRepository", "commitSpatialTransition", "aoHoustonSpatialTransitionsV1"):
+            with self.subTest(value=value):
+                self.assertIn(value, self.script)
+        self.assertIn("insideBuilding", self.script)
+        self.assertIn("No Kernel, WorldHeart or Supabase writes occur", self.html)
+
 
 if __name__ == "__main__":
     unittest.main()
