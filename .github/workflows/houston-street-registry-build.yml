@@ -2,6 +2,13 @@ name: AO Houston street registry snapshot
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/houston-street-registry-build.yml"
+      - "scripts/geography/acquire_houston_road_centerlines.py"
+      - "scripts/geography/build_houston_street_registry.py"
 
 permissions:
   contents: read
