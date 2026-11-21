@@ -8,6 +8,13 @@ on:
       - "scripts/geography/acquire_houston_city_limits.py"
       - "scripts/geography/audit_houston_building_footprints.py"
       - ".github/workflows/houston-building-footprint-audit.yml"
+  pull_request:
+    branches:
+      - feature/upper-gulf-coast-geography
+    paths:
+      - "scripts/geography/acquire_houston_city_limits.py"
+      - "scripts/geography/audit_houston_building_footprints.py"
+      - ".github/workflows/houston-building-footprint-audit.yml"
   workflow_dispatch:
 
 permissions:
