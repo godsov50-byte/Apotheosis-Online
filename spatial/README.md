@@ -61,6 +61,35 @@ Altitude is stored as Y in metres, but its vertical datum must be supplied and g
 
 GPS is an input source, not an authority. Device readings can be inaccurate, spoofed, unavailable indoors, or stale. The Kernel must validate movement, speed, access, collision, permissions, and transition legality before committing a new entity address.
 
+## Address-point entrance anchors and map signs
+
+\`resolveAddressAnchor()\` turns a source address point into a stable AO entrance-anchor record and a presentation marker.
+
+- The anchor retains the exact WGS84 address-point latitude/longitude and its source ID/version.
+- The anchor is resolved through the configured geographic region into the same deterministic chunk, tile and cell hierarchy used by other world positions.
+- The small location sign references that anchor and its spatial-address key. It does not create a second world position, collision body, or route origin.
+- A visual offset such as 24 screen pixels upward is presentation-only. It never changes the stored coordinate or tile assignment.
+- Two address points on opposite sides of a road remain separate anchors with their own source coordinates.
+- A 2D address point does not provide surveyed elevation. The resolver uses the region's local vertical reference plane for indexing and explicitly marks the physical vertical position as unknown.
+
+The anchor ID is stable for the AO address ID within its world and region. Source corrections should create a versioned coordinate/relocation record in the integrating persistence layer; this pure resolver does not silently mutate history or persist records.
+
+Example:
+
+\`\`\`js
+const anchor = resolver.resolveAddressAnchor({
+  addressId: "ao-address-100",
+  sourceId: "COH_SiteAddresses:OBJECTID:100",
+  sourceVersion: "source-snapshot-id",
+  latitude: 29.761,
+  longitude: -95.369,
+  regionId: "houston-test"
+});
+
+// The marker points to anchor.spatialAddressKey.
+// Its screen offset affects rendering only, never world coordinates.
+\`\`\`
+
 ## Interiors and buildings
 
 \`resolveInterior()\` creates a local coordinate namespace for a building and floor. It keeps the exterior address key as a reference and records the building/floor/room identity. The interior grid is not confused with the geographic road grid, but it remains attached to the building's physical location.
