@@ -30,8 +30,8 @@ except ImportError as exc:  # pragma: no cover - exercised in workflow
     raise SystemExit("Install requirements: pip install shapely") from exc
 
 FOOTPRINT_LAYER = (
-    "https://geohwp.houstontx.gov/arcgis/rest/services/"
-    "02_BaseData_Boundaries/Other/FeatureServer/4"
+    "https://services.arcgis.com/lqRTrQp2HrfnJt8U/ArcGIS/rest/services/"
+    "Texas_BuildingFootprints/FeatureServer/0"
 )
 BOUNDARY_SOURCE = (
     "https://www.gis.hctx.net/arcgis/rest/services/"
@@ -148,92 +148,26 @@ def esri_geometry(geojson_geometry: dict) -> dict:
     return {"rings": rings, "spatialReference": {"wkid": 4326}}
 
 
-def query_footprints(oid_field: str, raw_polygons: list[dict], pause: float):
+def query_footprint_count(raw_polygons: list[dict]) -> int:
     from shapely.ops import unary_union
 
-    # One dissolved service-area geometry avoids hundreds of repeated requests
-    # for the 751 boundary components while preserving the exact union.
     combined_geometry = mapping(unary_union([shape(item) for item in raw_polygons]))
-    seen: dict[int, dict] = {}
-    for polygon_number, geometry in enumerate([combined_geometry], start=1):
-        offset = 0
-        while True:
-            page = post_json(
-                FOOTPRINT_LAYER + "/query",
-                {
-                    "where": "1=1",
-                    "geometry": json.dumps(esri_geometry(geometry), separators=(",", ":")),
-                    "geometryType": "esriGeometryPolygon",
-                    "inSR": "4326",
-                    "spatialRel": "esriSpatialRelIntersects",
-                    "outFields": "*",
-                    "returnGeometry": "true",
-                    "outSR": "4326",
-                    "f": "geojson",
-                    "orderByFields": f"{oid_field} ASC",
-                    "resultOffset": str(offset),
-                    "resultRecordCount": str(PAGE_SIZE),
-                },
-            )
-            batch = page.get("features")
-            if not isinstance(batch, list):
-                raise RuntimeError(f"No feature array at polygon {polygon_number}, offset {offset}.")
-            if not batch:
-                if page.get("exceededTransferLimit") is True:
-                    raise RuntimeError(
-                        f"Transfer limit reported with empty page at polygon {polygon_number}, offset {offset}."
-                    )
-                break
-            for feature in batch:
-                properties = feature.get("properties") or {}
-                raw_id = properties.get(oid_field)
-                if raw_id is None:
-                    raise RuntimeError(f"Footprint missing {oid_field}.")
-                source_id = int(raw_id)
-                if not feature.get("geometry"):
-                    raise RuntimeError(f"Footprint {source_id} has no geometry.")
-                seen.setdefault(source_id, feature)
-            offset += len(batch)
-            if len(batch) < PAGE_SIZE:
-                break
-            time.sleep(pause)
-        time.sleep(pause)
-    return list(seen.values())
-
-
-def audit(features: list[dict], raw_polygons: list[dict], oid_field: str):
-    from shapely.ops import unary_union
-
-    city = unary_union([shape(geometry) for geometry in raw_polygons])
-    city_prepared = prep(city)
-    inside = []
-    boundary_intersections = []
-    invalid = 0
-    for feature in features:
-        props = feature.get("properties") or {}
-        geometry = shape(feature["geometry"])
-        if geometry.is_empty or not geometry.is_valid:
-            invalid += 1
-            continue
-        centroid = geometry.representative_point()
-        record = {
-            "source_object_id": props[oid_field],
-            "parcel_id": props.get("PARCEL_ID") or props.get("HGAC_Parcel_Number"),
-        }
-        if city_prepared.covers(centroid):
-            inside.append(record)
-        else:
-            boundary_intersections.append(record)
-    return {
-        "unique_intersecting_source_features": len(features),
-        "centroid_inside_city_limits": len(inside),
-        "intersecting_but_centroid_outside": len(boundary_intersections),
-        "invalid_or_empty_geometries_skipped": invalid,
-        "inside_features_with_parcel_id": sum(1 for row in inside if row["parcel_id"]),
-        "distinct_parcel_ids_inside": len({row["parcel_id"] for row in inside if row["parcel_id"]}),
-        "inside_feature_ids": inside,
-        "boundary_intersection_feature_ids": boundary_intersections,
-    }
+    response = post_json(
+        FOOTPRINT_LAYER + "/query",
+        {
+            "where": "1=1",
+            "geometry": json.dumps(esri_geometry(combined_geometry), separators=(",", ":")),
+            "geometryType": "esriGeometryPolygon",
+            "inSR": "4326",
+            "spatialRel": "esriSpatialRelIntersects",
+            "returnCountOnly": "true",
+            "f": "json",
+        },
+    )
+    count = response.get("count")
+    if not isinstance(count, int) or count < 0:
+        raise RuntimeError(f"ArcGIS did not return a valid footprint count: {response}")
+    return count
 
 
 def main():
@@ -273,41 +207,38 @@ def main():
         raise SystemExit("No Full/Limited Service city-limit polygons found.")
 
     metadata = get_json(FOOTPRINT_LAYER, {"f": "pjson"})
-    oid_field = validate_footprint_source(metadata)
-    features = query_footprints(oid_field, raw_polygons, args.pause)
-    report = audit(features, raw_polygons, oid_field)
-    report.update({
-        "source_name": "H-GAC Building Footprints 2018 (City of Houston GeoHub republish)",
+    validate_footprint_source(metadata)
+    count = query_footprint_count(raw_polygons)
+    report = {
+        "source_name": "Microsoft US Building Footprints (Texas layer)",
         "source_url": FOOTPRINT_LAYER,
-        "source_layer_last_updated": "2022-01-25",
-        "source_description": (
-            "2018 LiDAR-derived Harris County building footprints; source warns "
-            "that some features may be false positives from LiDAR classification."
-        ),
-        "source_copyright": "Houston-Galveston Area Council and Esri",
-        "source_vintage": "2018 LiDAR; Harris County delivery 2019-06-24; republished layer last updated 2022-01-25",
+        "source_description": "Building footprints extracted from 2019-2020 imagery; Microsoft-licensed Open Database License (ODbL).",
+        "source_vintage": "2019-2020 imagery",
+        "source_copyright": "Microsoft",
         "boundary_source": BOUNDARY_SOURCE,
         "boundary_classes_included": ["FULL", "LIMITED"],
         "boundary_classes_excluded": ["PENDING"],
+        "boundary_feature_count": len(raw_polygons),
         "retrieved_at": datetime.now(timezone.utc).isoformat(),
+        "unique_footprint_features_intersecting_city_limits": count,
         "count_definition": (
-            "Unique source footprint features intersecting Full/Limited Service "
-            "Houston city-limit polygons, counted as inside when the feature's "
-            "representative point lies within the union of those polygons."
+            "ArcGIS returnCountOnly count of unique source footprint polygon features "
+            "intersecting the union of Full/Limited Service Houston city-limit polygons. "
+            "This is a source-footprint count, not a verified count of distinct physical buildings."
         ),
+        "source_full_extent": metadata.get("fullExtent"),
+        "source_spatial_reference": metadata.get("extent", {}).get("spatialReference"),
         "limitations": [
-            "2018 footprint vintage; not a current ground survey.",
-            "LiDAR classification may include false positives or omit structures.",
-            "A footprint is not necessarily one building, one address, or one business.",
-            "PARCEL_ID identifies a parcel, not a building; parcel counts are not building counts.",
-            "Multi-part structures and attached buildings may be represented as one or more polygons.",
-            "Counts are source-feature counts, not verified occupancy or building-use counts.",
+            "2019-2020 imagery vintage; not a current ground survey.",
+            "Automated imagery extraction can omit buildings or produce false positives.",
+            "One footprint feature is not guaranteed to equal one physically distinct building.",
+            "The count includes polygons intersecting the city boundary, including any edge-touching features.",
+            "Building use, occupancy, floors, entrances, and business tenancy are not supplied by this count.",
             "Pending city-limit areas are excluded.",
         ],
-    })
-    (out / "houston-building-footprints.geojson").write_text(
-        json.dumps({"type": "FeatureCollection", "features": features}, separators=(",", ":")) + "\n",
-        encoding="utf-8",
+    }
+    (out / "source-layer-metadata.json").write_text(
+        json.dumps(metadata, indent=2) + "\\n", encoding="utf-8"
     )
     (out / "building-footprint-audit.json").write_text(
         json.dumps(report, indent=2) + "\n", encoding="utf-8"
