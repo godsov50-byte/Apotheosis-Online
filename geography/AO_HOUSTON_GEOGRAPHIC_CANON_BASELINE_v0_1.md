@@ -41,13 +41,17 @@ The publisher describes this as its road-centerline database for Houston and its
 
 The service metadata reports spatial reference **102740 / EPSG:2278 (Texas South Central, US survey feet)** and a maximum query record count of 2,000.
 
-Previously recorded extraction figures in the repository's working source manifest:
-- 83,760 road features, including 11 with null geometry.
-- A geometry-derived candidate graph of 84,267 edges and 63,923 nodes.
-- 607 connected components; largest component 58,010 nodes.
-- A separate audit identified 2,672 possible interior line crossings using a 2.0 m endpoint exclusion threshold.
+Acquired source snapshot (2026-11-21):
+- 83,760 source records and 83,760 unique OBJECTIDs / GlobalIDs.
+- 83,749 records with geometry; 11 records with null geometry (preserved, not fabricated).
+- Source data last-edit timestamp reported by the service: 2026-09-25T18:08:41.727Z.
+- Source CRS EPSG:2278 (US survey feet); downloaded geometry EPSG:4326, longitude/latitude.
+- Source geometry SHA-256: `1de423c634c05a36e79df99e7e33710c799a0eb9d2abdbb10f18abbfa11c8b1d`.
+- Source artifact archive SHA-256: `bf756e2658cbc8c924fad412ea128e3dbef7f1d78832a11f7d8f528f5c135c9c`.
+- Deterministic registry: 83,760 segments, 17,287 name groups, 17,210 distinct named labels, 50 unnamed segments.
+- Workflow run: https://github.com/godsov50-byte/Apotheosis-Online/actions/runs/44931115238; artifact ID `14717154555`.
 
-**Locked handling:** the source is a road-centerline reference, not road-surface geometry or a pedestrian navigation graph. The counts above are historical extraction/audit results, not a newly reproduced snapshot in this commit. Candidate graph intersections and connectivity are not confirmed legal or physical crossings. Private, access and proposed roads must retain their source classifications and must not be assumed publicly traversable.
+**Locked handling:** this exact acquired snapshot is accepted as source-backed road-centerline evidence for the source query scope stated above. It is not a road-surface geometry or pedestrian navigation graph. Null geometries remain missing. Candidate graph intersections and connectivity are not confirmed legal or physical crossings. Private, access and proposed roads retain their source classifications and must not be assumed publicly traversable. The artifact is currently held in GitHub Actions with a 30-day expiry; a permanent archive copy is still required before calling the dataset durably archived.
 
 ### 2.3 Building footprints
 
@@ -133,7 +137,7 @@ A source snapshot is eligible for feature-level baseline acceptance only when it
 8. Transformation pipeline/version and validation report.
 9. Known omissions, caveats and reviewer/status.
 
-The current repository contains a working source manifest and source acquisition workflows, but the integrated-city-registry documentation states that source snapshots are not bundled and the manual acquisition workflow has not yet been run. Therefore this v0.1 lock records the source-backed reference framework and its known historical audit facts; it does not claim that the complete Houston feature dataset has been acquired or frozen.
+The road-centerline acquisition workflow has now completed successfully and produced the source snapshot and registry described in §2.2. This exact road snapshot is locked as source-backed evidence, subject to the source scope and limitations above. The artifact's current 30-day retention is temporary; a durable archive copy remains outstanding. The building-footprint acquisition is still running and is not yet accepted. No citywide completeness claim is made for buildings or other unacquired layers.
 
 ## 7. Relationship to AO spatial addressing
 
