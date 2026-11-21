@@ -179,6 +179,7 @@ export function createChunkRecord(address, { source = "resolver", status = "know
     grid: {
       chunkX: address.grid.chunkX,
       chunkY: address.grid.chunkY,
+      chunkZ: address.grid.chunkZ,
       chunkSizeM: address.grid.chunkSizeM,
       tileSizeM: address.grid.tileSizeM,
       cellSizeM: address.grid.cellSizeM
