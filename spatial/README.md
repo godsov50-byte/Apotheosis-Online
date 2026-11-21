@@ -45,7 +45,7 @@ The address also records:
 | Tile | 64 m × 64 m × 64 m |
 | Cell | 1 m × 1 m × 1 m |
 
-These are engineering defaults, not AO canon. Configure them per world/region. X, Y and Z all participate in the identifiers. An aerial position 120 m above ground therefore resolves to a different vertical tile/cell from the ground position even when its horizontal coordinates match.
+These are engineering defaults, not AO canon. Configure them per world/region. X, Y and Z all participate in the identifiers, and the spatial layer is part of the chunk/tile/cell namespace. An aerial position 120 m above ground therefore resolves to a different layer namespace and vertical tile/cell from the ground position even when its horizontal coordinates match.
 
 The identifiers use mathematical floor, including for negative coordinates, so positions west/south/below the region origin remain deterministic.
 
