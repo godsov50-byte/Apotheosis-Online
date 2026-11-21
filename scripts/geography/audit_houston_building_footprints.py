@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Acquire and audit Houston building footprints against official city limits.
 
-Primary footprint source: H-GAC 2018 LiDAR-derived Harris County building
-footprints (City of Houston GeoHub FeatureServer layer 4). Boundary source: Harris County GIS City of Houston limits
+Primary footprint source: Microsoft's statewide Texas building-footprint layer,
+extracted from 2019-2020 imagery and queried only within Houston city limits. Boundary source: Harris County GIS City of Houston limits
 (layer 2), acquired by acquire_houston_city_limits.py.
 
 The report counts unique source footprints whose centroid falls inside Full or
@@ -177,7 +177,6 @@ def main():
         default="build/houston-building-audit/houston-city-limits.geojson",
     )
     parser.add_argument("--out", default="build/houston-building-audit")
-    parser.add_argument("--pause", type=float, default=0.15)
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
 
