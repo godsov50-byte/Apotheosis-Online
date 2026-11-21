@@ -71,9 +71,9 @@ function projectGeographic(region, lat, lon, altitudeM = 0) {
   const dLat = (lat - region.originLat) * Math.PI / 180;
   const dLon = (lon - region.originLon) * Math.PI / 180;
   return {
-    x: EARTH_RADIUS_M * dLon * Math.cos(lat0),
-    y: EARTH_RADIUS_M * dLat,
-    z: altitudeM
+    x: EARTH_RADIUS_M * dLon * Math.cos(lat0), // east/west
+    y: altitudeM, // AO vertical axis
+    z: EARTH_RADIUS_M * dLat // north/south on AO ground plane
   };
 }
 
