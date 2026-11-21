@@ -15,7 +15,7 @@ This package is the shared addressing foundation intended to replace disconnecte
 Run tests from the repository root with:
 
 \`\`\`bash
-node --test spatial/ao-spatial-addressing.test.mjs
+node --test spatial/ao-spatial-addressing.test.mjs spatial/ao-spatial-movement.test.mjs
 \`\`\`
 
 Requires Node.js 18+ and no third-party JavaScript dependencies. A test-only Houston coordinate-frame example is provided at `spatial/examples/houston-test-region.json`; it is not an approved geographic boundary or production region registry.
@@ -136,6 +136,10 @@ The connected AO account currently exposes two different database models: the in
 4. Azimah narrates the committed result within the observer's permitted knowledge.
 
 The module is deliberately not allowed to write directly to Supabase or decide world truth. No client can promote a candidate road, entrance, room, chunk, or teleport destination into canon.
+
+## Movement engine staging slice
+
+See `spatial/SPATIAL_MOVEMENT_ENGINE_v0_1.md`. It adds an isolated deterministic route/movement module, but does not connect it to live Houston data, the browser builder, Kernel, WorldHeart, or Supabase.
 
 ## Not implemented by this first slice
 
