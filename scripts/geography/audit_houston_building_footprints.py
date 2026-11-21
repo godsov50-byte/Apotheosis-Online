@@ -301,8 +301,7 @@ def main():
         ],
     })
     (out / "houston-building-footprints.geojson").write_text(
-        json.dumps({"type": "FeatureCollection", "features": features}, separators=(",", ":")) + "
-",
+        json.dumps({"type": "FeatureCollection", "features": features}, separators=(",", ":")) + "\n",
         encoding="utf-8",
     )
     (out / "building-footprint-audit.json").write_text(
