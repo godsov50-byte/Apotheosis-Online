@@ -173,3 +173,99 @@ A fresh review of the City of Houston ArcGIS service metadata confirms the servi
 The service metadata describes the city-limit service types as Full Service, Limited Service, and Pending. A separate public view layer exposes the values FULL and LIMITED and was last edited in May 2025. Treat that view as a corroborating layer, not as proof that Pending records are absent from the authoritative source. Inspect the current source layer's actual fields and returned values during acquisition before filtering.
 
 The U.S. Census Bureau's 2024 TIGER/Line release is now available; its legal boundaries and names are stated as of January 1, 2024, with release date September 25, 2024. Use the 2024 vintage for the state boundary baseline. The purpose is a stable baseline, not real-time administrative change tracking.
+
+
+## 13. Upper Texas Gulf Coast natural geography extension
+
+**Regional scope:** Texas → upper Texas Gulf Coast → Trinity–San Jacinto Estuary (Galveston Bay) and neighboring coastal systems → Houston metropolitan area → City of Houston.
+
+Do not use the City of Houston boundary as the extent of the natural-geography model. Watersheds and river networks cross administrative boundaries and may extend hundreds of miles inland.
+
+### Distinct systems to represent
+
+- **Galveston Bay / Trinity–San Jacinto Estuary:** Trinity River, San Jacinto River, Buffalo Bayou, surrounding coastal watersheds, Trinity Bay, Galveston Bay, East Bay, West Bay, Houston Ship Channel, Gulf Intracoastal Waterway, and Gulf passes including Bolivar Roads and San Luis Pass.
+- **Neighboring coastal drainage systems:** Brazos River and San Bernard River systems are separate neighboring drainage systems. Do not connect them to Galveston Bay as though they were tributaries of the estuary.
+- **Coastal transition:** tidal rivers and bayous, estuarine waterbodies, wetlands, tidal flats, barrier islands, inlets/passes, nearshore Gulf waters, continental shelf, and deeper seafloor.
+- **Urban hydrology:** Buffalo Bayou, Brays Bayou, White Oak Bayou, Sims Bayou, and tributaries must be mapped as connected hydrographic features, with actual flow-network topology retained where the source provides it.
+
+### Data sources selected for the globe extension
+
+| Layer | Selected source | Use and limitation |
+|---|---|---|
+| Major river basins | USGS WBD HUC-6, FeatureServer layer 3 | Major basin boundaries intersecting the regional study extent; neighboring basins remain separate. |
+| Subbasins | USGS WBD HUC-8, FeatureServer layer 4 | Regional subbasin boundaries; not a substitute for a fully delineated Galveston Bay watershed polygon. |
+| Rivers, canals, drainageways | USGS 3DHP_all Flowline, FeatureServer layer 50 | Flowline geometry and available feature type, flow direction, stream order, and length attributes. |
+| Waterbody edges | USGS 3DHP_all Waterbody, FeatureServer layer 60 | River and ocean/waterbody polygon edges for visualization; not a surveyed tidal-datum shoreline. |
+| Gulf seafloor visualization | Gulf of Mexico shaded-relief tile service maintained through GCOOS | Qualitative hillshade only. It is not an absolute-depth dataset. |
+| Canonical coastal elevation/depth | NOAA NCEI Coastal Relief Model and source bathymetric grids | Preferred source family for a later measured elevation/depth surface, retaining horizontal/vertical datum, resolution, survey lineage, and uncertainty. |
+
+USGS describes 3DHP as a national hydrography service with flowlines, hydrolocations, and waterbodies; where elevation-derived hydrography is not yet available, the service supplements with NHD data. The WBD provides hydrologic-unit boundaries. Preserve that source lineage and do not imply every feature is derived from a single uniform vintage.
+
+### Current globe implementation
+
+The downloadable globe has runtime layers for:
+- HUC-6 major basin boundaries;
+- HUC-8 subbasin boundaries;
+- river, canal, and drainageway flowlines;
+- clipped waterbody/ocean polygon boundary segments;
+- a low-zoom Gulf bathymetry shaded-relief mosaic;
+- focus controls for Houston, Galveston Bay, and the upper Gulf Coast;
+- independent visibility toggles for each natural-geography layer.
+
+The browser requests a bounded regional envelope (west -99.0°, south 25.2°, east -92.5°, north 34.5°). This is a visualization/query window, not the outer boundary of the Galveston Bay watershed. HUC-6 units returned by the service represent complete units intersecting the window; HUC-8 coverage is a regional subbasin view. The current view must not be described as a fully complete watershed inventory until upstream coverage and the exact estuary drainage-area definition are validated.
+
+The browser overlays are not canonical AO geography. They do not write to the AO Kernel, WorldHeart, or Supabase. The bathymetry overlay is hillshade and cannot be used to infer absolute depth. The coast and estuary boundaries are hydrography visualization edges, not a legal coastline or tidal-datum shoreline. All runtime layers require internet access.
+
+### Hydrologic integrity requirements
+
+- A watershed is a terrain-derived drainage area, not a circular buffer or city outline.
+- Basin/subbasin boundaries and flowline geometry must retain source IDs and hydrologic unit codes.
+- Flow direction, confluences, divergences, terminals, waterbody outlets, and network connectivity must be represented as distinct relationships where source attributes support them.
+- Do not infer flow connectivity merely because two lines visually touch; preserve grade, culvert, connector, and waterbody transitions where available.
+- Freshwater inflow and tidal/saltwater exchange are different processes. Galveston Bay is an estuary, not a freshwater lake or a simple river mouth.
+- The Trinity, San Jacinto, and Buffalo Bayou are major freshwater contributors identified by NOAA; the TWDB describes the estuary as including Trinity Bay, Galveston Bay, East Bay, West Bay, and Gulf passes at Bolivar Roads, San Luis Pass, and Rollover Pass.
+- Neighboring Brazos and San Bernard coastal systems remain separate unless a validated hydrologic connection is present.
+- Bathymetry must retain depth values, units, vertical datum, resolution, source surveys, interpolation method, and uncertainty. A shaded-relief image is visualization only.
+- Coastlines, shorelines, tidal boundaries, wetlands, and barrier islands are separate feature types and must be versioned independently.
+
+### Source references
+
+- USGS 3DHP access and products: https://www.usgs.gov/3d-hydrography-program/access-3dhp-data-products
+- USGS WBD/National Hydrography access: https://www.usgs.gov/national-hydrography/access-national-hydrography-products
+- Texas Water Development Board, Trinity–San Jacinto Estuary: https://www.twdb.texas.gov/surfacewater/bays/major_estuaries/trinity_san_jacinto/
+- NOAA NCEI Coastal Relief Model: https://www.ncei.noaa.gov/products/coastal-relief-model
+- Gulf bathymetry shaded-relief service: https://tiles.arcgis.com/tiles/qr14biwnHA6Vis6l/arcgis/rest/services/Shaded_Relief_Visualization_of_Gulf_of_Mexico_Bathymetry/MapServer
+
+
+### Wetlands and coastal habitat layer
+
+The globe includes an optional USFWS National Wetlands Inventory (NWI) polygon-boundary overlay for:
+- Estuarine and Marine Wetland;
+- Freshwater Emergent Wetland;
+- Freshwater Forested/Shrub Wetland.
+
+Wetland boundaries are outlined and styled by broad class; they are not rendered as filled habitat polygons. The source is the USFWS NWI REST Map Service, which the Service says is updated biannually. NWI is a mapped inventory with scale and aerial-imagery detection limitations; it is not a complete ecological inventory and must not be used alone for regulatory wetland determinations. Retain project metadata, imagery dates, mapping scale, and source vintage when importing these features into the canonical registry.
+
+Source: https://www.fws.gov/program/national-wetlands-inventory/web-mapping-services
+
+## 14. Geographic positioning and pedestrian travel preview
+
+The current implementation priority is to identify locations, determine their geographic positions, and estimate walking travel time between them. Advanced hydrologic, ecological, erosion, and bathymetric simulation is not required for this stage.
+
+### Immediate navigation requirements
+
+- Every place or geographic feature receives a stable AO identity and a geographic position or geometry appropriate to its type.
+- A point is a locator; a road, path, city, building, river, or region retains its actual geometry.
+- Pedestrian routing follows walkable streets, sidewalks, paths, crossings, bridges, and permitted connections. It must not assume that straight-line distance is a traversable route.
+- Report route distance separately from straight-line distance.
+- Estimate travel time from route distance and a baseline walking speed initially; later Kernel movement can modify speed using the character's capabilities, condition, terrain, and other relevant factors.
+- If no valid pedestrian route exists, report that rather than inventing a route or falling back silently to straight-line distance.
+- Preserve routing source, data vintage, route geometry, distance, duration, and calculation timestamp.
+
+### Current browser preview
+
+The downloadable globe now includes a coordinate-based pedestrian route preview using the FOSSGIS OSRM foot profile over OpenStreetMap data. It draws the returned route and reports route distance and the service's estimated walking duration. The route service requires internet access, has a published one-request-per-second usage limit, logs route requests, and is intended only for light, non-commercial use. It is a prototype dependency, not AO's production routing authority.
+
+The preview currently accepts longitude/latitude coordinate pairs. It does not yet provide place-name search, a saved place directory, or an AO-owned pedestrian network. No route is stored in the Kernel or WorldHeart. The returned time is an external baseline estimate, not an individual character's authoritative movement time.
+
+Source and usage policy: https://routing.openstreetmap.de/about.html
