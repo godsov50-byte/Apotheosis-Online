@@ -429,6 +429,16 @@ export function createSpatialRepository(adapter) {
 
   async function commitTransition(event) {
     if (!event || event.schemaVersion !== SPATIAL_SCHEMA_VERSION) throw new TypeError("Invalid transition event");
+    assertSpatialAddress(event.from);
+    assertSpatialAddress(event.to);
+    requiredString(event.entityId, "event.entityId");
+    if (event.worldId !== event.to.worldId || event.worldId !== event.from.worldId) {
+      throw new Error("Transition event world does not match its addresses");
+    }
+    if (event.originAddressKey !== spatialAddressKey(event.from) ||
+        event.destinationAddressKey !== spatialAddressKey(event.to)) {
+      throw new Error("Transition address keys do not match their address payloads");
+    }
     const destinationChunk = await loadChunk(event.to);
     await adapter.commitTransitionAtomic({
       event: clone(event),
