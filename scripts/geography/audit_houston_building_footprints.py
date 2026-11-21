@@ -1,0 +1,344 @@
+#!/usr/bin/env python3
+"""Acquire and audit Houston building footprints against official city limits.
+
+Primary footprint source: H-GAC 2018 LiDAR-derived Harris County building
+footprints (City of Houston GeoHub FeatureServer layer 4). Boundary source: Harris County GIS City of Houston limits
+(layer 2), acquired by acquire_houston_city_limits.py.
+
+The report counts unique source footprints whose centroid falls inside Full or
+Limited Service city-limit polygons. It separately reports intersecting
+footprints whose centroid is outside, because edge-crossing features should
+not silently inflate the in-boundary count. Pending boundary areas are excluded.
+This is a source-data audit, not a claim that every feature is a valid building.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import time
+import urllib.parse
+import urllib.request
+from collections import Counter
+from datetime import datetime, timezone
+from pathlib import Path
+
+try:
+    from shapely.geometry import shape, mapping, Polygon, MultiPolygon
+    from shapely.geometry.polygon import orient
+    from shapely.prepared import prep
+except ImportError as exc:  # pragma: no cover - exercised in workflow
+    raise SystemExit("Install requirements: pip install shapely") from exc
+
+FOOTPRINT_LAYER = (
+    "https://geohwp.houstontx.gov/arcgis/rest/services/"
+    "02_BaseData_Boundaries/Other/FeatureServer/4"
+)
+BOUNDARY_SOURCE = (
+    "https://www.gis.hctx.net/arcgis/rest/services/"
+    "CoH/CoH_Boundaries/MapServer/2"
+)
+PAGE_SIZE = 1000
+INCLUDED_SERVICE_TYPES = {"FULL", "LIMITED", "FULL SERVICE", "LIMITED SERVICE"}
+
+
+def get_json(url: str, params: dict[str, str] | None = None) -> dict:
+    if params:
+        url += ("&" if "?" in url else "?") + urllib.parse.urlencode(params)
+    request = urllib.request.Request(
+        url, headers={"User-Agent": "ApotheosisOnline-BuildingAudit/1.0"}
+    )
+    with urllib.request.urlopen(request, timeout=120) as response:
+        payload = json.load(response)
+    if not isinstance(payload, dict) or "error" in payload:
+        raise RuntimeError(f"ArcGIS request failed: {payload}")
+    return payload
+
+
+def post_json(url: str, params: dict[str, str]) -> dict:
+    data = urllib.parse.urlencode(params).encode("utf-8")
+    request = urllib.request.Request(
+        url,
+        data=data,
+        headers={
+            "User-Agent": "ApotheosisOnline-BuildingAudit/1.0",
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Accept": "application/json",
+        },
+        method="POST",
+    )
+    last_error = None
+    for attempt in range(4):
+        try:
+            with urllib.request.urlopen(request, timeout=180) as response:
+                raw = response.read()
+            try:
+                payload = json.loads(raw)
+            except json.JSONDecodeError as exc:
+                raise RuntimeError(
+                    f"ArcGIS returned a non-JSON response: {raw[:300]!r}"
+                ) from exc
+            if not isinstance(payload, dict) or "error" in payload:
+                raise RuntimeError(f"ArcGIS POST request failed: {payload}")
+            return payload
+        except Exception as exc:
+            last_error = exc
+            if attempt == 3:
+                break
+            time.sleep(2 ** (attempt + 1))
+    raise RuntimeError(f"ArcGIS POST failed after retries: {last_error}")
+
+
+def normalized_service_type(properties: dict) -> str:
+    value = properties.get("SERVICE_TY") or properties.get("SERVICE_TYPE") or ""
+    return " ".join(str(value).strip().upper().split())
+
+
+def load_city_polygons(path: Path):
+    document = json.loads(path.read_text(encoding="utf-8"))
+    features = document.get("features", [])
+    polygons = []
+    excluded = Counter()
+    for feature in features:
+        properties = feature.get("properties") or {}
+        service_type = normalized_service_type(properties)
+        geometry = feature.get("geometry")
+        if service_type in INCLUDED_SERVICE_TYPES and geometry:
+            polygon = shape(geometry)
+            if not polygon.is_empty and polygon.is_valid:
+                polygons.append(prep(polygon))
+            else:
+                raise RuntimeError(
+                    f"Invalid city-limit geometry for source feature "
+                    f"{properties.get('OBJECTID')}"
+                )
+        else:
+            excluded[service_type or "UNCLASSIFIED"] += 1
+    if not polygons:
+        raise RuntimeError(
+            "No valid Full/Limited Service city-limit polygons found. "
+            "Check source fields and boundary acquisition."
+        )
+    return polygons, dict(excluded)
+
+
+def validate_footprint_source(metadata: dict) -> str:
+    if metadata.get("geometryType") != "esriGeometryPolygon":
+        raise RuntimeError("Footprint source is not polygon geometry.")
+    fields = {field.get("name") for field in metadata.get("fields", [])}
+    oid = metadata.get("objectIdField") or metadata.get("objectIdFieldName")
+    if not oid:
+        oid_field = next(
+            (field.get("name") for field in metadata.get("fields", [])
+             if field.get("type") == "esriFieldTypeOID"),
+            None,
+        )
+        oid = oid_field
+    if not oid or oid not in fields:
+        raise RuntimeError("Could not identify the footprint source ObjectID field.")
+    formats = {
+        value.strip().lower()
+        for value in metadata.get("supportedQueryFormats", "").split(",")
+    }
+    if not ({"json", "geojson"} & formats):
+        raise RuntimeError("Source does not advertise JSON/GeoJSON query support.")
+    if metadata.get("advancedQueryCapabilities", {}).get("supportsPagination") is False:
+        raise RuntimeError("Source explicitly reports pagination unsupported.")
+    return oid
+
+
+def esri_geometry(geojson_geometry: dict) -> dict:
+    """Convert GeoJSON polygons to Esri rings with required shell/hole winding."""
+    geometry = shape(geojson_geometry)
+    if isinstance(geometry, Polygon):
+        polygons = [geometry]
+    elif isinstance(geometry, MultiPolygon):
+        polygons = list(geometry.geoms)
+    else:
+        raise RuntimeError(f"Unsupported city boundary geometry: {geometry.geom_type}")
+    rings = []
+    for polygon in polygons:
+        # Esri JSON expects clockwise exterior rings and counter-clockwise holes.
+        oriented = orient(polygon, sign=-1.0)
+        polygon_mapping = mapping(oriented)
+        rings.extend([list(ring) for ring in polygon_mapping["coordinates"]])
+    return {"rings": rings, "spatialReference": {"wkid": 4326}}
+
+
+def query_footprints(oid_field: str, raw_polygons: list[dict], pause: float):
+    from shapely.ops import unary_union
+
+    # One dissolved service-area geometry avoids hundreds of repeated requests
+    # for the 751 boundary components while preserving the exact union.
+    combined_geometry = mapping(unary_union([shape(item) for item in raw_polygons]))
+    seen: dict[int, dict] = {}
+    for polygon_number, geometry in enumerate([combined_geometry], start=1):
+        offset = 0
+        while True:
+            page = post_json(
+                FOOTPRINT_LAYER + "/query",
+                {
+                    "where": "1=1",
+                    "geometry": json.dumps(esri_geometry(geometry), separators=(",", ":")),
+                    "geometryType": "esriGeometryPolygon",
+                    "inSR": "4326",
+                    "spatialRel": "esriSpatialRelIntersects",
+                    "outFields": "*",
+                    "returnGeometry": "true",
+                    "outSR": "4326",
+                    "f": "geojson",
+                    "orderByFields": f"{oid_field} ASC",
+                    "resultOffset": str(offset),
+                    "resultRecordCount": str(PAGE_SIZE),
+                },
+            )
+            batch = page.get("features")
+            if not isinstance(batch, list):
+                raise RuntimeError(f"No feature array at polygon {polygon_number}, offset {offset}.")
+            if not batch:
+                if page.get("exceededTransferLimit") is True:
+                    raise RuntimeError(
+                        f"Transfer limit reported with empty page at polygon {polygon_number}, offset {offset}."
+                    )
+                break
+            for feature in batch:
+                properties = feature.get("properties") or {}
+                raw_id = properties.get(oid_field)
+                if raw_id is None:
+                    raise RuntimeError(f"Footprint missing {oid_field}.")
+                source_id = int(raw_id)
+                if not feature.get("geometry"):
+                    raise RuntimeError(f"Footprint {source_id} has no geometry.")
+                seen.setdefault(source_id, feature)
+            offset += len(batch)
+            if len(batch) < PAGE_SIZE:
+                break
+            time.sleep(pause)
+        time.sleep(pause)
+    return list(seen.values())
+
+
+def audit(features: list[dict], raw_polygons: list[dict], oid_field: str):
+    from shapely.ops import unary_union
+
+    city = unary_union([shape(geometry) for geometry in raw_polygons])
+    city_prepared = prep(city)
+    inside = []
+    boundary_intersections = []
+    invalid = 0
+    for feature in features:
+        props = feature.get("properties") or {}
+        geometry = shape(feature["geometry"])
+        if geometry.is_empty or not geometry.is_valid:
+            invalid += 1
+            continue
+        centroid = geometry.representative_point()
+        record = {
+            "source_object_id": props[oid_field],
+            "parcel_id": props.get("PARCEL_ID") or props.get("HGAC_Parcel_Number"),
+        }
+        if city_prepared.covers(centroid):
+            inside.append(record)
+        else:
+            boundary_intersections.append(record)
+    return {
+        "unique_intersecting_source_features": len(features),
+        "centroid_inside_city_limits": len(inside),
+        "intersecting_but_centroid_outside": len(boundary_intersections),
+        "invalid_or_empty_geometries_skipped": invalid,
+        "inside_features_with_parcel_id": sum(1 for row in inside if row["parcel_id"]),
+        "distinct_parcel_ids_inside": len({row["parcel_id"] for row in inside if row["parcel_id"]}),
+        "inside_feature_ids": inside,
+        "boundary_intersection_feature_ids": boundary_intersections,
+    }
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--city-limits",
+        default="build/houston-building-audit/houston-city-limits.geojson",
+    )
+    parser.add_argument("--out", default="build/houston-building-audit")
+    parser.add_argument("--pause", type=float, default=0.15)
+    parser.add_argument("--self-test", action="store_true")
+    args = parser.parse_args()
+
+    if args.self_test:
+        polygon_rings = esri_geometry({"type": "Polygon", "coordinates": [[[0, 0], [1, 0], [1, 1], [0, 0]]]})["rings"]
+        multi_rings = esri_geometry({"type": "MultiPolygon", "coordinates": [[[[0, 0], [1, 0], [0, 0]]]]})["rings"]
+        assert polygon_rings and multi_rings
+        assert len(polygon_rings[0]) >= 4
+        assert normalized_service_type({"SERVICE_TY": " full service "}) == "FULL SERVICE"
+        print("Building footprint audit self-test passed.")
+        return
+
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+    city_path = Path(args.city_limits)
+    if not city_path.exists():
+        raise SystemExit(
+            f"Missing {city_path}; first run scripts/geography/acquire_houston_city_limits.py."
+        )
+    city_document = json.loads(city_path.read_text(encoding="utf-8"))
+    raw_polygons = [
+        feature["geometry"] for feature in city_document.get("features", [])
+        if normalized_service_type(feature.get("properties") or {}) in INCLUDED_SERVICE_TYPES
+        and feature.get("geometry")
+    ]
+    if not raw_polygons:
+        raise SystemExit("No Full/Limited Service city-limit polygons found.")
+
+    metadata = get_json(FOOTPRINT_LAYER, {"f": "pjson"})
+    oid_field = validate_footprint_source(metadata)
+    features = query_footprints(oid_field, raw_polygons, args.pause)
+    report = audit(features, raw_polygons, oid_field)
+    report.update({
+        "source_name": "H-GAC Building Footprints 2018 (City of Houston GeoHub republish)",
+        "source_url": FOOTPRINT_LAYER,
+        "source_layer_last_updated": "2022-01-25",
+        "source_description": (
+            "2018 LiDAR-derived Harris County building footprints; source warns "
+            "that some features may be false positives from LiDAR classification."
+        ),
+        "source_copyright": "Houston-Galveston Area Council and Esri",
+        "source_vintage": "2018 LiDAR; Harris County delivery 2019-06-24; republished layer last updated 2022-01-25",
+        "source_coverage_extent_native_crs": metadata.get("extent"),
+        "coverage_warning": "The published H-GAC footprint extent covers only part of the Houston city-limit geometry; the returned count is a partial-coverage subtotal, not the citywide total.",
+        "boundary_source": BOUNDARY_SOURCE,
+        "boundary_classes_included": ["FULL", "LIMITED"],
+        "boundary_classes_excluded": ["PENDING"],
+        "retrieved_at": datetime.now(timezone.utc).isoformat(),
+        "count_definition": (
+            "Unique source footprint features intersecting Full/Limited Service "
+            "Houston city-limit polygons, counted as inside when the feature's "
+            "representative point lies within the union of those polygons."
+        ),
+        "limitations": [
+            "2018 footprint vintage; not a current ground survey.",
+            "LiDAR classification may include false positives or omit structures.",
+            "A footprint is not necessarily one building, one address, or one business.",
+            "PARCEL_ID identifies a parcel, not a building; parcel counts are not building counts.",
+            "Multi-part structures and attached buildings may be represented as one or more polygons.",
+            "Counts are source-feature counts, not verified occupancy or building-use counts.",
+            "Pending city-limit areas are excluded.",
+            "The source layer does not cover the full Houston city boundary.",
+        ],
+    })
+    (out / "houston-building-footprints.geojson").write_text(
+        json.dumps({"type": "FeatureCollection", "features": features}, separators=(",", ":")) + "\n",
+        encoding="utf-8",
+    )
+    (out / "building-footprint-audit.json").write_text(
+        json.dumps(report, indent=2) + "\n", encoding="utf-8"
+    )
+    (out / "source-layer-metadata.json").write_text(
+        json.dumps(metadata, indent=2) + "\n", encoding="utf-8"
+    )
+    summary = {key: value for key, value in report.items() if key not in {
+        "inside_feature_ids", "boundary_intersection_feature_ids"
+    }}
+    print(json.dumps(summary, indent=2))
+
+
+if __name__ == "__main__":
+    main()
