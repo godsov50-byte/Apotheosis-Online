@@ -108,8 +108,12 @@ def validate_feature(feature: dict[str, Any]) -> None:
     geom = feature.get("geometry")
     if props.get("OBJECTID") is None or not props.get("GlobalID"):
         raise ValueError("Road feature is missing OBJECTID or GlobalID.")
-    if not geom or geom.get("type") not in ("LineString", "MultiLineString"):
-        raise ValueError(f"Road {props.get('OBJECTID')} has unsupported/empty geometry.")
+    # GeoJSON permits a Feature geometry of null. Keep the source record and
+    # audit its OBJECTID; the graph builder will omit it from spatial edges.
+    if geom is None:
+        return
+    if not isinstance(geom, dict) or geom.get("type") not in ("LineString", "MultiLineString"):
+        raise ValueError(f"Road {props.get('OBJECTID')} has unsupported geometry.")
     lines = [geom["coordinates"]] if geom["type"] == "LineString" else geom["coordinates"]
     if not lines:
         raise ValueError(f"Road {props.get('OBJECTID')} has no coordinate paths.")
@@ -185,6 +189,7 @@ def main() -> int:
 
     features: list[dict[str, Any]] = []
     seen_ids: set[int] = set()
+    null_geometry_object_ids: list[int] = []
     for offset in range(0, len(object_ids), args.batch_size):
         batch = object_ids[offset:offset + args.batch_size]
         payload = post_json(LAYER_URL + "/query", {
@@ -200,6 +205,8 @@ def main() -> int:
         for feature in page:
             validate_feature(feature)
             oid = int(feature["properties"]["OBJECTID"])
+            if feature.get("geometry") is None:
+                null_geometry_object_ids.append(oid)
             if oid in seen_ids:
                 raise RuntimeError(f"Duplicate source OBJECTID encountered: {oid}")
             seen_ids.add(oid)
@@ -261,7 +268,9 @@ def main() -> int:
         "acquired_at_utc": acquired_at,
         "feature_count": len(features),
         "unique_object_id_count": len(seen_ids),
-        "geometry_type": "LineString or MultiLineString",
+        "geometry_type": "LineString or MultiLineString; null geometry retained when supplied by source",
+        "null_geometry_feature_count": len(null_geometry_object_ids),
+        "null_geometry_object_ids": sorted(null_geometry_object_ids),
         "geometry_sha256": digest,
         "limitations": [
             "Source positional accuracy/completeness is not warranted for survey or engineering use.",
