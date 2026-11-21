@@ -260,7 +260,8 @@ def main():
     report = audit(features, raw_polygons, oid_field)
     report.update({
         "source_name": "H-GAC Building Footprints 2018 (City of Houston GeoHub republish)",
-        "source_url": FOOTPRINT_LAYER,\n        "source_layer_last_updated": "2022-01-25",
+        "source_url": FOOTPRINT_LAYER,
+        "source_layer_last_updated": "2022-01-25",
         "source_description": (
             "2018 LiDAR-derived Harris County building footprints; source warns "
             "that some features may be false positives from LiDAR classification."
@@ -279,21 +280,25 @@ def main():
         "limitations": [
             "2018 footprint vintage; not a current ground survey.",
             "LiDAR classification may include false positives or omit structures.",
-            "A footprint is not necessarily one building, one address, or one business.",\n            "PARCEL_ID identifies a parcel, not a building; parcel counts are not building counts.",
+            "A footprint is not necessarily one building, one address, or one business.",
+            "PARCEL_ID identifies a parcel, not a building; parcel counts are not building counts.",
             "Multi-part structures and attached buildings may be represented as one or more polygons.",
             "Counts are source-feature counts, not verified occupancy or building-use counts.",
             "Pending city-limit areas are excluded.",
         ],
     })
     (out / "houston-building-footprints.geojson").write_text(
-        json.dumps({"type": "FeatureCollection", "features": features}, separators=(",", ":")) + "\n",
+        json.dumps({"type": "FeatureCollection", "features": features}, separators=(",", ":")) + "
+",
         encoding="utf-8",
     )
     (out / "building-footprint-audit.json").write_text(
-        json.dumps(report, indent=2) + "\n", encoding="utf-8"
+        json.dumps(report, indent=2) + "
+", encoding="utf-8"
     )
     (out / "source-layer-metadata.json").write_text(
-        json.dumps(metadata, indent=2) + "\n", encoding="utf-8"
+        json.dumps(metadata, indent=2) + "
+", encoding="utf-8"
     )
     summary = {key: value for key, value in report.items() if key not in {
         "inside_feature_ids", "boundary_intersection_feature_ids"
