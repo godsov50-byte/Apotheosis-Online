@@ -18,7 +18,7 @@ function fixture({ doorAccess = "open", stairs = true } = {}) {
         cells: ["2:0"], targetRoomId: "stair-2", targetCells: ["2:0"],
         travelSeconds: 4, connectionState: "Confirmed by admin"
       }] : [] },
-      { rows: 3, cols: 3, cells: {}, doors: [], stairs: [] }
+      { rows: 3, cols: 3, cells: {}, doors: [{ id: "door-stair-upper", cells: ["2:0"], fromRoomIds: ["stair-2"], targetRoomId: "upper-room" }], stairs: [] }
     ],
     rooms: [
       { id: "room-a", floor: 1, type: "Room", cells: ["0:0", "0:1"] },
