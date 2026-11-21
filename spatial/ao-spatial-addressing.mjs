@@ -37,8 +37,14 @@ const requiredString = (v, name) => {
   return v.trim();
 };
 const floorDiv = (n, d) => Math.floor(n / d);
-const pad = n => String(n).padStart(6, "0");
 const clone = value => structuredClone(value);
+const deepFreeze = value => {
+  if (value && typeof value === "object" && !Object.isFrozen(value)) {
+    Object.freeze(value);
+    for (const child of Object.values(value)) deepFreeze(child);
+  }
+  return value;
+};
 
 function validateGrid(grid) {
   const g = { ...DEFAULT_GRID, ...(grid || {}) };
@@ -106,9 +112,10 @@ function makeGridAddress({
   const cellZ = floorDiv(z, grid.cellSizeM);
 
   const namespace = spaceId || ("region:" + regionId);
-  const chunkId = namespace + ":chunk:" + cx + ":" + cy + ":" + cz;
-  const tileId = namespace + ":tile:" + tileX + ":" + tileY + ":" + tileZ;
-  const cellId = namespace + ":cell:" + cellX + ":" + cellY + ":" + cellZ;
+  const layerNamespace = namespace + ":layer:" + layer;
+  const chunkId = layerNamespace + ":chunk:" + cx + ":" + cy + ":" + cz;
+  const tileId = layerNamespace + ":tile:" + tileX + ":" + tileY + ":" + tileZ;
+  const cellId = layerNamespace + ":cell:" + cellX + ":" + cellY + ":" + cellZ;
 
   return Object.freeze({
     schemaVersion: SPATIAL_SCHEMA_VERSION,
@@ -368,12 +375,12 @@ export function createSpatialResolver({
       entityId,
       worldId,
       kind,
-      from: clone(from),
-      to: clone(to),
+      from: deepFreeze(clone(from)),
+      to: deepFreeze(clone(to)),
       originAddressKey: spatialAddressKey(from),
       destinationAddressKey: spatialAddressKey(to),
       occurredAt,
-      metadata: clone(metadata)
+      metadata: deepFreeze(clone(metadata))
     });
   }
 
