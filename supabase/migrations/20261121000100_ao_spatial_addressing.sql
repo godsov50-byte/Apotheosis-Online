@@ -111,6 +111,8 @@ create trigger ao_spatial_ledger_no_update_delete
 before update or delete on public.ao_spatial_transition_ledger
 for each row execute function public.ao_reject_spatial_ledger_mutation();
 
+revoke all on function public.ao_reject_spatial_ledger_mutation() from public, anon, authenticated;
+
 alter table public.ao_spatial_regions enable row level security;
 alter table public.ao_spatial_chunks enable row level security;
 alter table public.ao_spatial_entity_addresses enable row level security;
