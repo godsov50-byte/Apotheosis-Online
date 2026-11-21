@@ -77,6 +77,6 @@ def main():
       "acquired_at_utc":dt.datetime.now(dt.timezone.utc).isoformat(),"datasets":{}}
     for name,lid in LAYERS.items():
         manifest["datasets"][name]=acquire(name,lid,a.output_dir,a.batch_size,a.timeout,a.pause)
-    (a.output_dir/"official-nodes-links-manifest.json").write_text(json.dumps(manifest,indent=2)+"\\n",encoding="utf-8")
+    (a.output_dir/"official-nodes-links-manifest.json").write_text(json.dumps(manifest,indent=2)+"\n",encoding="utf-8")
     print(json.dumps({k:v["feature_count"] for k,v in manifest["datasets"].items()},indent=2))
 if __name__=="__main__": main()
