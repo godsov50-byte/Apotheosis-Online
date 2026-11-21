@@ -72,6 +72,15 @@ def main() -> None:
         json.dumps(metadata, indent=2) + "\n", encoding="utf-8"
     )
 
+    count_payload = get_json(LAYER_URL + "/query", {
+        "where": "1=1",
+        "returnCountOnly": "true",
+        "f": "json",
+    })
+    expected_count = count_payload.get("count")
+    if not isinstance(expected_count, int) or expected_count <= 0:
+        raise SystemExit(f"Source returned an invalid feature count: {expected_count!r}")
+
     features: list[dict] = []
     seen_ids: set[int] = set()
     offset = 0
@@ -113,8 +122,37 @@ def main() -> None:
             break
         time.sleep(0.15)
 
+    if len(features) != expected_count:
+        raise SystemExit(
+            f"Incomplete acquisition: source count is {expected_count}, "
+            f"but {len(features)} unique features were downloaded."
+        )
     if not features:
         raise SystemExit("The service returned zero features; no GeoJSON written.")
+
+    geometry_types = sorted({
+        str((feature.get("geometry") or {}).get("type", ""))
+        for feature in features
+    })
+    unsupported_geometry = sorted(set(geometry_types) - {"Polygon", "MultiPolygon"})
+    if unsupported_geometry:
+        raise SystemExit(f"Unexpected geometry types: {unsupported_geometry}")
+
+    for feature in features:
+        geometry = feature["geometry"]
+        polygons = [geometry["coordinates"]] if geometry["type"] == "Polygon" else geometry["coordinates"]
+        for polygon in polygons:
+            if not polygon:
+                raise SystemExit("A polygon has no rings.")
+            for ring in polygon:
+                if len(ring) < 4 or ring[0] != ring[-1]:
+                    raise SystemExit("A polygon ring is too short or not closed.")
+                for point in ring:
+                    if not isinstance(point, (list, tuple)) or len(point) < 2:
+                        raise SystemExit("A polygon coordinate is malformed.")
+                    lon, lat = point[:2]
+                    if not (-180 <= lon <= 180 and -90 <= lat <= 90):
+                        raise SystemExit(f"Coordinate is outside WGS84 bounds: {point!r}")
 
     raw_types = sorted({
         str((feature.get("properties") or {}).get("SERVICE_TY", "")).strip()
@@ -134,6 +172,9 @@ def main() -> None:
         "service_types_observed": raw_types,
         "service_types_normalized": normalized_types,
         "feature_count": len(features),
+        "source_reported_feature_count": expected_count,
+        "geometry_types": geometry_types,
+        "coordinate_validation": "all polygon rings closed; all coordinates within WGS84 longitude/latitude bounds",
         "object_id_min": min(seen_ids),
         "object_id_max": max(seen_ids),
         "vintage": "not_declared_by_source_service",
