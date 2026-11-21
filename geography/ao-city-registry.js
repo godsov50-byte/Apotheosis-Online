@@ -153,51 +153,142 @@
     }
     await transactionDone(tx);
   }
-  async function importFile(file, kind) {
-    if (!file) return;
-    status("Reading " + file.name + "…");
+
+  async function* streamArrayObjects(file, targetKey) {
+    const reader = file.stream().getReader();
+    const decoder = new TextDecoder();
+    let buffer = "", done = false, started = false, cursor = 0;
+    let depth = 0, inString = false, escaped = false, itemStart = -1;
+    const marker = JSON.stringify(targetKey);
     try {
-      const data = JSON.parse(await file.text());
-      const sourceLabel = kind === "building" ? ($("buildingSource").value || "user-imported-building-footprints") : "";
-      const records = kind === "street" ? normalizeStreetRegistry(data) : normalizeBuildingGeoJSON(data, sourceLabel);
-      let accepted = 0, rejected = 0;
-      const valid = [];
-      for (const record of records) {
-        const bbox = geometryBBox(record.geometry);
-        if (!bbox || !record.geometry || !["LineString", "MultiLineString", "Polygon", "MultiPolygon"].includes(record.geometry.type)) {
-          rejected++;
+      while (!done || cursor < buffer.length) {
+        if (!done && depth === 0 && (cursor > 65536 || buffer.length - cursor < 8192)) {
+          buffer = buffer.slice(cursor); cursor = 0;
+          const part = await reader.read();
+          done = part.done;
+          if (part.value) buffer += decoder.decode(part.value, {stream: true});
+          if (done) buffer += decoder.decode();
+        }
+        if (!started) {
+          const keyPos = buffer.indexOf(marker, cursor);
+          if (keyPos >= 0) {
+            const colon = buffer.indexOf(":", keyPos + marker.length);
+            if (colon >= 0) {
+              const bracket = buffer.indexOf("[", colon + 1);
+              if (bracket >= 0) { cursor = bracket + 1; started = true; continue; }
+            }
+          }
+          if (done) throw new Error("JSON array key not found: " + targetKey);
+          if (buffer.length - cursor > marker.length + 8192) cursor = Math.max(0, buffer.length - marker.length - 8192);
           continue;
         }
-        record.bbox = bbox;
-        record.tiles = tilesForBBox(bbox);
+        while (cursor < buffer.length) {
+          const ch = buffer[cursor++];
+          if (depth === 0) {
+            if (ch === "]") return;
+            if (ch === "{") { depth = 1; itemStart = cursor - 1; inString = false; escaped = false; }
+            continue;
+          }
+          if (inString) {
+            if (escaped) escaped = false;
+            else if (ch === "\\") escaped = true;
+            else if (ch === '"') inString = false;
+          } else if (ch === '"') inString = true;
+          else if (ch === "{") depth++;
+          else if (ch === "}") {
+            depth--;
+            if (depth === 0) {
+              const raw = buffer.slice(itemStart, cursor);
+              yield JSON.parse(raw);
+              itemStart = -1;
+            }
+          }
+        }
+        if (!done) {
+          if (depth === 0) { buffer = buffer.slice(cursor); cursor = 0; }
+          const part = await reader.read();
+          done = part.done;
+          if (part.value) buffer += decoder.decode(part.value, {stream: true});
+          if (done) buffer += decoder.decode();
+        }
+      }
+      if (depth !== 0) throw new Error("Truncated JSON array item.");
+    } finally { reader.releaseLock(); }
+  }
+
+  async function importFile(file, kind) {
+    if (!file) return;
+    const sourceLabel = kind === "building" ? ($("buildingSource").value || "user-imported-building-footprints") : "";
+    const arrayKey = kind === "street" ? "street_segments" : "features";
+    status("Streaming " + file.name + "…");
+    let accepted = 0, rejected = 0, processed = 0, batch = [];
+    let minX = 180, minY = 90, maxX = -180, maxY = -90;
+    const db = await openDB();
+    const existingTx = db.transaction("datasets", "readonly");
+    const prior = await new Promise((resolve, reject) => {
+      const req = existingTx.objectStore("datasets").get((kind === "street" ? "street:" : "building:") + sourceLabelOrDefault(kind, sourceLabel));
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    // Resume safely: stable source IDs make repeated imports idempotent. The import
+    // still refreshes tile references, but avoids deleting a previous cache mid-run.
+    async function commitBatch() {
+      if (!batch.length) return;
+      await writeBatch(batch);
+      accepted += batch.length;
+      batch = [];
+      status("Streaming " + file.name + " · " + accepted.toLocaleString() + " accepted");
+    }
+    try {
+      for await (const item of streamArrayObjects(file, arrayKey)) {
+        processed++;
+        let record;
+        if (kind === "street") {
+          record = {
+            id: "street:" + String(item.identity_key || item.source_global_id || item.source_record_key),
+            kind: "street", dataset: item.registry_id || "ao-houston-street-registry",
+            name: pickName(item.properties || item.raw_source_attributes, item.display_name),
+            geometry: item.geometry, properties: item.properties || {},
+            rawProperties: item.raw_source_attributes || {}, provenance: item.provenance || {},
+            sourceIdentity: item.identity_key || item.source_global_id || item.source_record_key,
+            sourceStatus: "source-reported centerline; not a validated route edge"
+          };
+        } else {
+          const p = item.properties || {};
+          const sourceId = p.GlobalID || p.GLOBALID || p.globalid || p.FID || p.OBJECTID || p.OBJECTID_1 || p.id || item.id || ("feature-" + (processed - 1));
+          record = {
+            id: "building:" + sourceLabel + ":" + String(sourceId),
+            kind: "building", dataset: sourceLabel, name: pickName(p, "Building " + sourceId),
+            geometry: item.geometry, properties: p, rawProperties: p,
+            provenance: { publisher: sourceLabel, source_record_id: String(sourceId) },
+            sourceIdentity: String(sourceId), sourceStatus: "source footprint; not field-verified building truth"
+          };
+        }
+        const bbox = geometryBBox(record.geometry);
+        if (!bbox || !record.geometry || !["LineString", "MultiLineString", "Polygon", "MultiPolygon"].includes(record.geometry.type)) { rejected++; continue; }
+        record.bbox = bbox; record.tiles = tilesForBBox(bbox);
         if (!record.tiles.length || record.tiles.length > 500) { rejected++; continue; }
-        valid.push(record);
+        minX = Math.min(minX, bbox[0]); minY = Math.min(minY, bbox[1]); maxX = Math.max(maxX, bbox[2]); maxY = Math.max(maxY, bbox[3]);
+        batch.push(record);
+        if (batch.length >= 200) await commitBatch();
       }
-      for (let i = 0; i < valid.length; i += 200) {
-        await writeBatch(valid.slice(i, i + 200));
-        accepted += Math.min(200, valid.length - i);
-        status("Importing " + file.name + " · " + accepted.toLocaleString() + " / " + valid.length.toLocaleString());
-      }
-      const db = await openDB();
+      await commitBatch();
       const tx = db.transaction("datasets", "readwrite");
       tx.objectStore("datasets").put({
         id: (kind === "street" ? "street:" : "building:") + sourceLabelOrDefault(kind, sourceLabel),
         kind, name: file.name, importedAt: new Date().toISOString(),
         sourceLabel: sourceLabelOrDefault(kind, sourceLabel),
-        accepted, rejected, fileBytes: file.size
+        accepted, rejected, processed, fileBytes: file.size, status: "complete",
+        previousImport: prior ? prior.importedAt : null
       });
       await transactionDone(tx);
-      status("Imported " + accepted.toLocaleString() + " " + (kind === "street" ? "street segments" : "building footprints") +
-        (rejected ? "; skipped " + rejected.toLocaleString() + " missing/unsupported geometries." : ".") +
-        " Data is saved in this browser's IndexedDB.");
+      status("Import complete: " + accepted.toLocaleString() + " " + (kind === "street" ? "street segments" : "building footprints") +
+        (rejected ? "; skipped " + rejected.toLocaleString() + " invalid records." : ".") + " Streamed to IndexedDB.");
       await updateCounts();
       await refreshVisible();
-      if (accepted) map.fitBounds(L.latLngBounds(
-        [valid.reduce((v, r) => Math.min(v, r.bbox[1]), 90), valid.reduce((v, r) => Math.min(v, r.bbox[0]), 180)],
-        [valid.reduce((v, r) => Math.max(v, r.bbox[3]), -90), valid.reduce((v, r) => Math.max(v, r.bbox[2]), -180)]
-      ), { padding: [24, 24], maxZoom: 16 });
+      if (accepted) map.fitBounds(L.latLngBounds([minY, minX], [maxY, maxX]), { padding: [24, 24], maxZoom: 16 });
     } catch (error) {
-      status("Import failed: " + (error && error.message ? error.message : String(error)));
+      status("Streaming import stopped after " + processed.toLocaleString() + " records (" + accepted.toLocaleString() + " saved): " + (error && error.message ? error.message : String(error)) + ". Retry import to continue safely.");
     }
   }
   function sourceLabelOrDefault(kind, label) {
