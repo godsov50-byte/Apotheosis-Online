@@ -65,9 +65,9 @@ def crosswalk(candidates_report, nodes_geojson, radius_m=15.0):
 
 def main():
     ap=argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--candidates",type=Path,required=True)
-    ap.add_argument("--nodes",type=Path,required=True)
-    ap.add_argument("--output",type=Path,required=True)
+    ap.add_argument("--candidates",type=Path)
+    ap.add_argument("--nodes",type=Path)
+    ap.add_argument("--output",type=Path)
     ap.add_argument("--radius-m",type=float,default=15.0)
     ap.add_argument("--self-test",action="store_true")
     a=ap.parse_args()
@@ -85,6 +85,8 @@ def main():
         assert crosswalk(fake_candidates,{"features":[]},10)["crosswalk"][0]["official_node_match_status"]=="no_official_node_within_radius"
         print("self-test passed: projection, nearest-node crosswalk, conservative status")
         return
+    if not a.candidates or not a.nodes or not a.output:
+        ap.error("--candidates, --nodes, and --output are required unless --self-test is used")
     candidates=json.loads(a.candidates.read_text(encoding="utf-8"))
     nodes=json.loads(a.nodes.read_text(encoding="utf-8"))
     report=crosswalk(candidates,nodes,a.radius_m)
