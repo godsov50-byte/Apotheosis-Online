@@ -2,7 +2,7 @@
 """Acquire and audit Houston building footprints against official city limits.
 
 Primary footprint source: H-GAC 2018 LiDAR-derived Harris County building
-footprints (layer 0). Boundary source: Harris County GIS City of Houston limits
+footprints (City of Houston GeoHub FeatureServer layer 4). Boundary source: Harris County GIS City of Houston limits
 (layer 2), acquired by acquire_houston_city_limits.py.
 
 The report counts unique source footprints whose centroid falls inside Full or
@@ -185,7 +185,6 @@ def audit(features: list[dict], raw_polygons: list[dict], oid_field: str):
     city_prepared = prep(city)
     inside = []
     boundary_intersections = []
-    geom_types = Counter()
     invalid = 0
     for feature in features:
         props = feature.get("properties") or {}
@@ -196,10 +195,8 @@ def audit(features: list[dict], raw_polygons: list[dict], oid_field: str):
         centroid = geometry.representative_point()
         record = {
             "source_object_id": props[oid_field],
-            "geom_type": props.get("GeomType"),
-            "parcel_id": props.get("HGAC_Parcel_Number"),
+            "parcel_id": props.get("PARCEL_ID") or props.get("HGAC_Parcel_Number"),
         }
-        geom_types[str(record["geom_type"] or "UNCLASSIFIED")] += 1
         if city_prepared.covers(centroid):
             inside.append(record)
         else:
@@ -209,10 +206,8 @@ def audit(features: list[dict], raw_polygons: list[dict], oid_field: str):
         "centroid_inside_city_limits": len(inside),
         "intersecting_but_centroid_outside": len(boundary_intersections),
         "invalid_or_empty_geometries_skipped": invalid,
-        "counts_by_source_geom_type_inside": dict(sorted(
-            Counter(str(row["geom_type"] or "UNCLASSIFIED") for row in inside).items()
-        )),
-        "counts_by_source_geom_type_intersecting": dict(sorted(geom_types.items())),
+        "inside_features_with_parcel_id": sum(1 for row in inside if row["parcel_id"]),
+        "distinct_parcel_ids_inside": len({row["parcel_id"] for row in inside if row["parcel_id"]}),
         "inside_feature_ids": inside,
         "boundary_intersection_feature_ids": boundary_intersections,
     }
