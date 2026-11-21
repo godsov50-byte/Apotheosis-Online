@@ -25,3 +25,10 @@ Any MCP-capable agent may connect to the same endpoint using Streamable HTTP and
 - The building currently has no structured cell-based floor plan in this experiment.
 - The separate Houston builder and PRs #54/#55 remain staging code; they are not automatically connected to this Supabase schema.
 - OAuth must be tested by a real user sign-in and authenticated MCP tool call before the client connection is called end-to-end verified.
+
+
+## Follow-up hardening
+
+Migration `20261121191414_harden_world_proposal_target_requirements` adds a table constraint requiring every non-`building.create` proposal to reference an existing target entity, and requiring `building.create` to have no target. This prevents orphan room/door/stair/entrance elements or NPC assignments from reaching the commit function.
+
+GitHub Actions now runs `deno check` against both Edge Functions on relevant pull requests.
