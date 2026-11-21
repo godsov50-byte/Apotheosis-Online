@@ -46,8 +46,10 @@ Acquired source snapshot (2026-11-21):
 - 83,749 records with geometry; 11 records with null geometry (preserved, not fabricated).
 - Source data last-edit timestamp reported by the service: 2026-09-25T18:08:41.727Z.
 - Source CRS EPSG:2278 (US survey feet); downloaded geometry EPSG:4326, longitude/latitude.
-- Source geometry SHA-256: `1de423c634c05a36e79df99e7e33710c799a0eb9d2abdbb10f18abbfa11c8b1d`.
-- Source artifact archive SHA-256: `bf756e2658cbc8c924fad412ea128e3dbef7f1d78832a11f7d8f528f5c135c9c`.
+- First acquisition raw GeoJSON SHA-256: `1de423c634c05a36e79df99e7e33710c799a0eb9d2abdbb10f18abbfa11c8b1d` (provisional; feature order was not canonical).
+- A second acquisition returned the same 83,760 source IDs and feature content when matched by OBJECTID, but a different raw file hash (`fe9c03b3b8293d01de76abc86d54d6697827df16e1a40521d4caf1b866003206`) because service page ordering varied.
+- The acquisition code now sorts features by source OBJECTID before serialization and hashing. A fresh canonical acquisition is running; its checksum will supersede both order-sensitive hashes.
+- First source artifact archive SHA-256: `bf756e2658cbc8c924fad412ea128e3dbef7f1d78832a11f7d8f528f5c135c9c` (temporary workflow artifact).
 - Deterministic registry: 83,760 segments, 17,287 name groups, 17,210 distinct named labels, 50 unnamed segments.
 - Workflow run: https://github.com/godsov50-byte/Apotheosis-Online/actions/runs/44931115238; artifact ID `14717154555`.
 
