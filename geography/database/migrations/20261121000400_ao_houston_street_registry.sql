@@ -17,6 +17,28 @@ create table ao_spatial.street_segment_records (
  unique(identity_namespace,source_global_id)
 );
 create index street_segment_records_centerline_idx on ao_spatial.street_segment_records(source_centerline_id);
+
+create or replace function ao_spatial.guard_street_segment_identity()
+returns trigger language plpgsql set search_path=pg_catalog as $
+begin
+ if new.street_segment_id is distinct from old.street_segment_id
+    or new.source_feature_id is distinct from old.source_feature_id
+    or new.identity_key is distinct from old.identity_key
+    or new.identity_namespace is distinct from old.identity_namespace
+    or new.source_record_key is distinct from old.source_record_key
+    or new.source_global_id is distinct from old.source_global_id
+    or new.source_object_id is distinct from old.source_object_id
+    or new.source_centerline_id is distinct from old.source_centerline_id then
+   raise exception 'Street segment identity/source locator is immutable';
+ end if;
+ if old.spatial_object_id is not null and new.spatial_object_id is distinct from old.spatial_object_id then
+   raise exception 'A linked AO spatial object cannot be silently replaced';
+ end if;
+ return new;
+end;
+$;
+create trigger street_segment_identity_guard before update on ao_spatial.street_segment_records
+for each row execute function ao_spatial.guard_street_segment_identity();
 comment on table ao_spatial.street_segment_records is
 'Permanent source-based identity for one road-centerline feature. Optional spatial_object_id links a later Kernel-approved spatial object; source evidence is not world state.';
 
@@ -53,15 +75,21 @@ create index street_name_observations_lookup_idx on ao_spatial.street_name_obser
 comment on table ao_spatial.street_name_observations is
 'Versioned name observations and aliases. Names are not identity; the same name can label disconnected road segments.';
 
-create view ao_spatial.street_name_groups_current as
-select normalized_name,min(observed_name) as display_name,
+create view ao_spatial.street_name_groups_current with (security_invoker=true) as
+with latest_revision as (
+ select distinct on (street_segment_id) street_segment_id,street_segment_revision_id
+ from ao_spatial.street_segment_revisions
+ order by street_segment_id,revision_number desc
+)
+select n.normalized_name,min(n.observed_name) as display_name,
  count(distinct r.street_segment_id) as segment_count,
  array_agg(distinct r.identity_key order by r.identity_key) as segment_identity_keys
-from ao_spatial.street_name_observations n
-join ao_spatial.street_segment_revisions v using(street_segment_revision_id)
+from latest_revision latest
+join ao_spatial.street_name_observations n
+  on n.street_segment_revision_id=latest.street_segment_revision_id
 join ao_spatial.street_segment_records r using(street_segment_id)
 where n.name_role in ('source_reported','verified_alias','admin_alias')
-group by normalized_name;
+group by n.normalized_name;
 comment on view ao_spatial.street_name_groups_current is
 'Derived name-search grouping only, not a physical corridor identity or route edge.';
 
