@@ -44,3 +44,7 @@ Each crossing is labeled as:
 The crosswalk preserves nearby node properties and distances. **It is evidence only:** node proximity does not establish road-to-road connectivity, and no crossing is auto-connected. The artifact `official-node-crosswalk.json` is produced for review.
 
 Self-test checks CRS round-trip, a positive nearby-node match, a no-match case, and that no topology decision is assumed.
+
+
+## CI acquisition scope
+The continuous integration workflow now acquires the official **Nodes layer only** to keep the topology review pipeline focused and avoid blocking the crossing audit on the larger Links snapshot. The acquisition script still supports downloading both layers (default) or Nodes only (`--nodes-only`). Links acquisition remains available as a separate manual/full snapshot step.
