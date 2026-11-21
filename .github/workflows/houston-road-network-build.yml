@@ -47,7 +47,7 @@ jobs:
       - name: Test official node crossing crosswalk
         run: python scripts/geography/crosswalk_houston_crossings_to_official_nodes.py --self-test
       - name: Acquire official Houston Nodes and Links snapshot
-        run: python scripts/geography/acquire_houston_official_nodes_links.py --output-dir build/houston-road-network --batch-size 500 --timeout 90 --pause 0.1
+        run: python scripts/geography/acquire_houston_official_nodes_links.py --nodes-only --output-dir build/houston-road-network --batch-size 500 --timeout 90 --pause 0.1
       - name: Acquire complete Houston road-centerline snapshot
         run: python scripts/geography/acquire_houston_road_centerlines.py --output-dir build/houston-road-network --batch-size 500 --timeout 90 --pause 0.15
       - name: Build endpoint connectivity graph
