@@ -149,8 +149,13 @@ def esri_geometry(geojson_geometry: dict) -> dict:
 
 
 def query_footprints(oid_field: str, raw_polygons: list[dict], pause: float):
+    from shapely.ops import unary_union
+
+    # One dissolved service-area geometry avoids hundreds of repeated requests
+    # for the 751 boundary components while preserving the exact union.
+    combined_geometry = mapping(unary_union([shape(item) for item in raw_polygons]))
     seen: dict[int, dict] = {}
-    for polygon_number, geometry in enumerate(raw_polygons, start=1):
+    for polygon_number, geometry in enumerate([combined_geometry], start=1):
         offset = 0
         while True:
             page = post_json(
