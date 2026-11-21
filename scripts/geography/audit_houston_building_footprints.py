@@ -23,7 +23,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 try:
-    from shapely.geometry import Point, shape
+    from shapely.geometry import shape
     from shapely.prepared import prep
 except ImportError as exc:  # pragma: no cover - exercised in workflow
     raise SystemExit("Install requirements: pip install shapely") from exc
@@ -109,19 +109,6 @@ def validate_footprint_source(metadata: dict) -> str:
     if metadata.get("advancedQueryCapabilities", {}).get("supportsPagination") is False:
         raise RuntimeError("Source explicitly reports pagination unsupported.")
     return oid
-
-
-def acquire_footprints(oid_field: str, polygons, pause: float):
-    seen: dict[int, dict] = {}
-    for polygon_index, polygon in enumerate(polygons, start=1):
-        # Query each official service polygon independently. IDs are deduplicated
-        # across polygons, so shared boundaries do not double-count footprints.
-        geometry = json.dumps(
-            polygon.context.__geo_interface__ if hasattr(polygon, "context") else {}
-        )
-        # PreparedGeometry intentionally does not expose its original geometry;
-        # callers attach the raw city polygons below instead.
-        raise AssertionError("acquire_footprints requires raw city polygons")
 
 
 def esri_geometry(geojson_geometry: dict) -> dict:
