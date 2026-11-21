@@ -188,8 +188,13 @@ export class MockKernel {
       const execution = { execution_id, execution_status: "running", outcome: "none",
         progress: 0, remaining: p.parameters.remaining ?? "work" };
       this.executions.set(execution_id, execution);
-      return { request_status: "accepted", execution_status: "running", outcome: "none",
+      const accepted = { request_status: "accepted", execution_status: "running", outcome: "none",
         execution_id, result: { progress: 0 }, events: [], history_record_ids: [] };
+      if (key) {
+        this.idempotency.set(key, structuredClone(accepted));
+        this.idempotencyFingerprints.set(key, operationFingerprint);
+      }
+      return accepted;
     }
     if (p.parameters?.fail) return { request_status: "rejected", outcome: "failed",
       execution_status: "failed", error: { code: "CAPABILITY_INSUFFICIENT", message: "Mock capability check failed." } };
