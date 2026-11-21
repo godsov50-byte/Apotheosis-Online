@@ -25,6 +25,11 @@ These layers must not be collapsed into one table or treated as interchangeable.
 | `consistency-registry.js` | Deterministic identity, retrieval, coordinate keys, correction proposals and generation manifests | Utility; not yet wired to trusted API |
 | `../docs/geography/ao-deterministic-world-registry.md` | Identity, provenance, visual references, generation and correction contract | Implementation foundation |
 | `database/migrations/20261121000300_ao_deterministic_registry.sql` | Persistent identity aliases, revisions, visual references and correction history | Migration artifact; not applied |
+| `../scripts/geography/acquire_houston_road_centerlines.py` | Complete, count-checked City of Houston centerline acquisition | Local build; no database writes |
+| `../scripts/geography/build_houston_street_registry.py` | Stable segment identities, source properties, name-search groups and count manifest | Local compiler; no database writes |
+| `database/migrations/20261121000400_ao_houston_street_registry.sql` | Persistent street segment records, append-only property revisions and name observations | Migration artifact; not applied |
+| `../docs/geography/ao-houston-street-registry.md` | Houston source, properties, identity and import contract | Implementation documentation |
+| `../tests/street_registry/` | Street identity, grouping and null-preservation tests | Python standard-library tests |
 | `../tests/spatial/` | Coordinate and migration contract tests | Python standard-library tests |
 
 The S2 cell registry and its proposed `ao_geo` schema are a separate layer currently developed in other branches/PRs. This Houston feature store uses `ao_spatial`; it does not replace or duplicate S2 cell identity.
