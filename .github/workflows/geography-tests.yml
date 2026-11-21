@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "geography/**"
+      - "spatial/**"
       - "tests/spatial/**"
       - "tests/street_registry/**"
       - "scripts/geography/**"
@@ -37,6 +38,8 @@ jobs:
         run: node tests/spatial/consistency-registry.test.js
       - name: Test Houston street registry compiler
         run: python scripts/geography/build_houston_street_registry.py --self-test
+      - name: Test AO spatial address resolver
+        run: node --test spatial/ao-spatial-addressing.test.mjs
       - name: Compile Python modules
         run: python -m compileall -q geography tests scripts/geography
       - name: Run unit and migration contract tests
