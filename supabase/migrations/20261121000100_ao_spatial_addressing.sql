@@ -181,8 +181,8 @@ begin
     raise exception 'Spatial transition, address and chunk must be JSON objects';
   end if;
 
-  if (p_event->>'schemaVersion')::integer <> 1
-     or (p_destination_address->>'schemaVersion')::integer <> 1 then
+  if (p_event->>'schemaVersion')::integer is distinct from 1
+     or (p_destination_address->>'schemaVersion')::integer is distinct from 1 then
     raise exception 'Unsupported AO spatial schema version';
   end if;
 
@@ -223,9 +223,9 @@ begin
   v_chunk_id := p_destination_chunk->>'id';
   if v_chunk_id is null
      or v_chunk_id <> p_destination_address->>'chunkId'
-     or p_destination_chunk->>'worldId' <> v_world_id
-     or p_destination_chunk->>'regionId' <> p_destination_address->>'regionId'
-     or p_destination_chunk->>'layer' <> p_destination_address->>'layer' then
+     or p_destination_chunk->>'worldId' is distinct from v_world_id
+     or p_destination_chunk->>'regionId' is distinct from p_destination_address->>'regionId'
+     or p_destination_chunk->>'layer' is distinct from p_destination_address->>'layer' then
     raise exception 'Destination chunk does not match destination address';
   end if;
 
