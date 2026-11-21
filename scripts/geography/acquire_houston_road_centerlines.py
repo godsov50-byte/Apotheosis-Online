@@ -36,6 +36,9 @@ OUT_FIELDS = ",".join([
 
 
 def get_json(url: str, timeout: int, retries: int = 4) -> dict[str, Any]:
+    # Emit the exact ArcGIS request before opening it so hosted-runner failures
+    # can be diagnosed from Actions logs without reproducing the entire job.
+    print(f"ArcGIS request: {url}", file=sys.stderr, flush=True)
     req = urllib.request.Request(
         url,
         headers={"User-Agent": "ApotheosisOnline-Geography/1.0 (road data acquisition)"},
