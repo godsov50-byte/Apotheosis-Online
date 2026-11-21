@@ -89,6 +89,6 @@ def main():
     nodes=json.loads(a.nodes.read_text(encoding="utf-8"))
     report=crosswalk(candidates,nodes,a.radius_m)
     a.output.parent.mkdir(parents=True,exist_ok=True)
-    a.output.write_text(json.dumps(report,indent=2)+"\\n",encoding="utf-8")
+    a.output.write_text(json.dumps(report,indent=2)+"\n",encoding="utf-8")
     print(json.dumps({k:v for k,v in report.items() if k!="crosswalk"},indent=2))
 if __name__=="__main__": main()
