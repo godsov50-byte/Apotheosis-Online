@@ -42,7 +42,7 @@ def acquire(name, layer_id, outdir, batch_size=500, timeout=90, pause=0.1):
     expected=count_payload.get("count")
     oid_field=meta.get("objectIdField") or meta.get("objectIdFieldName")
     if not oid_field: raise RuntimeError(f"{name} metadata missing object ID field")
-    if expected is None or len(ids)!=expected: raise RuntimeError(f"{name} ID/count mismatch: {len(ids)} vs {expected")}
+    if expected is None or len(ids)!=expected: raise RuntimeError(f"{name} ID/count mismatch: {len(ids)} vs {expected")
     features=[]
     seen=set()
     for off in range(0,len(ids),batch_size):
