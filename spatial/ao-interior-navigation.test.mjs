@@ -85,7 +85,7 @@ test("stair landing cannot be inferred from a target floor without a matching st
 
 test("route advancement completes discrete cell and stair steps using elapsed time", () => {
   const graph = createInteriorNavigationGraph({ building: fixture() });
-  const route = planInteriorRoute(graph, { fromNodeId: "1:0:0", toNodeId: "2:2:1" });
+  const route = planInteriorRoute(graph, { fromNodeId: "1:2:0", toNodeId: "2:2:1" });
   assert.equal(route.status, "ready");
   const first = advanceInteriorRoute({ route, elapsedSeconds: 0.5 });
   assert.equal(first.status, "moving");
