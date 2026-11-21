@@ -127,7 +127,7 @@ def self_test()->None:
       {"properties":{"GlobalID":"c","OBJECTID":3,"fullname":"C"},"geometry":{"type":"LineString","coordinates":[[-94.997,29.0],[-94.996,29.0]]}},
     ]}
     g,r=build(c,1.5)
-    assert r["edge_count"]==3 and r["node_count"]==4
+    assert r["edge_count"]==3 and r["node_count"]==5
     assert r["connected_component_count"]==2
     assert next(e for e in g["edges"] if e["source_id"]=="a")["to_node"]==next(e for e in g["edges"] if e["source_id"]=="b")["from_node"]
     print("self-test passed")
