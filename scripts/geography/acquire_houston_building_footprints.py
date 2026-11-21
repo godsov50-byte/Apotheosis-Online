@@ -24,7 +24,15 @@ OUTPUT_CRS = 4326
 def request_json(url: str, params: dict[str, Any] | None = None, timeout: int = 90) -> dict[str, Any]:
     query = urllib.parse.urlencode(params or {})
     target = url + ("?" + query if query else "")
-    req = urllib.request.Request(target, headers={"User-Agent": "Apotheosis-Online-Geography/1.0"})
+    headers = {"User-Agent": "Apotheosis-Online-Geography/1.0"}
+    # ArcGIS rejects or resets oversized GET requests, especially the full
+    # Houston boundary polygon used by the spatial-intersection query.
+    # Send long parameter sets as form-encoded POST requests instead.
+    if len(target) > 1800:
+        headers["Content-Type"] = "application/x-www-form-urlencoded"
+        req = urllib.request.Request(url, data=query.encode("ascii"), headers=headers)
+    else:
+        req = urllib.request.Request(target, headers=headers)
     with urllib.request.urlopen(req, timeout=timeout) as response:
         data = json.loads(response.read().decode("utf-8"))
     if "error" in data:
