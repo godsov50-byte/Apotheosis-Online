@@ -58,6 +58,30 @@ create table ao_spatial.spatial_profiles (
 comment on table ao_spatial.spatial_profiles is
 'Versioned coordinate contracts. Changing origin, CRS, axis, unit or scale requires a new profile version and migration plan.';
 
+create or replace function ao_spatial.guard_approved_profile_update()
+returns trigger
+language plpgsql
+set search_path = pg_catalog
+as $$
+begin
+    if old.profile_state = 'retired' then
+        raise exception 'retired spatial profiles are immutable';
+    end if;
+    if old.profile_state = 'approved' then
+        if new.profile_state not in ('approved', 'retired')
+           or (to_jsonb(new) - 'profile_state') is distinct from
+              (to_jsonb(old) - 'profile_state') then
+            raise exception 'approved spatial profiles are immutable; create a new version';
+        end if;
+    end if;
+    return new;
+end;
+$$;
+
+create trigger spatial_profiles_immutable_after_approval
+before update on ao_spatial.spatial_profiles
+for each row execute function ao_spatial.guard_approved_profile_update();
+
 create table ao_spatial.source_datasets (
     source_dataset_id uuid primary key default gen_random_uuid(),
     dataset_key text not null,
@@ -108,6 +132,7 @@ create table ao_spatial.import_runs (
     kernel_approval_id text,
     foreign key (profile_key, profile_version)
         references ao_spatial.spatial_profiles(profile_key, profile_version),
+    unique (import_run_id, source_dataset_id),
     check (completed_at is null or completed_at >= started_at)
 );
 
@@ -119,9 +144,8 @@ comment on table ao_spatial.import_runs is
 
 create table ao_spatial.source_features (
     source_feature_id uuid primary key default gen_random_uuid(),
-    import_run_id uuid not null references ao_spatial.import_runs(import_run_id),
-    source_dataset_id uuid not null
-        references ao_spatial.source_datasets(source_dataset_id),
+    import_run_id uuid not null,
+    source_dataset_id uuid not null,
     source_feature_key text not null,
     source_crs text not null,
     source_geom geometry(Geometry),
@@ -135,6 +159,8 @@ create table ao_spatial.source_features (
         geometry_status in ('unreviewed', 'valid', 'invalid', 'missing')
     ),
     captured_at timestamptz not null default now(),
+    foreign key (import_run_id, source_dataset_id)
+        references ao_spatial.import_runs(import_run_id, source_dataset_id),
     unique (import_run_id, source_feature_key)
 );
 
@@ -145,6 +171,20 @@ create index source_features_run_idx
 
 comment on table ao_spatial.source_features is
 'Immutable source snapshot records. Preserve original geometry and attributes even when invalid or incomplete.';
+
+create or replace function ao_spatial.reject_source_feature_mutation()
+returns trigger
+language plpgsql
+set search_path = pg_catalog
+as $$
+begin
+    raise exception 'ao_spatial.source_features is append-only; create a new import run';
+end;
+$$;
+
+create trigger source_features_no_update
+before update or delete on ao_spatial.source_features
+for each row execute function ao_spatial.reject_source_feature_mutation();
 
 create table ao_spatial.canonical_features (
     canonical_feature_id uuid primary key default gen_random_uuid(),
@@ -190,21 +230,27 @@ comment on column ao_spatial.canonical_features.canonical_geom is
 comment on table ao_spatial.canonical_features is
 'Normalized projected geometry and evidence status. This is not the AO world-state/entity table; Kernel approval is a separate step.';
 
--- Source snapshots are append-only. A changed upstream feature is captured in a
--- new import run rather than silently replacing the previous source record.
-create or replace function ao_spatial.reject_source_feature_mutation()
+create or replace function ao_spatial.guard_canonical_feature_update()
 returns trigger
 language plpgsql
 set search_path = pg_catalog
 as $$
 begin
-    raise exception 'ao_spatial.source_features is append-only; create a new import run';
+    if new.source_feature_id is distinct from old.source_feature_id
+       or new.profile_key is distinct from old.profile_key
+       or new.profile_version is distinct from old.profile_version
+       or new.feature_kind is distinct from old.feature_kind
+       or new.canonical_geom is distinct from old.canonical_geom
+       or new.transform_version is distinct from old.transform_version then
+        raise exception 'canonical feature identity/geometry is immutable; create a new version';
+    end if;
+    return new;
 end;
 $$;
 
-create trigger source_features_no_update
-before update or delete on ao_spatial.source_features
-for each row execute function ao_spatial.reject_source_feature_mutation();
+create trigger canonical_features_identity_immutable
+before update on ao_spatial.canonical_features
+for each row execute function ao_spatial.guard_canonical_feature_update();
 
 alter table ao_spatial.spatial_profiles enable row level security;
 alter table ao_spatial.source_datasets enable row level security;
