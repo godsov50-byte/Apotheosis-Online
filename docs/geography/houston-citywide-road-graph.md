@@ -43,3 +43,24 @@ The Houston street graph is the citywide geographic substrate. Downtown remains 
 ## Cloud build
 
 The repository workflow `.github/workflows/houston-road-network-build.yml` runs the self-test, downloads the full filtered Houston snapshot, builds the endpoint graph, and uploads the four outputs as a 14-day GitHub Actions artifact. It runs on relevant pushes to `feature/houston-gps-spatial-data` and supports manual dispatch. The workflow uses read-only repository permissions and does not write to Supabase or AO world state.
+
+
+## Official topology-reference metadata inspection (2026-11-21)
+
+Live metadata for the City of Houston production Nodes (layer 10) and Links (layer 12) was inspected.
+
+
+### Nodes layer (10)
+- Geometry: points; source CRS resolves to EPSG:2278.
+- Fields include `NODEID`, `ORI_NODEID`, `NODE_TYPE`, `STREET1` through `STREET4`, `JURISDICTION`, `DATE_MODIFIED`, and `COMMENTS`.
+- Observed `NODE_TYPE` values: `Intersection`, `Intersection, long bridge`, `Intersection, railroad`, `Intersection, short bridge`, `Intersection, traffic signal`, `Long bridge`, `Long bridge, railroad`, `Railroad`, `Railroad, long bridge`, `Railroad, railroad`, `Railroad, short bridge`, `Short bridge`, `Short bridge, railroad`, and `Traffic signal`.
+- These values indicate that Nodes is not simply a list of ordinary street intersections; it explicitly includes bridge and railroad-related node categories. Preserve node types when evaluating crossings.
+
+### Links layer (12)
+- Geometry: polylines; source CRS resolves to EPSG:2278.
+- Fields include `LINKID`, `ORI_LINKID`, `NAME`, `ST_TYPE`, `ROAD_CLASS`, `LINK_TYPE`, `JURISDICTI`, `DATE_MODIF`, `COMMENTS`, and `Quadrant`.
+- Observed `LINK_TYPE` values: blank, `ACCESS`, `LOCAL`, `MAJOR`, `MAJOR LONG BRIDGE`, `MAJOR RAILROAD`, and `TxDOT`.
+- IDs are strings and remain source-specific. No crosswalk to COH centerline `GlobalID`/`centerlineid` has been established yet.
+
+### Engineering implication
+Use the official Nodes/Links layers as explicit topology evidence and preserve special categories. A conservative first crosswalk should score candidates using spatial distance, normalized street-name agreement, and source node/link semantics; ambiguous or conflicting candidates should remain unjoined for review. Do not auto-connect a bridge/railroad crossing solely from geometric proximity.
