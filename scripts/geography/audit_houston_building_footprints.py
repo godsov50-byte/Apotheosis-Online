@@ -251,14 +251,14 @@ def main():
     features = query_footprints(oid_field, raw_polygons, args.pause)
     report = audit(features, raw_polygons, oid_field)
     report.update({
-        "source_name": "H-GAC Building Footprints 2018",
-        "source_url": FOOTPRINT_LAYER,
+        "source_name": "H-GAC Building Footprints 2018 (City of Houston GeoHub republish)",
+        "source_url": FOOTPRINT_LAYER,\n        "source_layer_last_updated": "2022-01-25",
         "source_description": (
             "2018 LiDAR-derived Harris County building footprints; source warns "
             "that some features may be false positives from LiDAR classification."
         ),
         "source_copyright": "Houston-Galveston Area Council and Esri",
-        "source_vintage": "2018 LiDAR; Harris County delivery 2019-06-24",
+        "source_vintage": "2018 LiDAR; Harris County delivery 2019-06-24; republished layer last updated 2022-01-25",
         "boundary_source": BOUNDARY_SOURCE,
         "boundary_classes_included": ["FULL", "LIMITED"],
         "boundary_classes_excluded": ["PENDING"],
@@ -271,7 +271,7 @@ def main():
         "limitations": [
             "2018 footprint vintage; not a current ground survey.",
             "LiDAR classification may include false positives or omit structures.",
-            "A footprint is not necessarily one building, one address, or one business.",
+            "A footprint is not necessarily one building, one address, or one business.",\n            "PARCEL_ID identifies a parcel, not a building; parcel counts are not building counts.",
             "Multi-part structures and attached buildings may be represented as one or more polygons.",
             "Counts are source-feature counts, not verified occupancy or building-use counts.",
             "Pending city-limit areas are excluded.",
