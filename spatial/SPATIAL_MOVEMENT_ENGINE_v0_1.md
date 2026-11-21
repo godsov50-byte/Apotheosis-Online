@@ -9,8 +9,8 @@
 - Dijkstra route planning by estimated travel time rather than edge count.
 - Continuous 3D position interpolation along approved edge geometry. Positions are not snapped to the 1 m address cell.
 - Swept-circle collision checks against static obstacles and currently occupied actor positions. A moving actor stops just before the first detected collision.
-- An adapter hook (addressAtPosition) so the caller can resolve the returned position through the canonical spatial-address resolver without making this module the persistence authority.
-- Movement result data (origin, destination, distance, elapsed time, route cursor, blocker, status) for a later Kernel/WorldHeart commit adapter.
+- An adapter hook (addressAtPosition) so the caller can resolve the returned position through the canonical spatial-address resolver without making this module the persistence authority. The callback receives the active edge and cursor so outdoor/interior address contexts can be selected explicitly.
+- A movement-event constructor that converts a Kernel-authorized displacement plus canonical origin/destination addresses into the existing immutable spatial transition format. The caller can pass that event to the existing atomic spatial repository contract; the module itself does not persist.
 
 ## Movement time and AO calendar time
 
@@ -45,7 +45,7 @@ resolveMovementStep() accepts the route cursor (edgeIndex, edgeProgressM) return
 - No live Houston road graph is yet eligible for routing. Existing road-centerline data remains source evidence until intersections, grade separation, mode access, sidewalks/crossings, and edge approval are validated.
 - No automatic address-to-door mapping or building interior route has been wired. Building entrances and interior grids remain admin-authored candidates until connected and verified.
 - No vehicle traffic, lane-level dynamics, turn restrictions, pedestrian sidewalk model, elevation/terrain cost, water/flight movement, group formations, initiative, or battle movement engine.
-- No live GPS input, anti-spoofing, chunk streaming, persistence adapter, or Supabase migration.
+- No live GPS input, anti-spoofing, chunk streaming scheduler, concrete Supabase adapter, or deployed migration. The pure event constructor can be paired with the existing repository contract, but no live database is connected.
 - Collision circles do not replace exact polygon/mesh collision. The route graph is not built from arbitrary GIS lines.
 
 ## Next integration gate
