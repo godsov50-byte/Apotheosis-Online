@@ -305,12 +305,10 @@ def main():
         encoding="utf-8",
     )
     (out / "building-footprint-audit.json").write_text(
-        json.dumps(report, indent=2) + "
-", encoding="utf-8"
+        json.dumps(report, indent=2) + "\n", encoding="utf-8"
     )
     (out / "source-layer-metadata.json").write_text(
-        json.dumps(metadata, indent=2) + "
-", encoding="utf-8"
+        json.dumps(metadata, indent=2) + "\n", encoding="utf-8"
     )
     summary = {key: value for key, value in report.items() if key not in {
         "inside_feature_ids", "boundary_intersection_feature_ids"
