@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AO Chess · Houston Road Preview</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#111716;color:#e7ece7}body{margin:0;padding:16px}main{max-width:1200px;margin:auto}header{display:flex;gap:12px;align-items:center;flex-wrap:wrap}h1{font-size:1.25rem;margin:0}button,input{background:#202a26;color:inherit;border:1px solid #48564e;border-radius:8px;padding:9px 12px}#stats{opacity:.8;font-size:.9rem;margin:12px 0}canvas{width:100%;height:min(76vh,780px);background:#0b110f;border:1px solid #3a4640;border-radius:10px;touch-action:none}#hint{opacity:.65;font-size:.8rem;margin-top:8px}
+</style></head><body><main><header><h1>AO Chess · Houston road preview</h1><input id="file" type="file" accept=".json,application/json"><button id="zoomIn">Zoom +</button><button id="zoomOut">Zoom −</button><button id="fit">Fit</button><button id="reset">Reset</button></header><div id="stats">Load road-centerline-cells.json to visualize the preview.</div><canvas id="map" width="1200" height="800"></canvas><div id="hint">Pan by dragging · Zoom with buttons · Preview data is centerline-only and is not walkable ground.</div></main>
+<script>
+(() => {
+ const canvas=document.querySelector('#map'),ctx=canvas.getContext('2d'),stats=document.querySelector('#stats');
+ let features=[],extent=null,scale=1,offsetX=0,offsetY=0,drag=null,loaded=false;
+ function bounds(){if(!extent)return;let w=extent.maxX-extent.minX,h=extent.maxY-extent.minY;if(!w||!h)return;scale=Math.min(canvas.width/w,canvas.height/h)*.94;offsetX=(canvas.width-w*scale)/2-extent.minX*scale;offsetY=(canvas.height-h*scale)/2-extent.minY*scale;draw()}
+ function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);if(!loaded)return;ctx.save();ctx.translate(offsetX,offsetY);ctx.scale(scale,scale);ctx.lineWidth=Math.max(.8,1/scale*1.2);ctx.strokeStyle='#e2bd76';
+ for(const f of features){let g=f.geometry;if(!g)continue;let lines=g.type==='LineString'?[g.coordinates]:g.coordinates;for(const line of lines){if(!line?.length)continue;ctx.beginPath();ctx.moveTo(line[0][0],line[0][1]);for(let i=1;i<line.length;i++)ctx.lineTo(line[i][0],line[i][1]);ctx.stroke()}}
+ ctx.restore()}
+ function fit(){bounds()}
+ document.querySelector('#file').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const data=JSON.parse(await f.text());features=data.features||[];let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;for(const f of features){const g=f.geometry;if(!g)continue;const lines=g.type==='LineString'?[g.coordinates]:g.coordinates;for(const l of lines)for(const p of l){minX=Math.min(minX,p[0]);minY=Math.min(minY,p[1]);maxX=Math.max(maxX,p[0]);maxY=Math.max(maxY,p[1])}}extent={minX,minY,maxX,maxY};loaded=true;stats.textContent=features.length.toLocaleString()+' centerline features loaded · preview only · '+(data.cell_size_mm||'')+' mm cell size';bounds()}catch(err){stats.textContent='Unable to load file: '+err.message}});
+ document.querySelector('#zoomIn').onclick=()=>{scale*=1.25;draw()};document.querySelector('#zoomOut').onclick=()=>{scale/=1.25;draw()};document.querySelector('#fit').onclick=fit;document.querySelector('#reset').onclick=()=>{offsetX=0;offsetY=0;scale=1;draw()};
+ canvas.addEventListener('pointerdown',e=>{drag=[e.clientX,e.clientY,offsetX,offsetY];canvas.setPointerCapture(e.pointerId)});canvas.addEventListener('pointermove',e=>{if(!drag)return;let r=canvas.getBoundingClientRect(),sx=canvas.width/r.width,sy=canvas.height/r.height;offsetX=drag[2]+(e.clientX-drag[0])*sx;offsetY=drag[3]+(e.clientY-drag[1])*sy;draw()});canvas.addEventListener('pointerup',()=>drag=null);canvas.addEventListener('pointercancel',()=>drag=null);
+ })();
+</script></body></html>
