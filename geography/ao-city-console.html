@@ -45,8 +45,8 @@
  </section>
  <section class="panel view" id="view-navigation">
   <h2>Navigation</h2><div class="kv"><span>Destination</span><b id="navDestination">None selected</b></div><div class="kv"><span>Direct distance</span><b id="navDistance">—</b></div><div class="kv"><span>Bearing</span><b id="navBearing">—</b></div><div class="kv"><span>Route status</span><b id="navStatus">No route preview</b></div>
-  <div class="actions"><button class="primary" id="previewRoute">Preview direct route</button><button id="moveToDestination">Move to destination</button></div>
-  <p class="notice">This build draws a direct-line preview only. Verified road, sidewalk, entrance and interior connectivity must be imported and approved before AO can claim a navigable street route.</p>
+  <div class="actions"><button class="primary" id="previewRoute">Preview road route</button><button id="moveToDestination">Move to destination</button></div>
+  <p class="notice">The map grid is a scale-adjusting geographic overlay. Route previews use imported OSM road/path centerlines and explicitly authored entrances; they are not verified sidewalks, and movement remains local until Kernel validation is connected.</p>
  </section>
  <section class="panel view" id="view-narration">
   <h2>Narration preview</h2><div class="bubble" id="narrationText">You are at the demo starting anchor. The surrounding city is represented by the geographic basemap; no unverified interior details are assumed.</div>
@@ -106,6 +106,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script src="./ao-city-console.js"></script>\n<script src="./ao-city-registry.js"></script>
 <script src="./ao-city-road-import.js"></script>
+<script src="./ao-city-navigation.js"></script>
 <script src="./ao-street-name-overlay.js"></script>
 </body>
 </html>
