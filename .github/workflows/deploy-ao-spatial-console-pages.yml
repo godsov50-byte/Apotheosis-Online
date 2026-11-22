@@ -45,9 +45,13 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
-          # A rerun keeps artifacts from earlier attempts in the same run.
-          # Include run_attempt so deploy-pages selects only this attempt's artifact.
+          # Reruns retain previous artifacts, so use a unique name per attempt.
           name: github-pages-${{ github.run_attempt }}
+
+      # GitHub's artifact metadata API can briefly lag upload finalization.
+      # Give the artifact time to become visible before deploy-pages queries it.
+      - name: Wait for artifact metadata propagation
+        run: sleep 20
 
       - name: Deploy
         id: deployment
