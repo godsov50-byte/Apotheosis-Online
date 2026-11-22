@@ -45,7 +45,12 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
+          # A rerun keeps artifacts from earlier attempts in the same run.
+          # Include run_attempt so deploy-pages selects only this attempt's artifact.
+          name: github-pages-${{ github.run_attempt }}
 
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}
