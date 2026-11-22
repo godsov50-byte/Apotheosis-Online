@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createBoard,validateBoard,addStructure,expandCity,createConnectivity,addConnection} from './ao-board-world.mjs';
+const home={id:'home1',kind:'home',footprint:[{x:2,y:2},{x:3,y:2}],entrances:[{id:'door1',x:2,y:2,doorId:'d1'}]};
+test('board creates complete tile grid',()=>{const b=createBoard({worldId:'w',boardId:'b',width:4,height:4});assert.equal(b.tiles.length,16);assert.equal(validateBoard(b),true)});
+test('structure entrance is explicit and fixed',()=>{const b=addStructure(createBoard({worldId:'w',boardId:'b',width:6,height:6}),home);assert.deepEqual(b.structures[0].entrances,home.entrances);assert.throws(()=>addStructure(b,{...home,id:'second'}),/overlap/)});
+test('city expansion changes wilderness but preserves existing structure records',()=>{const b=addStructure(createBoard({worldId:'w',boardId:'b',width:6,height:6}),home),original=structuredClone(b.structures);const grown=expandCity(b,{cityId:'c',tiles:[{x:2,y:2},{x:3,y:2},{x:4,y:2}]});assert.deepEqual(grown.structures,original);assert.equal(grown.tiles.find(t=>t.x===2&&t.y===2).landUse,'urban');assert.equal(b.tiles.find(t=>t.x===2&&t.y===2).landUse,'wilderness')});
+test('protected tile blocks expansion',()=>{const b=createBoard({worldId:'w',boardId:'b',width:2,height:2});b.tiles[0].landUse='protected';assert.throws(()=>expandCity(b,{cityId:'c',tiles:[{x:0,y:0}]}),/protected/)});
+test('layer 3 connects street, entrance, and interior through explicit edges',()=>{const c=createConnectivity({nodes:[{id:'street',boardId:'city',x:1,y:2,kind:'street'},{id:'door',boardId:'city',x:2,y:2,kind:'entrance'},{id:'room',boardId:'interior',x:0,y:0,kind:'room'}],edges:[{id:'street-door',from:'street',to:'door',kind:'entrance'}]});const n=addConnection(c,{id:'door-room',from:'door',to:'room',kind:'door'});assert.equal(n.edges.size,2);assert.equal(n.edges.get('door-room').cost,1)});
+test('connector rejects missing endpoint',()=>{const c=createConnectivity({nodes:[{id:'a',boardId:'b',x:0,y:0,kind:'street'}]});assert.throws(()=>addConnection(c,{id:'bad',from:'a',to:'missing',kind:'door'}),/endpoint/)});

@@ -47,6 +47,8 @@ jobs:
         run: node tests/spatial/consistency-registry.test.js
       - name: Test Houston street registry compiler
         run: python scripts/geography/build_houston_street_registry.py --self-test
+      - name: Test AO board-world foundation
+        run: node --test spatial/ao-board-world.test.mjs
       - name: Test AO spatial address resolver
         run: node --test spatial/ao-spatial-addressing.test.mjs
       - name: Test AO global geographic resolver and feature bridge
