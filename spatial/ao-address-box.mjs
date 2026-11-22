@@ -28,7 +28,8 @@ export function createAddressBox({ building, entrance, pedestrianAccess = null }
       edge.routingApproved !== true ||
       !WALKABLE_EDGE_STATUSES.has(edge.status) ||
       !Array.isArray(edge.modes) ||
-      !edge.modes.includes("walk")
+      !edge.modes.includes("walk") ||
+      (edge.from !== accessPoint.id && edge.to !== accessPoint.id)
     ) {
       throw new Error("Pedestrian connection is not explicitly approved for walking");
     }
