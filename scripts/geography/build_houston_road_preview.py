@@ -100,7 +100,8 @@ def main() -> int:
           "2. Compile immutable segment identities and street-name search groups.",
           "3. Transform to Houston-local millimetres using staging profile v2.",
           "4. Rasterize sparse centerline candidate cells.",
-          "5. Build legacy endpoint topology candidates.",\n          "6. Build distance-tolerant endpoint topology v2 (no crossing connections).",\n          "7. Write BUILD_SUMMARY.json with source/output counts and provenance."
+          "5. Build legacy endpoint topology candidates.",
+          "6. Build distance-tolerant endpoint topology v2 (no crossing connections).",\n          "7. Write BUILD_SUMMARY.json with source/output counts and provenance."
           
           "NOTE: preview-only; no database or world-state writes."
         ]))
