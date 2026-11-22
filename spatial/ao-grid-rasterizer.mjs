@@ -84,11 +84,17 @@ function pointOnSegment(p, a, b) {
     p[1] >= Math.min(a[1], b[1]) && p[1] <= Math.max(a[1], b[1]);
 }
 
+function pointOnRing(point, ring) {
+  for (let i = 0; i < ring.length - 1; i++) {
+    if (pointOnSegment(point, ring[i], ring[i + 1])) return true;
+  }
+  return false;
+}
+
 function pointInRing(point, ring) {
   let inside = false;
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
     const a = ring[j], b = ring[i];
-    if (pointOnSegment(point, a, b)) return true;
     const crosses = (a[1] > point[1]) !== (b[1] > point[1]) &&
       point[0] < ((b[0] - a[0]) * (point[1] - a[1])) / (b[1] - a[1]) + a[0];
     if (crosses) inside = !inside;
@@ -97,6 +103,7 @@ function pointInRing(point, ring) {
 }
 
 function pointInPolygon(point, rings) {
+  if (rings.some(ring => pointOnRing(point, ring))) return false;
   if (!pointInRing(point, rings[0])) return false;
   for (let i = 1; i < rings.length; i++) {
     if (pointInRing(point, rings[i])) return false;
@@ -119,13 +126,22 @@ function segmentsIntersect(a, b, c, d) {
 }
 
 function segmentIntersectsCell(a, b, left, bottom, right, top) {
-  if (Math.max(a[0], b[0]) < left || Math.min(a[0], b[0]) > right ||
-      Math.max(a[1], b[1]) < bottom || Math.min(a[1], b[1]) > top) return false;
-  if ((a[0] >= left && a[0] <= right && a[1] >= bottom && a[1] <= top) ||
-      (b[0] >= left && b[0] <= right && b[1] >= bottom && b[1] <= top)) return true;
-  const bl = [left, bottom], br = [right, bottom], tr = [right, top], tl = [left, top];
-  return segmentsIntersect(a, b, bl, br) || segmentsIntersect(a, b, br, tr) ||
-    segmentsIntersect(a, b, tr, tl) || segmentsIntersect(a, b, tl, bl);
+  // Positive-length intersection with the open cell interior only. Merely
+  // touching a cell edge does not occupy the cell (important for polygon holes).
+  const dx = b[0] - a[0], dy = b[1] - a[1];
+  let t0 = 0, t1 = 1;
+  const clip = (p, q) => {
+    if (p === 0) return q > 0;
+    const t = q / p;
+    if (p < 0) { if (t > t1) return false; if (t > t0) t0 = t; }
+    else { if (t < t0) return false; if (t < t1) t1 = t; }
+    return true;
+  };
+  if (!clip(-dx, a[0] - left) || !clip(dx, right - a[0]) ||
+      !clip(-dy, a[1] - bottom) || !clip(dy, top - a[1]) || t1 <= t0) return false;
+  const mid = (t0 + t1) / 2;
+  const x = a[0] + dx * mid, y = a[1] + dy * mid;
+  return x > left && x < right && y > bottom && y < top;
 }
 
 function rasterizePolygon(rings, cells, cellSizeMm, maxCells) {
@@ -164,7 +180,7 @@ function rasterizePolygon(rings, cells, cellSizeMm, maxCells) {
       }
       if (!hit) {
         outer: for (const point of rings[0]) {
-          if (point[0] >= left && point[0] <= right && point[1] >= bottom && point[1] <= top) {
+          if (point[0] > left && point[0] < right && point[1] > bottom && point[1] < top) {
             hit = true; break outer;
           }
         }
