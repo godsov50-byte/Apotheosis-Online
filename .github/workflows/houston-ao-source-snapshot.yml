@@ -1,5 +1,4 @@
 name: Houston AO source snapshot
-
 on:
   workflow_dispatch:
     inputs:
@@ -37,6 +36,17 @@ jobs:
           BBOX_WGS84: ${{ inputs.bbox_wgs84 }}
           SOURCE_IDS: ${{ inputs.source_ids }}
         run: |
+          set -u
+          output_dir="build/houston-ao-source-data"
+          mkdir -p "$output_dir"
+          log_file="$output_dir/acquisition.log"
+          echo "Starting Houston AO GIS acquisition"
+          echo "Bounding box: $BBOX_WGS84"
+          if [[ -n "$SOURCE_IDS" ]]; then
+            echo "Selected source IDs: $SOURCE_IDS"
+          else
+            echo "Selected source IDs: ALL catalog entries"
+          fi
           args=()
           if [[ -n "$SOURCE_IDS" ]]; then
             IFS=',' read -r -a ids <<< "$SOURCE_IDS"
@@ -47,38 +57,58 @@ jobs:
               fi
             done
           fi
-          python scripts/geography/acquire_houston_ao_sources.py \
+          set +e
+          python -u scripts/geography/acquire_houston_ao_sources.py \
             --bbox "$BBOX_WGS84" \
-            --output-dir build/houston-ao-source-data \
-            "${args[@]}"
+            --output-dir "$output_dir" \
+            "${args[@]}" 2>&1 | tee "$log_file"
+          acquire_status=${PIPESTATUS[0]}
+          set -e
+          printf '%s\n' "$acquire_status" > "$output_dir/acquisition-exit-code.txt"
+          echo "Python acquisition exit code: $acquire_status"
+          if [[ ! -f "$output_dir/run-manifest.json" ]]; then
+            echo "No run-manifest.json was produced; the failure occurred before normal per-source reporting." | tee -a "$log_file"
+          fi
+          exit "$acquire_status"
 
       - name: Summarize source acquisition
         if: always()
         run: |
-          if [[ -f build/houston-ao-source-data/run-manifest.json ]]; then
-            python - <<'PY'
+          output_dir="build/houston-ao-source-data"
+          {
+            echo "## Houston AO GIS source acquisition"
+            if [[ -f "$output_dir/run-manifest.json" ]]; then
+              python - <<'PY'
           import json
           from pathlib import Path
           p = Path("build/houston-ao-source-data/run-manifest.json")
           data = json.loads(p.read_text())
           done = data.get("completed", [])
           failed = data.get("failures", [])
-          summary = [
-              "## Houston AO GIS source acquisition",
-              f"- Bounding box: `{data.get('bbox_wgs84')}`",
-              f"- Completed layers: **{len(done)}**",
-              f"- Failed layers: **{len(failed)}**",
-              "",
-          ]
-          summary += [f"- ✓ {item.get('dataset_id')}: {item.get('downloaded_feature_count')} features" for item in done]
-          summary += [f"- ✗ {item.get('dataset_id')}: {item.get('error')}" for item in failed]
-          Path(__import__("os").environ["GITHUB_STEP_SUMMARY"]).write_text("\n".join(summary) + "\n")
+          print(f"- Bounding box: `{data.get('bbox_wgs84')}`")
+          print(f"- Completed layers: **{len(done)}**")
+          print(f"- Failed layers: **{len(failed)}**")
+          for item in done:
+              print(f"- ✓ {item.get('dataset_id')}: {item.get('downloaded_feature_count')} features")
+          for item in failed:
+              print(f"- ✗ {item.get('dataset_id')}: {item.get('error')}")
           PY
-          else
-            echo "No run manifest was produced. Check the acquisition step logs." >> "$GITHUB_STEP_SUMMARY"
-          fi
+            else
+              echo "- No run manifest was produced; see the captured acquisition log below."
+            fi
+            if [[ -f "$output_dir/acquisition-exit-code.txt" ]]; then
+              echo "- Python exit code: $(cat "$output_dir/acquisition-exit-code.txt")"
+            fi
+            if [[ -f "$output_dir/acquisition.log" ]]; then
+              echo
+              echo "### Acquisition log (last 100 lines)"
+              echo '~~~text'
+              tail -n 100 "$output_dir/acquisition.log"
+              echo '~~~'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload AO staging source bundle
+      - name: Upload AO staging source bundle and diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -89,4 +119,6 @@ jobs:
 
       - name: Report partial acquisition failure
         if: steps.acquire.outcome == 'failure'
-        run: exit 1
+        run: |
+          echo "GIS acquisition failed. Inspect the acquisition step log, job summary, or houston-ao-source-data artifact for the captured Python error."
+          exit 1
