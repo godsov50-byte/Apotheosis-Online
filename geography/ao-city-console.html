@@ -66,6 +66,8 @@
    <select id="buildingSource"><option value="hgac-harris-county-building-footprints-2018">H-GAC / Harris County building footprints · 2018 LiDAR</option><option value="city-of-houston-building-footprints-2022">City of Houston detailed footprints · 2022 snapshot</option><option value="user-imported-building-footprints">Other sourced building GeoJSON</option></select>
    <button id="importBuildings">Import building footprints GeoJSON</button>
    <button id="loadOsmBuildings" class="primary">Load OSM building outlines in current map view</button>
+   <button id="loadOsmRoads" class="primary">Load OSM roads in current map view</button>
+   <div class="hint">Imports mapped highway ways as source centerlines, preserving OSM way IDs and tags. This browser-local cache is source evidence, not a verified routing graph or a Supabase/Kernel commit.</div>
    <div class="hint">Fetches building footprints from OpenStreetMap via Overpass. Source data is community-mapped and may be incomplete; it is not parcel ownership or field-verified door data.</div>
    <input id="buildingRegistryFile" type="file" accept=".geojson,.json,application/geo+json,application/json" hidden>
    <button id="importLots">Import lot / parcel boundaries GeoJSON</button>
@@ -103,6 +105,7 @@
 <div class="footer">Prototype boundary: imported streets/building footprints are local sourced evidence only. No AO origin, trusted API, Kernel approval, WorldHeart persistence, validated street topology, entrances, interiors, or production routing is connected.</div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script src="./ao-city-console.js"></script>\n<script src="./ao-city-registry.js"></script>
+<script src="./ao-city-road-import.js"></script>
 <script src="./ao-street-name-overlay.js"></script>
 </body>
 </html>
