@@ -18,6 +18,7 @@ ACQUIRE = ROOT / "scripts/geography/acquire_houston_road_centerlines.py"
 REGISTRY = ROOT / "scripts/geography/build_houston_street_registry.py"
 GRID = ROOT / "scripts/geography/build_houston_road_grid.py"
 RASTER = ROOT / "scripts/geography/rasterize_houston_road_grid.mjs"
+TOPOLOGY = ROOT / "scripts/geography/build_houston_endpoint_topology_preview.py"
 
 def run(command: list[str]) -> None:
     print("+", " ".join(map(str, command)), flush=True)
@@ -37,10 +38,15 @@ def build(output: Path, preview_only: bool) -> dict:
          "--output", str(grid_dir/"road-centerline-cells.json"),
          "--manifest", str(grid_dir/"road-centerline-cells-manifest.json"),
          "--input-manifest", str(grid_dir/"roads-local-mm-manifest.json")])
+    run([sys.executable, str(TOPOLOGY), "--input", str(grid_dir/"roads-local-mm.json"),
+         "--manifest", str(grid_dir/"roads-local-mm-manifest.json"),
+         "--output", str(grid_dir/"endpoint-topology.json"),
+         "--report", str(grid_dir/"endpoint-topology-report.json")])
     source_manifest = json.loads((road_dir/"manifest.json").read_text(encoding="utf-8"))
     registry_manifest = json.loads((road_dir/"street-registry-manifest.json").read_text(encoding="utf-8"))
     grid_manifest = json.loads((grid_dir/"roads-local-mm-manifest.json").read_text(encoding="utf-8"))
     raster_manifest = json.loads((grid_dir/"road-centerline-cells-manifest.json").read_text(encoding="utf-8"))
+    topology_report = json.loads((grid_dir/"endpoint-topology-report.json").read_text(encoding="utf-8"))
     summary = {
       "build_id":"ao-houston-road-network-preview-v1",
       "status":"preview_only_not_importable",
@@ -54,6 +60,8 @@ def build(output: Path, preview_only: bool) -> dict:
       "grid_features_missing_geometry":grid_manifest["features_missing_geometry"],
       "transformed_vertices":grid_manifest["transformed_vertex_count"],
       "candidate_cells":raster_manifest["total_sparse_cells"],
+      "road_paths":topology_report["road_paths"],
+      "endpoint_node_candidates":topology_report["endpoint_node_candidates"],
       "source_crs":"EPSG:4326",
       "working_crs":"EPSG:2278",
       "local_grid_cell_size_mm":grid_manifest["cell_size_mm"],
@@ -65,7 +73,9 @@ def build(output: Path, preview_only: bool) -> dict:
         "local_geometry":str(grid_dir/"roads-local-mm.json"),
         "local_geometry_manifest":str(grid_dir/"roads-local-mm-manifest.json"),
         "candidate_cells":str(grid_dir/"road-centerline-cells.json"),
-        "candidate_cells_manifest":str(grid_dir/"road-centerline-cells-manifest.json")
+        "candidate_cells_manifest":str(grid_dir/"road-centerline-cells-manifest.json"),
+        "endpoint_topology":str(grid_dir/"endpoint-topology.json"),
+        "endpoint_topology_report":str(grid_dir/"endpoint-topology-report.json")
       },
       "restrictions":[
         "Road-centerline cells are candidate indexes, not walkable road surfaces.",
@@ -90,7 +100,8 @@ def main() -> int:
           "2. Compile immutable segment identities and street-name search groups.",
           "3. Transform to Houston-local millimetres using staging profile v2.",
           "4. Rasterize sparse centerline candidate cells.",
-          "5. Write BUILD_SUMMARY.json with source/output counts and provenance.",
+          "5. Build conservative endpoint topology candidates (no crossing connections).",
+          "6. Write BUILD_SUMMARY.json with source/output counts and provenance.",
           "NOTE: preview-only; no database or world-state writes."
         ]))
         return 0
