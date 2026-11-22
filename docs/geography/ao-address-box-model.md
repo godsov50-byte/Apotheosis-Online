@@ -2,7 +2,7 @@
 
 ## Decision
 
-Keep the Houston road pipeline, building entrance records, and entrance-destination validation unchanged. Add a small address-box projection beside them; do not replace the builder's existing building or interior data.
+Keep the Houston road pipeline, building entrance records, and interior-destination validation unchanged. Add a small address-box projection beside them; do not replace the builder's existing building or interior data.
 
 ## Minimal model
 
@@ -14,14 +14,14 @@ An address box is a lightweight addressable space derived from a building entran
 
 The initial projection is one box per entrance record. This allows a building with multiple independent entrances/units to have multiple boxes without inventing unit counts. It does not generate room grids, cell occupancy, room partitions, furniture, stairs, or interior geometry.
 
-## Door-to-road rule
+## Door-to-pedestrian-graph rule
 
-A door is not connected merely because an entrance is near a road or has a nearest-road projection. The optional pedestrian link is emitted only when an explicit pedestrian access point and edge are supplied and the edge has:
+A door is not connected merely because an entrance is near a road or has a nearest-road projection. The optional pedestrian link must reference an explicit access point and an edge in the shape emitted by `buildPedestrianGraph`. The edge must have:
 - `routingApproved: true`;
-- `status: "accepted"`;
-- `walkAccess: true`.
+- a status of `source_verified`, `accepted_for_staging`, or `verified`;
+- `modes` containing `"walk"`.
 
-An entrance without that evidence remains a valid address box with an unconnected door. The existing entrance validation remains responsible for validating the interior destination; this projection does not bypass it.
+These values match the staging graph contract in the pedestrian-access builder. An entrance without that evidence remains a valid address box with an unconnected door. The existing interior-destination validation remains separate and is not bypassed.
 
 ## Compatibility and safety
 
@@ -33,4 +33,4 @@ An entrance without that evidence remains a valid address box with an unconnecte
 
 ## Validation
 
-Run `node --test spatial/ao-address-box.test.mjs`. Tests cover the builder-shaped building/entrance records, one-door invariant, non-mutation, and rejection of unapproved pedestrian links.
+Run `node --test spatial/ao-address-box.test.mjs`. Tests cover builder-shaped building/entrance records, the one-door invariant, non-mutation, acceptance of pedestrian-graph output statuses, and rejection of unapproved or non-walkable links.
