@@ -1,0 +1,49 @@
+name: Deploy AO Spatial Console to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "geography/**"
+      - ".github/workflows/deploy-ao-spatial-console-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: ao-spatial-console-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare static site
+        run: |
+          mkdir -p site
+          cp geography/ao-city-console.html site/index.html
+          cp geography/ao-city-console.js site/
+          cp geography/ao-city-registry.js site/
+          cp geography/ao-street-name-overlay.js site/
+          cp geography/ao-city-console.css site/ 2>/dev/null || true
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
