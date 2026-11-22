@@ -252,7 +252,7 @@ def main() -> int:
     args.output_dir.mkdir(parents=True, exist_ok=True)
     output_bytes = (json.dumps(output, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode()
     manifest["local_geometry_sha256"] = sha256(output_bytes)
-    (args.output_dir / "roads-local-mm.geojson").write_bytes(output_bytes)
+    (args.output_dir / "roads-local-mm.json").write_bytes(output_bytes)
     (args.output_dir / "roads-local-mm-manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, sort_keys=True, indent=2) + "\n", encoding="utf-8"
     )
