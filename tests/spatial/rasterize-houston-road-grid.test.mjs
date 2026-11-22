@@ -10,6 +10,16 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const script = path.join(root, "scripts/geography/rasterize_houston_road_grid.mjs");
 
+function rewriteFixture(f) {
+  const bytes = Buffer.from(JSON.stringify(f.fixture));
+  fs.writeFileSync(f.input, bytes);
+  fs.writeFileSync(f.inputManifest, JSON.stringify({
+    status: "preview_only_not_importable",
+    profile_version: 2,
+    local_geometry_sha256: crypto.createHash("sha256").update(bytes).digest("hex")
+  }));
+}
+
 function runFixture() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "ao-houston-grid-"));
   const input = path.join(dir, "input.json");
@@ -68,8 +78,8 @@ test("rasterizes preview road centerline, retaining identity and source attribut
 test("rejects any input not explicitly marked as the Houston preview format", () => {
   const f = runFixture();
   f.fixture.coordinate_space = "houston-v2-local-mm-approved";
-  fs.writeFileSync(f.input, JSON.stringify(f.fixture));
-  const result = spawnSync(process.execPath, [script, "--input", f.input, "--output", f.output, "--manifest", f.manifest], { encoding: "utf8" });
+  rewriteFixture(f);
+  const result = spawnSync(process.execPath, [script, "--input", f.input, "--input-manifest", f.inputManifest, "--output", f.output, "--manifest", f.manifest], { encoding: "utf8" });
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /preview artifact/);
 });
