@@ -62,6 +62,8 @@ jobs:
         run: node --test tests/spatial/rasterize-houston-road-grid.test.mjs
       - name: Test AO spatial movement kernel
         run: node --test spatial/ao-spatial-movement.test.mjs
+      - name: Test lightweight address-box projection
+        run: node --test spatial/ao-address-box.test.mjs
       - name: Compile Python modules
         run: python -m compileall -q geography tests scripts/geography
       - name: Run unit and migration contract tests
