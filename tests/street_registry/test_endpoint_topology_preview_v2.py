@@ -7,7 +7,7 @@ class EndpointTopologyV2Tests(unittest.TestCase):
  def setUp(self):
   self.data={"type":"AOGridInputFeatureCollection","coordinate_space":"houston-v2-local-mm-preview","features":[
    {"geometry":{"type":"LineString","coordinates":[[0,0],[1000,0]]},"properties":{"ao_source_identity":"a","ao_geometry_role":"centerline_candidate","ao_preview_only":True}},
-   {"geometry":{"type":"LineString","coordinates":[[1000,500],[1000,1000]]},"properties":{"ao_source_identity":"b","ao_geometry_role":"centerline_candidate","ao_preview_only":True}},
+   {"geometry":{"type":"LineString","coordinates":[[1000,500],[1000,2500]]},"properties":{"ao_source_identity":"b","ao_geometry_role":"centerline_candidate","ao_preview_only":True}},
    {"geometry":{"type":"LineString","coordinates":[[6000,0],[7000,0]]},"properties":{"ao_source_identity":"c","ao_geometry_role":"centerline_candidate","ao_preview_only":True}}]}
   self.manifest={"status":"preview_only_not_importable","profile_version":2}
  def test_distance_cluster_and_noncluster(self):
