@@ -59,7 +59,7 @@ jobs:
           fi
           set +e
           python -u scripts/geography/acquire_houston_ao_sources.py \
-            --bbox "$BBOX_WGS84" \
+            --bbox="$BBOX_WGS84" \
             --output-dir "$output_dir" \
             "${args[@]}" 2>&1 | tee "$log_file"
           acquire_status=${PIPESTATUS[0]}
