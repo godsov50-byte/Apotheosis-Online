@@ -24,6 +24,13 @@ export function createSourceBuildingRecord(feature, options = {}) {
   if (!Array.isArray(outer) || outer.length < 4 || !outer.every(finitePair)) {
     throw new TypeError("Polygon must have a valid outer ring with at least four coordinates.");
   }
+  if (rings.length > 1) {
+    throw new TypeError("Polygon holes are not supported by the staging footprint renderer yet.");
+  }
+  const first = outer[0], last = outer.at(-1);
+  if (first[0] !== last[0] || first[1] !== last[1]) {
+    throw new TypeError("GeoJSON outer ring must be closed (first and last coordinates match).");
+  }
   const props = feature.properties || {};
   const sourceId = feature.id ?? props.OBJECTID ?? props.OBJECTID_1 ?? props.id ?? null;
   const sourceName = props.NAME ?? props.name ?? props.BUILDING ?? props.building ?? null;
