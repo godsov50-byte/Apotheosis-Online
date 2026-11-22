@@ -13,6 +13,7 @@ These layers must not be collapsed into one table or treated as interchangeable.
 | Path | Purpose | Status |
 |---|---|---|
 | `HOUSTON_SPATIAL_ADAPTER_SPEC.md` | Multi-resolution spatial architecture and safeguards | Design specification |
+| `profiles/houston-v2.json` | User-selected downtown Houston map origin in EPSG:2278; still import-gated pending validation | Staging profile v2 |
 | `AO_HOUSTON_GRID_CONVERSION_PIPELINE_v1.md` | Source-to-S2-to-sparse-square-cell conversion pipeline and acceptance gates | Implementation foundation; staging only |
 | `../spatial/ao-grid-rasterizer.mjs` | Deterministic line/polygon geometry-to-cell rasterizer | Pure utility; requires approved local metric input |
 | `../tests/spatial/ao-grid-rasterizer.test.mjs` | Rasterization contract tests | Node test suite |
