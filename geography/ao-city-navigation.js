@@ -208,13 +208,16 @@
     catch(error){routeLayer.clearLayers();activePath=null;$("navStatus").textContent="No connected route";chat("AO",error.message);}
     finally{routeBusy=false;$("previewRoute").disabled=false;}
   };
-  $("moveToDestination").onclick=async()=>{
-    if(routeBusy)return;
-    if(!activePath){$("previewRoute").click();return;}
-    routeBusy=true;$("moveToDestination").disabled=true;const token=++routeToken;
-    const points=activePath.points;
-    chat("AO","Following the mapped road/path centerline toward "+activePath.entrance.name+". The Envoy will stop at the recorded entrance. This is a local preview, not Kernel movement.");
+  async function walkActivePath(){
+    if(routeBusy||!activePath)return;
+    routeBusy=true;
+    $("previewRoute").disabled=true;
+    $("moveToDestination").disabled=true;
+    const token=++routeToken;
+    const path=activePath;
+    chat("AO","Walking the mapped road/path route toward "+path.entrance.name+". The Envoy will stop at the recorded entrance. This is a local preview, not Kernel movement.");
     try{
+      const points=path.points;
       for(let i=1;i<points.length;i++){
         const a=points[i-1],b=points[i],distance=meters(a,b),steps=Math.max(1,Math.ceil(distance/1.2));
         for(let j=1;j<=steps;j++){
@@ -228,8 +231,35 @@
       }
       state.positionSource="At recorded entrance";
       updateEnvoy();
-      chat("AO","Reached "+activePath.entrance.name+". You are at the recorded doorway; entering still requires the door/access rules to permit it.");
-    } finally{routeBusy=false;$("moveToDestination").disabled=false;}
+      chat("AO","Reached "+path.entrance.name+". You are at the recorded doorway; entering still requires the door/access rules to permit it.");
+    } finally{
+      routeBusy=false;
+      $("previewRoute").disabled=false;
+      $("moveToDestination").disabled=false;
+    }
+  }
+  $("moveToDestination").onclick=async()=>{
+    if(routeBusy)return;
+    if(!activePath){
+      routeBusy=true;
+      $("moveToDestination").disabled=true;
+      try{
+        const path=await calculatePath();
+        drawPath(path);
+        map.fitBounds(L.latLngBounds(path.points.map(p=>[p.lat,p.lng])),{padding:[35,35]});
+      }catch(error){
+        routeLayer.clearLayers();
+        activePath=null;
+        $("navStatus").textContent="Route unavailable";
+        chat("AO",error.message);
+        routeBusy=false;
+        $("moveToDestination").disabled=false;
+        return;
+      }
+      routeBusy=false;
+      $("moveToDestination").disabled=false;
+    }
+    await walkActivePath();
   };
   $("clearDestination").addEventListener("click",()=>{routeLayer.clearLayers();activePath=null;});
   $("navStatus").textContent="Ready · select a destination near a saved entrance, then preview a road route. Import OSM roads first if needed.";
