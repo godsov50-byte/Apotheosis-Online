@@ -180,12 +180,50 @@
     for(const e of entrances){const d=meters(destination,e);if(d<distance){best=e;distance=d;}}
     return best&&distance<=60?{entrance:best,distance}:null;
   }
+  async function fetchRoadsForRoute(start, end) {
+    const south=Math.min(start.lat,end.lat)-0.0035;
+    const north=Math.max(start.lat,end.lat)+0.0035;
+    const west=Math.min(start.lng,end.lng)-0.0045;
+    const east=Math.max(start.lng,end.lng)+0.0045;
+    const query='[out:json][timeout:25];way["highway"]('+south+','+west+','+north+','+east+');out meta geom;';
+    const endpoints=["https://overpass-api.de/api/interpreter","https://overpass.kumi.systems/api/interpreter"];
+    let lastError=null;
+    for(const endpoint of endpoints){
+      try{
+        const response=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},body:"data="+encodeURIComponent(query)});
+        if(!response.ok)throw new Error("Road data service returned HTTP "+response.status);
+        const data=await response.json();
+        const records=(data.elements||[]).filter(w=>w.type==="way"&&Array.isArray(w.geometry)&&w.geometry.length>=2).map(way=>{
+          const tags=way.tags||{},coords=way.geometry.map(p=>[Number(p.lon),Number(p.lat)]);
+          if(coords.some(p=>!Number.isFinite(p[0])||!Number.isFinite(p[1])))return null;
+          const id="street:osm:way:"+String(way.id);
+          return {id,kind:"street",dataset:"openstreetmap-overpass-roads",name:String(tags.name||tags.ref||tags.highway||"OSM road"),geometry:{type:"LineString",coordinates:coords},properties:{...tags,osm_type:"way",osm_id:String(way.id),osm_nodes:Array.isArray(way.nodes)?way.nodes:null,highway:String(tags.highway||"unclassified")},rawProperties:{...tags,osm_type:"way",osm_id:String(way.id),osm_nodes:Array.isArray(way.nodes)?way.nodes:null,highway:String(tags.highway||"unclassified")},provenance:{publisher:"OpenStreetMap contributors",source_url:"https://www.openstreetmap.org/way/"+way.id,license:"ODbL 1.0",retrieved_at:new Date().toISOString()},sourceIdentity:"way/"+way.id,sourceStatus:"OSM road centerline; not a verified sidewalk or access record"};
+        }).filter(Boolean);
+        if(!records.length)throw new Error("No OSM highway ways were returned around this route.");
+        const db=await openDB(),tx=db.transaction("features","readwrite"),store=tx.objectStore("features");
+        for(const record of records)store.put(record);
+        await new Promise((resolve,reject)=>{tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error||new Error("Could not cache route road data."));tx.onabort=()=>reject(tx.error||new Error("Road cache write was aborted."));});
+        return records;
+      }catch(error){lastError=error;}
+    }
+    throw lastError||new Error("Could not retrieve road data.");
+  }
   async function calculatePath(){
     if(!state.destination)throw new Error("Choose a purple destination point first.");
     const entranceMatch=selectEntrance(state.destination);
     if(!entranceMatch)throw new Error("No recorded entrance pin or AO entrance is within 60 m of that destination. Add a door pin in Admin, then select a destination beside it.");
-    const records=await loadRoads(),graph=buildGraph(records);
-    if(!graph.nodes.size)throw new Error("No walkable OSM centerlines are loaded here. Use Admin → Load OSM roads in current map view, then try again.");
+    $("navStatus").textContent="Loading nearby road network…";
+    let records=await loadRoads();
+    try{
+      const fetched=await fetchRoadsForRoute(state.position,entranceMatch.entrance);
+      const byId=new Map(records.map(r=>[r.id,r]));
+      for(const record of fetched)byId.set(record.id,record);
+      records=[...byId.values()];
+    }catch(error){
+      if(!records.length)throw new Error("Could not load roads automatically: "+error.message);
+    }
+    const graph=buildGraph(records);
+    if(!graph.nodes.size)throw new Error("No walkable OSM centerlines are available for this route. Check the road data service or choose another mapped street.");
     const start=snapToNetwork(graph,state.position,60,"route-start"),end=snapToNetwork(graph,entranceMatch.entrance,60,"route-end");
     if(!start||!end)throw new Error("The Envoy or entrance is more than 60 m from the imported road/path centerlines. The route is not connected.");
     const roadPath=shortestPath(graph,start.node.key,end.node.key);
@@ -194,10 +232,11 @@
   }
   function drawPath(path){
     routeLayer.clearLayers();
+    window.AONavRouteStatus="Road route ready · "+path.entrance.name;
     L.polyline(path.points,{color:"#c69bff",weight:5,opacity:.95,lineCap:"round",lineJoin:"round"}).addTo(routeLayer);
     L.circleMarker([path.entrance.lat,path.entrance.lng],{radius:8,color:"#fff",weight:2,fillColor:"#75d3a4",fillOpacity:1}).addTo(routeLayer).bindTooltip("Recorded entrance · "+path.entrance.name);
     activePath=path;
-    $("navStatus").textContent="Road/path centerline route → " + path.entrance.name + " (recorded door)";
+    $("navStatus").textContent=window.AONavRouteStatus;
     $("navDistance").textContent=Math.round(path.roadMeters)+" m road network";
     $("navDestination").textContent=path.entrance.name+" (recorded entrance)";
     $("moveToDestination").disabled=false;
@@ -215,6 +254,8 @@
     $("moveToDestination").disabled=true;
     const token=++routeToken;
     const path=activePath;
+    window.AONavRouteStatus="Walking to "+path.entrance.name+"…";
+    $("navStatus").textContent=window.AONavRouteStatus;
     chat("AO","Walking the mapped road/path route toward "+path.entrance.name+". The Envoy will stop at the recorded entrance. This is a local preview, not Kernel movement.");
     try{
       const points=path.points;
@@ -230,6 +271,7 @@
         }
       }
       state.positionSource="At recorded entrance";
+      window.AONavRouteStatus="Arrived at recorded entrance · "+path.entrance.name;
       updateEnvoy();
       chat("AO","Reached "+path.entrance.name+". You are at the recorded doorway; entering still requires the door/access rules to permit it.");
     } finally{
@@ -250,7 +292,8 @@
       }catch(error){
         routeLayer.clearLayers();
         activePath=null;
-        $("navStatus").textContent="Route unavailable";
+        window.AONavRouteStatus="Route unavailable";
+        $("navStatus").textContent=window.AONavRouteStatus;
         chat("AO",error.message);
         routeBusy=false;
         $("moveToDestination").disabled=false;
