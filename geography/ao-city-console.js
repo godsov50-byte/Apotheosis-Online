@@ -38,7 +38,36 @@
  $('setDestination').onclick=()=>{if(!state.destination){chat('AO','Select a point on the map first.');return}setView('navigation');updateNavigation()};
  $('clearDestination').onclick=()=>{state.destination=null;state.route=null;renderObjects();updateNavigation();mapstatus('Destination cleared.')};
  $('previewRoute').onclick=()=>{if(!state.destination){chat('AO','Select a destination on the map first.');return}state.route=true;renderObjects();updateNavigation();map.fitBounds([[state.position.lat,state.position.lng],[state.destination.lat,state.destination.lng]],{padding:[40,40]})};
- $('moveToDestination').onclick=()=>{if(!state.destination){chat('AO','Select a destination first.');return}state.position={lat:state.destination.lat,lng:state.destination.lng};state.positionSource='Direct destination preview';state.route=null;updateEnvoy();renderObjects();chat('AO','Moved the demo marker to the selected destination. This is a local preview, not Kernel-committed movement.')};
+ let walkPreviewToken=0;
+ function pointInsideFootprint(point,footprint){
+   if(!Array.isArray(footprint)||footprint.length<3)return false;
+   let inside=false;
+   for(let i=0,j=footprint.length-1;i<footprint.length;j=i++){
+     const [yi,xi]=footprint[i],[yj,xj]=footprint[j];
+     const crosses=((yi>point.lat)!==(yj>point.lat))&&(point.lng<(xj-xi)*(point.lat-yi)/(yj-yi||1e-12)+xi);
+     if(crosses)inside=!inside;
+   }
+   return inside;
+ }
+ function walkBlocked(point){
+   return state.objects.some(o=>o.kind==='building'&&o.footprint&&pointInsideFootprint(point,o.footprint));
+ }
+ $('moveToDestination').onclick=async()=>{
+   if(!state.destination){chat('AO','Select a destination first.');return}
+   const token=++walkPreviewToken,origin={...state.position},destination={...state.destination},distance=haversine(origin,destination);
+   if(distance<1){chat('AO','You are already at the destination.');return}
+   if(state.insideBuilding){chat('AO','Exit the building before walking along the exterior preview.');return}
+   const steps=Math.ceil(distance),stepCount=Math.max(1,steps);
+   chat('AO','Walking preview started. This uses a straight-line path only—not verified sidewalks or street routing.');
+   for(let i=1;i<=stepCount;i++){
+     if(token!==walkPreviewToken)return;
+     const t=Math.min(1,i/stepCount),next={lat:origin.lat+(destination.lat-origin.lat)*t,lng:origin.lng+(destination.lng-origin.lng)*t};
+     if(walkBlocked(next)){state.positionSource='Walking preview stopped at an authored building footprint';updateEnvoy();renderObjects();chat('AO','Walking preview stopped: an authored building footprint blocks the direct path. No route around it is inferred.');return}
+     state.position=next;state.positionSource='Walking preview · step-by-step direct line';updateEnvoy();renderObjects();
+     if(i<stepCount)await new Promise(resolve=>setTimeout(resolve,200));
+   }
+   state.route=null;updateEnvoy();renderObjects();chat('AO','Walking preview reached the selected point. Position was advanced step by step; this is not Kernel-committed movement.');
+ };
  document.querySelectorAll('[data-move]').forEach(b=>b.onclick=()=>moveCell(b.dataset.move));
  function moveCell(dir){if(state.insideBuilding){chat('AO','Interior movement is unavailable because this building has no authored walkable room geometry yet. Exit the building or author its interior geometry first.');return}const deltas={north:[0,1],south:[0,-1],east:[1,0],west:[-1,0]},[east,north]=deltas[dir];const next={lat:state.position.lat+metersToLat(north),lng:state.position.lng+metersToLng(east,state.position.lat)};for(const o of state.objects.filter(o=>o.kind==='building'&&o.center)){const dx=(next.lng-o.center.lng)*111320*Math.cos(next.lat*Math.PI/180),dy=(o.center.lat-next.lat)*111320;if(Math.abs(dx)<o.width/2&&Math.abs(dy)<o.depth/2){chat('AO','Movement blocked by '+o.name+'. Use a recorded entrance; the preview does not allow walking through the footprint.');return}}state.position=next;state.positionSource='Tactical preview movement';updateEnvoy();chat('AO','You move one 1 m preview cell '+dir+'.')}
  $('gpsButton').onclick=()=>{if(!navigator.geolocation){mapstatus('Device GPS is unavailable in this browser.');return}navigator.geolocation.getCurrentPosition(p=>{state.position={lat:p.coords.latitude,lng:p.coords.longitude};state.positionSource='Device GPS ±'+Math.round(p.coords.accuracy)+' m';updateEnvoy();map.setView([state.position.lat,state.position.lng],18);mapstatus('Device GPS read for display only; it does not change AO world state.')},e=>mapstatus('GPS unavailable: '+e.message),{enableHighAccuracy:true,timeout:12000,maximumAge:5000})};
