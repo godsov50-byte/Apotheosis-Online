@@ -68,6 +68,16 @@
    <label>Search imported streets and buildings</label>
    <input id="registrySearch" placeholder="Search a street or building name">
    <div id="registryResults" class="registry-results"></div>
+   <div id="aoStreetRenamePanel" class="placecard registry-inspector" hidden>
+    <h3>AO Street Name Overlay</h3>
+    <div class="hint">Rename the full source name group (all matching segments share one AO name). Original GIS identity and geometry remain unchanged. Names are saved locally in this browser only.</div>
+    <label>AO street name</label>
+    <input id="aoStreetNameInput" placeholder="Enter an AO street name">
+    <div class="row"><button id="saveAoStreetName" class="primary">Save AO name</button><button id="clearAoStreetName">Restore source name</button></div>
+    <div class="row"><button id="exportAoStreetNames">Export names</button><button id="importAoStreetNames">Import names</button></div>
+    <input id="aoStreetNamesFile" type="file" accept=".json,application/json" hidden>
+    <div id="aoStreetNameStatus" class="hint" role="status">Select a street segment to rename its name group.</div>
+   </div>
    <div id="registryInspector" class="placecard registry-inspector"><span class="hint">Select an imported street or building on the map or from search to inspect its source properties.</span></div>
    <div id="registryStatus" class="hint" role="status">No source files imported yet. Existing locally authored demo places remain separate.</div>
    <div class="hint">H-GAC 2018 footprints are approximate LiDAR-derived evidence and may include classification errors. Importing them does not verify entrances, ownership, use, floors, rooms, access or condition.</div>
@@ -88,5 +98,6 @@
 <div class="footer">Prototype boundary: imported streets/building footprints are local sourced evidence only. No AO origin, trusted API, Kernel approval, WorldHeart persistence, validated street topology, entrances, interiors, or production routing is connected.</div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script src="./ao-city-console.js"></script>\n<script src="./ao-city-registry.js"></script>
+<script src="./ao-street-name-overlay.js"></script>
 </body>
 </html>
