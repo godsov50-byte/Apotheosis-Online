@@ -33,6 +33,7 @@ jobs:
           cp geography/ao-city-console.html site/index.html
           mkdir -p site/spatial-mock
           cp geography/ao-spatial-mock/index.html site/spatial-mock/index.html
+          cp geography/ao-street-network.js site/ao-street-network.js
           cp geography/ao-city-console.js site/
           cp geography/ao-city-registry.js site/
           cp geography/ao-city-road-import.js site/
