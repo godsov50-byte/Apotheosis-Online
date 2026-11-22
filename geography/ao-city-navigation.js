@@ -115,15 +115,17 @@
     return best&&bestDistance<=maxMeters?{node:best,distance:bestDistance}:null;
   }
   function shortestPath(graph,startKey,endKey){
-    const dist=new Map([[startKey,0]]),prev=new Map(),unvisited=new Set(graph.nodes.keys());
-    while(unvisited.size){
-      let current=null,best=Infinity;
-      for(const key of unvisited){const d=dist.get(key);if(d!==undefined&&d<best){best=d;current=key;}}
-      if(current===null||current===endKey)break;
-      unvisited.delete(current);
+    const dist=new Map([[startKey,0]]),prev=new Map(),heap=[];
+    const push=(item)=>{heap.push(item);let i=heap.length-1;while(i){const p=(i-1)>>1;if(heap[p].cost<=item.cost)break;heap[i]=heap[p];i=p;}heap[i]=item;};
+    const pop=()=>{if(!heap.length)return null;const top=heap[0],last=heap.pop();if(heap.length){let i=0;while(true){let l=i*2+1,r=l+1,c=i;if(l<heap.length&&heap[l].cost<last.cost)c=l;if(r<heap.length&&heap[r].cost<(c===i?last.cost:heap[c].cost))c=r;if(c===i)break;heap[i]=heap[c];i=c;}heap[i]=last;}return top;};
+    push({key:startKey,cost:0});
+    while(heap.length){
+      const item=pop(),current=item.key,best=item.cost;
+      if(best!==(dist.get(current)??Infinity))continue;
+      if(current===endKey)break;
       for(const edge of graph.nodes.get(current).edges){
-        if(!unvisited.has(edge.to))continue;
-        const next=best+edge.cost;if(next<(dist.get(edge.to)??Infinity)){dist.set(edge.to,next);prev.set(edge.to,current);}
+        const next=best+edge.cost;
+        if(next<(dist.get(edge.to)??Infinity)){dist.set(edge.to,next);prev.set(edge.to,current);push({key:edge.to,cost:next});}
       }
     }
     if(!dist.has(endKey))return null;
@@ -143,10 +145,10 @@
     if(!entranceMatch)throw new Error("No explicitly recorded entrance is within 30 m of that destination. Add or select the correct entrance first.");
     const records=await loadRoads(),graph=buildGraph(records);
     if(!graph.nodes.size)throw new Error("No walkable OSM centerlines are loaded here. Use Admin → Load OSM roads in current map view, then try again.");
-    const start=nearestNode(graph,state.position,60),end=nearestNode(graph,entranceMatch.entrance,60);
-    if(!start||!end)throw new Error("The Envoy or entrance is more than 60 m from the imported walkable network. The route is not connected.");
+    const start=nearestNode(graph,state.position,20),end=nearestNode(graph,entranceMatch.entrance,20);
+    if(!start||!end)throw new Error("The Envoy or entrance is more than 20 m from the imported road/path centerlines. The route is not connected.");
     const roadPath=shortestPath(graph,start.node.key,end.node.key);
-    if(!roadPath)throw new Error("No connected walkable road/path route reaches that entrance. No direct-line fallback will be used.");
+    if(!roadPath)throw new Error("No connected road/path centerline route reaches that entrance. No direct-line fallback will be used.");
     return {points:[{lat:state.position.lat,lng:state.position.lng},...roadPath.map(n=>({lat:n.lat,lng:n.lng})),{lat:entranceMatch.entrance.lat,lng:entranceMatch.entrance.lng}],entrance:entranceMatch.entrance,roadMeters:roadPath.reduce((sum,n,i)=>i?sum+meters(roadPath[i-1],n):sum,0)};
   }
   function drawPath(path){
@@ -154,7 +156,7 @@
     L.polyline(path.points,{color:"#c69bff",weight:5,opacity:.95,lineCap:"round",lineJoin:"round"}).addTo(routeLayer);
     L.circleMarker([path.entrance.lat,path.entrance.lng],{radius:8,color:"#fff",weight:2,fillColor:"#75d3a4",fillOpacity:1}).addTo(routeLayer).bindTooltip("Recorded entrance · "+path.entrance.name);
     activePath=path;
-    $("navStatus").textContent="Walkable road route → recorded entrance";
+    $("navStatus").textContent="Road/path centerline route → recorded entrance";
     $("navDistance").textContent=Math.round(path.roadMeters)+" m road network";
     $("navDestination").textContent=path.entrance.name+" (entrance)";
     $("moveToDestination").disabled=false;
@@ -170,7 +172,7 @@
     if(!activePath){$("previewRoute").click();return;}
     routeBusy=true;$("moveToDestination").disabled=true;const token=++routeToken;
     const points=activePath.points;
-    chat("AO","Walking the mapped route toward "+activePath.entrance.name+". The Envoy will stop at the recorded entrance.");
+    chat("AO","Following the mapped road/path centerline toward "+activePath.entrance.name+". The Envoy will stop at the recorded entrance. This is a local preview, not Kernel movement.");
     try{
       for(let i=1;i<points.length;i++){
         const a=points[i-1],b=points[i],distance=meters(a,b),steps=Math.max(1,Math.ceil(distance/1.2));
@@ -189,6 +191,6 @@
     } finally{routeBusy=false;$("moveToDestination").disabled=false;}
   };
   $("clearDestination").addEventListener("click",()=>{routeLayer.clearLayers();activePath=null;});
-  $("navStatus").textContent="Select a destination near a recorded entrance; import walkable roads to route.";
+  $("navStatus").textContent="Select a destination near a recorded entrance; import OSM roads/paths to preview a route. The centerline preview is not a verified sidewalk.";
   $("moveToDestination").disabled=false;
 })();
