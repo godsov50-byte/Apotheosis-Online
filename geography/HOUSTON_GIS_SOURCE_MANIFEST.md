@@ -5,7 +5,7 @@
 
 ## Registered ArcGIS sources
 
-The machine-readable catalog is `houston-source-catalog.json`; the acquisition entry point is `../scripts/geography/acquire_houston_ao_sources.py`. The catalog currently contains 30 feature-layer entries across these groups.
+The machine-readable catalog is `houston-source-catalog.json`; the acquisition entry point is `../scripts/geography/acquire_houston_ao_sources.py`. The catalog currently contains 36 feature-layer entries across these groups.
 
 | Group | Source layers | AO staging use | Important limitation |
 |---|---|---|---|
@@ -18,7 +18,7 @@ The machine-readable catalog is `houston-source-catalog.json`; the acquisition e
 | Trails | Houston Parks Board shared-use/trails layers 0–4 | Existing, proposed, conceptual, and unofficial trail candidates | Each status is a separate source collection; none is automatically routing-approved |
 | Hydrography | H-GAC Hydrography polygons and Major Rivers lines | Waterbody and watercourse candidates | Not a depth, navigability, flood, bridge, or crossing model |
 | Transit | H-GAC Regional Public Transit Agencies layers: METRO bus stops/routes, rail lines/stations, transit centers, park-and-ride, METRO service area, regional service areas | Transit stops, route geometry, facilities, and service-area candidates | GIS snapshots do not provide live schedules, operating status, or guaranteed current service |
-| Emergency-service geography | City of Houston Fire Districts layer 11 | Administrative service-area candidates | Does not prove staffing, dispatch rules, station response times, or operational coverage |
+| Emergency-service geography | City of Houston Fire Districts layer 11; older Fire Stations point layer 7 | Administrative service-area and facility candidates | Does not prove staffing, dispatch rules, station response times, current operational status, or hospital coverage |\n| Flood hazard | FEMA NFHL H-GAC 8-County 2026 layer 0 | Flood-hazard polygon candidates | Not a real-time flood forecast; retain zone codes and effective dates |\n| Transportation safety | City Vision Zero 2022 high-injury, bicycle-dangerous, and pedestrian-dangerous road layers | Safety-risk overlay candidates | 2022 network snapshot; not a current crash feed and does not automatically block movement |\n| Historic geography | City Historic Sites and Landmarks layer 6 | Historic-site point candidates | Point locations are not full property boundaries; preserve designation attributes |
 | Buildings | H-GAC 2018 LiDAR footprints; City/Harris 3D building footprints | Building footprint candidates and selected source height/address metadata | H-GAC footprint acquisition previously inspected only a subset of 523 features across 486 parcel references; that subset is not citywide and may contain classification errors |
 | Downtown tunnels | City of Houston Downtown Tunnel System layers 0–5 | Tunnel businesses, access points, portal candidates, underground paths, restriction-area candidates, and tunnel-associated building footprints | No automatic portal-to-building or portal-to-street connection; preserve underground level as a semantic layer, not surveyed Z |
 
