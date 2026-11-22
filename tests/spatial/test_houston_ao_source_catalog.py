@@ -17,7 +17,6 @@ class HoustonAOSourceCatalogTests(unittest.TestCase):
             for key in ("id", "title", "publisher", "layer_url", "ao_feature_class", "geometry_role"):
                 self.assertTrue(source.get(key), (source["id"], key))
             self.assertIn("FeatureServer/", source["layer_url"])
-            self.assertIn("ao_access_confidence", source.get("limitations", []) or []) if False else None
 
     def test_canonical_hash_is_order_independent(self):
         self.assertEqual(MODULE.digest({"b": 2, "a": 1}), MODULE.digest({"a": 1, "b": 2}))
