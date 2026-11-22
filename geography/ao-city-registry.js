@@ -358,6 +358,7 @@
     }
   }
   window.AOCityRegistryRefresh = refreshVisible;
+  window.AOCityRegistryUpdateCounts = updateCounts;
   window.addEventListener("ao:street-names-updated", refreshVisible);
   function showRecord(record) {
     selectedRecord = record;
