@@ -342,7 +342,7 @@
               : { color: "#e0b65e", weight: 1.5, fillColor: "#d9b66d", fillOpacity: 0.18 }
         }).addTo(layer);
         const aoName = record.kind === "street" && window.AOStreetNames ? window.AOStreetNames.getName(record) : null;
-        drawn.bindTooltip((record.kind==="lot"?"Lot / Parcel · ":"Building · ")+(aoName ? (aoName + " · ") : "")+record.name, { sticky: true });
+        drawn.bindTooltip((record.kind==="street"?"Road · ":record.kind==="lot"?"Lot / Parcel · ":"Building · ")+(aoName ? (aoName + " · ") : "")+record.name, { sticky: true });
         drawn.on("click", (event) => {
           if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
           if(pinAuthoring){addEntrancePinAt(event.latlng);return;}
@@ -380,7 +380,7 @@
     panel.append(provenance);
     const props = record.rawProperties || record.properties || {};
     const preferred = record.kind === "street"
-      ? ["roadclass", "onewaydir", "lanes", "speed", "funcclass", "munileft", "muniright", "fromleft", "toleft", "fromright", "toright", "zipleft", "zipright"]
+      ? ["highway", "ref", "oneway", "lanes", "maxspeed", "surface", "access", "bridge", "tunnel", "layer", "roadclass", "onewaydir", "speed", "funcclass", "munileft", "muniright", "fromleft", "toleft", "fromright", "toright", "zipleft", "zipright"]
       : ["Parcel_ID", "PARCEL_ID", "Address", "ADDRESS", "address", "height", "HEIGHT", "zipcode", "ZIP", "department", "CreationDate", "EditDate"];
     let shown = 0;
     preferred.forEach((key) => {
