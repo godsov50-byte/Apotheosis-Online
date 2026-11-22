@@ -10,6 +10,7 @@
   const { state, updateEnvoy, renderObjects, updateNavigation, chat } = runtime;
   const DB_NAME = "ao-city-registry-cache-v1";
   const DB_VERSION = 2;
+  const ENTRANCE_PINS_KEY = "ao-city-entrance-addresses-v1";
   const $ = (id) => document.getElementById(id);
   let gridLayer = null;
   let routeLayer = L.layerGroup().addTo(map);
@@ -28,9 +29,11 @@
     if (zoom >= 19) return 2;
     if (zoom >= 18) return 5;
     if (zoom >= 17) return 10;
-    if (zoom >= 16) return 20;
+    if (zoom >= 16) return 25;
     if (zoom >= 15) return 50;
-    return 0;
+    if (zoom >= 14) return 100;
+    if (zoom >= 13) return 200;
+    return 500;
   }
   const Grid = L.GridLayer.extend({
     createTile(coords) {
@@ -41,7 +44,7 @@
       const bounds=this._tileCoordsToBounds(coords),south=bounds.getSouth(),north=bounds.getNorth(),west=bounds.getWest(),east=bounds.getEast();
       const mid=(south+north)/2,latStep=spacing/111320,lngStep=spacing/(111320*Math.max(.1,Math.cos(mid*RAD)));
       const origin=this._map.project(bounds.getNorthWest(),coords.z);
-      ctx.strokeStyle="rgba(31,83,105,.35)";ctx.lineWidth=1;
+      ctx.strokeStyle="rgba(33,112,151,.78)";ctx.lineWidth=1.25;
       ctx.beginPath();
       const firstLat=Math.ceil(south/latStep)*latStep;
       for(let lat=firstLat;lat<=north+latStep*.01;lat+=latStep){
@@ -107,12 +110,42 @@
     }
     return {nodes,edges};
   }
-  function nearestNode(graph,point,maxMeters){
+  function snapToNetwork(graph,point,maxMeters,keyPrefix){
     let best=null,bestDistance=Infinity;
     for(const node of graph.nodes.values()){
-      const d=meters(point,node);if(d<bestDistance){best=node;bestDistance=d;}
+      const d=meters(point,node);
+      if(d<bestDistance){best={kind:"node",node};bestDistance=d;}
     }
-    return best&&bestDistance<=maxMeters?{node:best,distance:bestDistance}:null;
+    // Project onto every imported centerline segment, not just sparse OSM vertices.
+    const cos=Math.max(.1,Math.cos(point.lat*RAD));
+    for(const edge of graph.edges){
+      const a=graph.nodes.get(edge.a),b=graph.nodes.get(edge.b);
+      const ax=(a.lng-point.lng)*111320*cos, ay=(a.lat-point.lat)*111320;
+      const bx=(b.lng-point.lng)*111320*cos, by=(b.lat-point.lat)*111320;
+      const dx=bx-ax,dy=by-ay,den=dx*dx+dy*dy;
+      const t=den?Math.max(0,Math.min(1,-(ax*dx+ay*dy)/den)):0;
+      const x=ax+t*dx,y=ay+t*dy,d=Math.hypot(x,y);
+      if(d<bestDistance){
+        bestDistance=d;
+        best={kind:"edge",edge,t,lat:point.lat+y/111320,lng:point.lng+x/(111320*cos)};
+      }
+    }
+    if(!best||bestDistance>maxMeters)return null;
+    if(best.kind==="node")return {node:best.node,distance:bestDistance};
+    const {edge,t}=best;
+    if(t<0.00001)return {node:graph.nodes.get(edge.a),distance:bestDistance};
+    if(t>0.99999)return {node:graph.nodes.get(edge.b),distance:bestDistance};
+    const key=keyPrefix+"|"+edge.a+"|"+edge.b;
+    const node={key,lat:best.lat,lng:best.lng,edges:[]};
+    const a=graph.nodes.get(edge.a),b=graph.nodes.get(edge.b);
+    a.edges=a.edges.filter(e=>e.to!==edge.b);
+    b.edges=b.edges.filter(e=>e.to!==edge.a);
+    const costA=meters(a,node),costB=meters(node,b);
+    a.edges.push({to:key,cost:costA});b.edges.push({to:key,cost:costB});
+    node.edges.push({to:edge.a,cost:costA},{to:edge.b,cost:costB});
+    graph.nodes.set(key,node);
+    graph.edges.push({a:edge.a,b:key,cost:costA},{a:key,b:edge.b,cost:costB});
+    return {node,distance:bestDistance};
   }
   function shortestPath(graph,startKey,endKey){
     const dist=new Map([[startKey,0]]),prev=new Map(),heap=[];
@@ -133,20 +166,28 @@
     return keys.map(k=>graph.nodes.get(k));
   }
   function selectEntrance(destination){
-    const entrances=state.objects.filter(o=>o.kind==="entrance"&&Number.isFinite(o.lat)&&Number.isFinite(o.lng));
+    const authored=state.objects.filter(o=>o.kind==="entrance"&&Number.isFinite(o.lat)&&Number.isFinite(o.lng))
+      .map(o=>({...o,entranceSource:"AO local building record"}));
+    let pins=[];
+    try{
+      const stored=JSON.parse(localStorage.getItem(ENTRANCE_PINS_KEY)||"[]");
+      if(Array.isArray(stored))pins=stored.filter(p=>Number.isFinite(Number(p.lat))&&Number.isFinite(Number(p.lng)))
+        .map(p=>({id:p.id,kind:"entrance",name:p.address||"Recorded entrance",lat:Number(p.lat),lng:Number(p.lng),description:p.description||"",parentName:p.parentName||"",entranceSource:"User-authored map entrance pin"}));
+    }catch{}
+    const entrances=[...authored,...pins];
     if(!entrances.length)return null;
     let best=null,distance=Infinity;
     for(const e of entrances){const d=meters(destination,e);if(d<distance){best=e;distance=d;}}
-    return best&&distance<=30?{entrance:best,distance}:null;
+    return best&&distance<=60?{entrance:best,distance}:null;
   }
   async function calculatePath(){
     if(!state.destination)throw new Error("Choose a purple destination point first.");
     const entranceMatch=selectEntrance(state.destination);
-    if(!entranceMatch)throw new Error("No explicitly recorded entrance is within 30 m of that destination. Add or select the correct entrance first.");
+    if(!entranceMatch)throw new Error("No recorded entrance pin or AO entrance is within 60 m of that destination. Add a door pin in Admin, then select a destination beside it.");
     const records=await loadRoads(),graph=buildGraph(records);
     if(!graph.nodes.size)throw new Error("No walkable OSM centerlines are loaded here. Use Admin → Load OSM roads in current map view, then try again.");
-    const start=nearestNode(graph,state.position,20),end=nearestNode(graph,entranceMatch.entrance,20);
-    if(!start||!end)throw new Error("The Envoy or entrance is more than 20 m from the imported road/path centerlines. The route is not connected.");
+    const start=snapToNetwork(graph,state.position,60,"route-start"),end=snapToNetwork(graph,entranceMatch.entrance,60,"route-end");
+    if(!start||!end)throw new Error("The Envoy or entrance is more than 60 m from the imported road/path centerlines. The route is not connected.");
     const roadPath=shortestPath(graph,start.node.key,end.node.key);
     if(!roadPath)throw new Error("No connected road/path centerline route reaches that entrance. No direct-line fallback will be used.");
     return {points:[{lat:state.position.lat,lng:state.position.lng},...roadPath.map(n=>({lat:n.lat,lng:n.lng})),{lat:entranceMatch.entrance.lat,lng:entranceMatch.entrance.lng}],entrance:entranceMatch.entrance,roadMeters:roadPath.reduce((sum,n,i)=>i?sum+meters(roadPath[i-1],n):sum,0)};
@@ -156,9 +197,9 @@
     L.polyline(path.points,{color:"#c69bff",weight:5,opacity:.95,lineCap:"round",lineJoin:"round"}).addTo(routeLayer);
     L.circleMarker([path.entrance.lat,path.entrance.lng],{radius:8,color:"#fff",weight:2,fillColor:"#75d3a4",fillOpacity:1}).addTo(routeLayer).bindTooltip("Recorded entrance · "+path.entrance.name);
     activePath=path;
-    $("navStatus").textContent="Road/path centerline route → recorded entrance";
+    $("navStatus").textContent="Road/path centerline route → " + path.entrance.name + " (recorded door)";
     $("navDistance").textContent=Math.round(path.roadMeters)+" m road network";
-    $("navDestination").textContent=path.entrance.name+" (entrance)";
+    $("navDestination").textContent=path.entrance.name+" (recorded entrance)";
     $("moveToDestination").disabled=false;
   }
   $("previewRoute").onclick=async()=>{
@@ -191,6 +232,6 @@
     } finally{routeBusy=false;$("moveToDestination").disabled=false;}
   };
   $("clearDestination").addEventListener("click",()=>{routeLayer.clearLayers();activePath=null;});
-  $("navStatus").textContent="Select a destination near a recorded entrance; import OSM roads/paths to preview a route. The centerline preview is not a verified sidewalk.";
+  $("navStatus").textContent="Ready · select a destination near a saved entrance, then preview a road route. Import OSM roads first if needed.";
   $("moveToDestination").disabled=false;
 })();
