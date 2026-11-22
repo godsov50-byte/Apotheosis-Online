@@ -828,19 +828,19 @@
   "not_registered_yet": [
     {
       "dataset": "HCAD full tax parcel shapefile",
-      "reason": "Official quarterly shapefile ZIP is published by HCAD; add a dedicated ZIP/DBF/SHp ingestion path after recording the snapshot, terms, schema, and geometry CRS. Official download: https://download.hcad.org/data/GIS/Parcels.zip; GIS page last updated 2026-10-05."
+      "reason": "The City of Houston Cadastral Parcels MapServer layer is registered. HCAD's official quarterly GIS ZIP (https://download.hcad.org/data/GIS/Parcels.zip) remains a separate source snapshot requiring a dedicated ZIP/shapefile adapter, schema/CRS review, licence capture, and checksum. HCAD GIS download page last updated 2026-10-05."
     },
     {
       "dataset": "H-GAC 2024 LiDAR/DEM",
-      "reason": "2024 data is available through H-GAC's tile purchase portal; pricing is paid per tile (currently listed at $100 per tile for 1-50). Do not automate acquisition or assume a free download. Confirm purchase/licence, tile index, horizontal CRS, vertical datum, and deliverable format first."
+      "reason": "2024 data is available through H-GAC's tile purchase portal; listed price is $100 per tile for 1-50. Confirm purchase/licence and tile index before acquisition; verify horizontal CRS, vertical datum, units, resolution and deliverables."
     },
     {
       "dataset": "Road nodes and links",
-      "reason": "The prior manifest references City GIS Nodes layer 10 and Links layer 12 but the exact service URL and schemas have not yet been confirmed; do not synthesize a graph from nearby road points."
+      "reason": "Prior working notes refer to City GIS Nodes layer 10 and Links layer 12, but exact service URL and schemas have not been confirmed; do not synthesize a graph from nearby road points."
     },
     {
       "dataset": "Road-surface polygons and complete sidewalks",
-      "reason": "The registered City sidewalk dataset is a polyline inventory limited to City-maintained roadways; it is not a complete surface polygon layer. No verified complete road-surface dataset is registered."
+      "reason": "A City-maintained sidewalk polyline inventory is registered, but it is not a complete sidewalk surface polygon dataset. No verified complete road-surface polygon layer is registered."
     },
     {
       "dataset": "Building entrances/floors/basements",
@@ -848,7 +848,7 @@
     },
     {
       "dataset": "Drainage assets, stormwater network, culverts and bridges",
-      "reason": "Need to locate and validate the appropriate City of Houston Public Works/Harris County Flood Control service layers and distinguish asset points/lines from actual hydraulic connectivity."
+      "reason": "Need to locate and validate appropriate City of Houston Public Works/Harris County Flood Control service layers and distinguish asset points/lines from actual hydraulic connectivity."
     }
   ]
 }
