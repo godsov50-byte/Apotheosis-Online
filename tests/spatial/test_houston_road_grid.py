@@ -67,7 +67,7 @@ class HoustonRoadGridBuildTests(unittest.TestCase):
         self.assertEqual(a, b)
 
     def test_unapproved_profile_cannot_make_importable_output(self):
-        with self.assertRaisesRegex(BuildError, "not Kernel-approved"):
+        with self.assertRaisesRegex(BuildError, "only emits non-authoritative preview"):
             build(fixture(), {}, self.profile, False)
 
     def test_duplicate_source_identity_is_rejected(self):
