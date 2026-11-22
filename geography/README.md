@@ -24,6 +24,7 @@ These layers must not be collapsed into one table or treated as interchangeable.
 | `HOUSTON_GIS_SOURCE_MANIFEST.md` | Houston source groups, attribution, coverage caveats and unresolved adapters | Working source register |
 | `houston-source-catalog.json` | 36 registered ArcGIS feature layers covering roads, boundaries, parcels, addresses, buildings, sidewalks, trails, bikeways, water, transit, fire districts, flood hazard, safety risk, historic landmarks, emergency facilities and downtown tunnels | Staging catalog; HCAD ZIP, paid LiDAR, road nodes/links and additional assets remain unresolved |
 | `../scripts/geography/acquire_houston_ao_sources.py` | Count-checked, paginated ArcGIS acquisition into provenance-preserving WGS84 GeoJSON with source attribution, geometry extents and optional field whitelists | Staging-only source converter; no world/database writes |
+| `../.github/workflows/houston-ao-source-snapshot.yml` | Manual, bounded source acquisition for all catalog layers or selected IDs; uploads GeoJSON and manifests as an artifact | On-demand; source snapshot only, no live-world writes |
 | `profiles/houston-v1.json` | Machine-readable Houston coordinate profile | Draft; origin deliberately unset |
 | `adapter/coords.py` | Deterministic projected-coordinate/local-AO conversion | Implemented utility; requires approved profile |
 | `database/migrations/20261121000100_ao_houston_spatial_features.sql` | PostGIS source/canonical geometry store | Migration artifact; not applied |
