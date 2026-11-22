@@ -87,8 +87,8 @@ test("rejects any input not explicitly marked as the Houston preview format", ()
 test("rejects a source feature that tries to claim walkability", () => {
   const f = runFixture();
   f.fixture.features[0].properties.ao_geometry_role = "walkable";
-  fs.writeFileSync(f.input, JSON.stringify(f.fixture));
-  const result = spawnSync(process.execPath, [script, "--input", f.input, "--output", f.output, "--manifest", f.manifest], { encoding: "utf8" });
+  rewriteFixture(f);
+  const result = spawnSync(process.execPath, [script, "--input", f.input, "--input-manifest", f.inputManifest, "--output", f.output, "--manifest", f.manifest], { encoding: "utf8" });
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /preview contract/);
 });
