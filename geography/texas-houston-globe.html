@@ -22,7 +22,7 @@ button{background:#173448;border:1px solid #376078;color:#edf8fb;padding:10px 12
 #cellList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:12px}
 .cellchip{font-size:11px;padding:8px;text-align:left;background:#0c1b28;border-color:#294456;overflow:hidden;text-overflow:ellipsis}
 .cellchip.active{border-color:var(--gold);color:var(--gold);background:#2b251b}
-.notice{margin-top:16px;padding:10px;border:1px solid #344b5c;border-radius:8px;color:var(--muted);font-size:11px}
+.notice{margin-top:16px;padding:10px;border:1px solid #344b5c;border-radius:8px;color:var(--muted);font-size:11px}.layerToggle{display:flex;align-items:center;gap:9px;padding:7px 2px;color:#d9e7ef;font-size:12px}.layerToggle input{accent-color:#75d5d0;width:16px;height:16px}
 #loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--accent);pointer-events:none;font-size:12px;letter-spacing:.12em}
 @media(max-width:760px){#app{grid-template-columns:1fr;grid-template-rows:auto minmax(280px,1fr) auto}header{padding:10px 12px}#side{border-left:0;border-top:1px solid var(--line);max-height:38vh;padding:12px 15px}.hint{bottom:10px;left:10px}#cellList{grid-template-columns:repeat(3,minmax(0,1fr))}.notice{display:none}}
 </style>
@@ -33,8 +33,8 @@ button{background:#173448;border:1px solid #376078;color:#edf8fb;padding:10px 12
 <body>
 <div id="app">
 <header>
-  <div class="brand"><div class="mark">AO</div><div><h1>AO Earth · Texas & Houston</h1><p>2024 GEOGRAPHY BASELINE · TEXAS / HOUSTON</p></div></div>
-  <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap"><button id="focusTexas">Texas</button><button id="focusHouston">Houston</button><button id="showEarth">Whole Earth</button><span class="muted" id="gridStatus">Loading geographic layers…</span></div>
+  <div class="brand"><div class="mark">AO</div><div><h1>AO Earth · Geography & Walking Routes</h1><p>GEOGRAPHIC POSITIONING · PEDESTRIAN ROUTING PREVIEW</p></div></div>
+  <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap"><button id="focusTexas">Texas</button><button id="focusHouston">Houston</button><button id="focusBay">Galveston Bay</button><button id="focusGulf">Upper Gulf Coast</button><button id="showEarth">Whole Earth</button><span class="muted" id="gridStatus">Loading geographic layers…</span></div>
 </header>
 <main id="stage"><canvas id="globe"></canvas><div id="loading">INITIALIZING EARTH GRID</div><div class="hint">Drag to rotate · Scroll or pinch to zoom · Select a cell</div></main>
 <aside id="side">
@@ -47,9 +47,15 @@ button{background:#173448;border:1px solid #376078;color:#edf8fb;padding:10px 12
     <div class="statrow"><span>Parent face</span><strong>Six S2 faces</strong></div>
   </div>
   <div class="actions"><button id="subdivide" disabled>Open 4 children</button><button id="reset">Reset globe</button></div>
-  <div class="eyebrow">Geographic layers</div><div class="statrow"><span>Texas boundary</span><strong id="texasStatus">Loading…</strong></div><div class="statrow"><span>Houston limits</span><strong id="houstonStatus">Loading…</strong></div><div class="statrow"><span>Boundary vintage</span><strong>Texas 2024</strong></div><div class="eyebrow" style="margin-top:16px">Visible S2 cells</div>
+  <div class="eyebrow">Administrative geography</div><div class="statrow"><span>Texas boundary</span><strong id="texasStatus">Loading…</strong></div><div class="statrow"><span>Houston limits</span><strong id="houstonStatus">Loading…</strong></div><div class="statrow"><span>Boundary vintage</span><strong>Texas 2024</strong></div><div class="eyebrow" style="margin-top:16px">Natural geography</div><div class="statrow"><span>HUC-6 major basins</span><strong id="basinStatus">Waiting…</strong></div><div class="statrow"><span>HUC-8 subbasins</span><strong id="watershedStatus">Waiting…</strong></div><div class="statrow"><span>Rivers / bayous / canals</span><strong id="flowStatus">Waiting…</strong></div><div class="statrow"><span>Waterbody edges</span><strong id="waterbodyStatus">Waiting…</strong></div><div class="statrow"><span>Wetlands</span><strong id="wetlandStatus">Waiting…</strong></div><div class="statrow"><span>Gulf seafloor relief</span><strong id="bathyStatus">Waiting…</strong></div><div class="eyebrow" style="margin-top:16px">Layer visibility</div><label class="layerToggle"><input type="checkbox" id="toggleBasins" checked> Major river basins</label><label class="layerToggle"><input type="checkbox" id="toggleWatersheds" checked> Watershed subbasins</label><label class="layerToggle"><input type="checkbox" id="toggleFlowlines" checked> Rivers, bayous, canals</label><label class="layerToggle"><input type="checkbox" id="toggleWaterbodies" checked> Waterbody / coastal edges</label><label class="layerToggle"><input type="checkbox" id="toggleWetlands" checked> Coastal and inland wetlands</label><label class="layerToggle"><input type="checkbox" id="toggleBathymetry" checked> Gulf bathymetry relief</label><div class="eyebrow" style="margin-top:16px">Walking navigation · preview</div>
+  <p class="muted" style="font-size:11px">Enter two map positions to calculate a pedestrian route. Coordinates are longitude, latitude.</p>
+  <label class="layerToggle" style="display:block">From (lon, lat)<input id="walkFrom" value="-95.3698,29.7604" style="display:block;width:100%;margin-top:5px;background:#091824;color:#edf5fa;border:1px solid #376078;border-radius:6px;padding:9px"></label>
+  <label class="layerToggle" style="display:block">To (lon, lat)<input id="walkTo" value="-94.7977,29.3013" style="display:block;width:100%;margin-top:5px;background:#091824;color:#edf5fa;border:1px solid #376078;border-radius:6px;padding:9px"></label>
+  <button id="walkRoute" style="width:100%;margin-top:8px">Calculate walking route</button>
+  <div id="walkResult" class="notice" aria-live="polite">Choose two positions to see walking distance and estimated time.</div>
+  <div class="eyebrow" style="margin-top:16px">Visible S2 cells</div>
   <div id="cellList"></div>
-  <div class="notice">Geographic identities and cell boundaries are generated by the S2 spherical geometry library. Texas is drawn from the Census 2024 generalized state boundary. Houston is drawn from the City of Houston public boundary view (2024 reference layer). The globe still requires internet access for map data, Three.js, S2, and the Earth texture. The geographic outlines are source geometry, not a texture.</div>
+  <div class="notice">Geographic identities and cell boundaries are generated by S2. Texas uses the Census 2024 generalized state boundary; Houston uses the public City boundary reference view. Watershed subbasins use USGS WBD HUC-8; flowlines and waterbody edges use USGS 3DHP. Gulf relief is a qualitative GCOOS shaded-relief tile layer, not a source of absolute depth values. These are regional visualization layers, not yet imported canonical AO geography. Walking routes use the public FOSSGIS OSRM foot profile over OpenStreetMap data; public demo usage is rate-limited and not suitable for production. Route results are estimates and require internet access.</div>
 </aside>
 </div>
 <script type="module">
@@ -99,7 +105,22 @@ new THREE.TextureLoader().load('https://threejs.org/examples/textures/planets/ea
 const atmosphere=new THREE.Mesh(new THREE.SphereGeometry(1.012,64,48),new THREE.MeshBasicMaterial({color:0x4b9cc0,transparent:true,opacity:.09,side:THREE.BackSide}));globeRoot.add(atmosphere);
 
 
-const geographyLayers={texas:null,houston:null};
+const geographyLayers={texas:null,houston:null,basins:null,watersheds:null,flowlines:null,waterbodies:null,bathymetry:null};
+const hydroExtent={xmin:-99.0,ymin:25.2,xmax:-92.5,ymax:34.5};
+const hydroMaterials={
+ river:new THREE.LineBasicMaterial({color:0x48b8ed,transparent:true,opacity:.94}),
+ canal:new THREE.LineBasicMaterial({color:0xe6b45c,transparent:true,opacity:.9}),
+ drainage:new THREE.LineBasicMaterial({color:0x80c9dc,transparent:true,opacity:.68}),
+ basin:new THREE.LineBasicMaterial({color:0xf0c77d,transparent:true,opacity:.9}),
+ watershed:new THREE.LineDashedMaterial({color:0x65d6b5,dashSize:.003,gapSize:.002,transparent:true,opacity:.62}),
+ waterbody:new THREE.LineBasicMaterial({color:0x7ac9ee,transparent:true,opacity:.82}),
+ wetlandEstuarine:new THREE.LineBasicMaterial({color:0x64d8bd,transparent:true,opacity:.9}),
+ wetlandFreshwater:new THREE.LineBasicMaterial({color:0x9bc66d,transparent:true,opacity:.82}),
+ wetlandOther:new THREE.LineBasicMaterial({color:0xb9aa82,transparent:true,opacity:.7})
+};
+const layerVisibility={basins:true,watersheds:true,flowlines:true,waterbodies:true,wetlands:true,bathymetry:true};
+const layerGroups={basins:null,watersheds:null,flowlines:null,waterbodies:null,wetlands:null,bathymetry:null};
+function setLayerVisibility(name,visible){layerVisibility[name]=visible;if(layerGroups[name])layerGroups[name].visible=visible;}
 const geographyMaterials={
   texas:new THREE.LineBasicMaterial({color:0xe6bd75,transparent:true,opacity:.98}),
   full:new THREE.LineBasicMaterial({color:0x65e0c4,transparent:true,opacity:1}),
@@ -147,6 +168,125 @@ async function fetchGeoJSON(url){
   if(data.type!=="FeatureCollection"||!Array.isArray(data.features))throw new Error("Invalid GeoJSON FeatureCollection");
   return data;
 }
+function queryUrl(layer,where,outFields,orderByFields=""){
+ const u=new URL(layer+"/query"),p=u.searchParams;
+ p.set("where",where);p.set("outFields",outFields);p.set("returnGeometry","true");p.set("outSR","4326");p.set("inSR","4326");
+ p.set("geometryType","esriGeometryEnvelope");p.set("geometry",JSON.stringify({xmin:hydroExtent.xmin,ymin:hydroExtent.ymin,xmax:hydroExtent.xmax,ymax:hydroExtent.ymax,spatialReference:{wkid:4326}}));
+ p.set("spatialRel","esriSpatialRelIntersects");p.set("f","geojson");p.set("resultRecordCount","1800");if(orderByFields)p.set("orderByFields",orderByFields);return u;
+}
+async function fetchArcGISCollection(layer,where,outFields,orderByFields="",limit=7200,pageSize=1800){
+ const base=queryUrl(layer,where,outFields,orderByFields);base.searchParams.set("resultRecordCount",String(pageSize));const features=[];let offset=0,exceeded=false;
+ while(offset<limit){const u=new URL(base);u.searchParams.set("resultOffset",String(offset));const d=await fetchGeoJSON(u.toString());features.push(...d.features);exceeded=exceeded||!!d.exceededTransferLimit;if(d.features.length<pageSize)break;offset+=d.features.length;}
+ return {type:"FeatureCollection",features,exceededTransferLimit:exceeded||offset>=limit};
+}
+function addHydroFlowlines(collection){
+ const group=new THREE.Group();
+ for(const f of collection.features){const t=Number(f.properties?.featuretype),m=t===1?hydroMaterials.river:t===2?hydroMaterials.canal:hydroMaterials.drainage,g=f.geometry||{};
+  const lines=g.type==="LineString"?[g.coordinates]:g.type==="MultiLineString"?g.coordinates:[];
+  for(const coords of lines){if(!Array.isArray(coords)||coords.length<2)continue;const pts=coords.map(c=>latLonVector(c[0],c[1],1.010));group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),m));}
+ }
+ globeRoot.add(group);group.visible=layerVisibility.flowlines;return group;
+}
+function addClippedWaterbodyEdges(collection){
+ const group=new THREE.Group(),inside=p=>p[0]>=hydroExtent.xmin&&p[0]<=hydroExtent.xmax&&p[1]>=hydroExtent.ymin&&p[1]<=hydroExtent.ymax;
+ for(const f of collection.features){for(const ring of geojsonRings(f.geometry||{})){if(!Array.isArray(ring)||ring.length<2)continue;let pts=[];
+  for(let i=1;i<ring.length;i++){const a=ring[i-1],b=ring[i],mid=[(a[0]+b[0])/2,(a[1]+b[1])/2];
+   if(inside(a)||inside(b)||inside(mid)){if(!pts.length)pts.push(latLonVector(a[0],a[1],1.011));pts.push(latLonVector(b[0],b[1],1.011));}
+   else if(pts.length>1){group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),hydroMaterials.waterbody));pts=[];}
+  }if(pts.length>1)group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),hydroMaterials.waterbody));
+ }}
+ globeRoot.add(group);group.visible=layerVisibility.waterbodies;return group;
+}
+function addWetlandBoundaries(collection){
+ const group=new THREE.Group();
+ for(const feature of collection.features){
+  const type=String(feature.properties?.WETLAND_TYPE||"").toLowerCase();
+  const material=type.includes("estuarine")||type.includes("marine")?hydroMaterials.wetlandEstuarine:type.includes("freshwater")?hydroMaterials.wetlandFreshwater:hydroMaterials.wetlandOther;
+  for(const ring of geojsonRings(feature.geometry||{})){
+   if(!Array.isArray(ring)||ring.length<2)continue;
+   const pts=ring.map(c=>latLonVector(c[0],c[1],1.012));
+   group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),material));
+  }
+ }
+ globeRoot.add(group);group.visible=layerVisibility.wetlands;return group;
+}
+
+function tileXY(lon,lat,z){const n=2**z;return {x:(lon+180)/360*n,y:(1-Math.log(Math.tan(Math.PI/4+THREE.MathUtils.degToRad(lat)/2))/Math.PI)/2*n};}
+async function loadGulfBathymetry(){
+ const z=7,b={west:-98.5,east:-89.5,south:25,north:31.2},nw=tileXY(b.west,b.north,z),se=tileXY(b.east,b.south,z);
+ const x0=Math.floor(nw.x),x1=Math.floor(se.x),y0=Math.floor(nw.y),y1=Math.floor(se.y),canvas=document.createElement("canvas");
+ canvas.width=(x1-x0+1)*256;canvas.height=(y1-y0+1)*256;const ctx=canvas.getContext("2d");let loaded=0,failed=0;
+ const jobs=[];for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++)jobs.push(new Promise(resolve=>{
+  const img=new Image();img.crossOrigin="anonymous";img.onload=()=>{ctx.drawImage(img,(x-x0)*256,(y-y0)*256,256,256);loaded++;resolve();};img.onerror=()=>{failed++;resolve();};
+  img.src="https://tiles.arcgis.com/tiles/qr14biwnHA6Vis6l/arcgis/rest/services/Shaded_Relief_Visualization_of_Gulf_of_Mexico_Bathymetry/MapServer/tile/"+z+"/"+y+"/"+x;
+ }));
+ await Promise.all(jobs);if(!loaded)throw Error("No bathymetry tiles loaded");
+ const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+ const cols=100,rows=70,pos=[],uv=[],idx=[],w=x1-x0+1,ht=y1-y0+1;
+ for(let j=0;j<=rows;j++)for(let i=0;i<=cols;i++){const lon=THREE.MathUtils.lerp(b.west,b.east,i/cols),lat=THREE.MathUtils.lerp(b.north,b.south,j/rows),v=latLonVector(lon,lat,1.003),t=tileXY(lon,lat,z);pos.push(v.x,v.y,v.z);uv.push((t.x-x0)/w,1-(t.y-y0)/ht);}
+ for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){const a=j*(cols+1)+i,c=a+cols+1;idx.push(a,c,a+1,c,c+1,a+1);}
+ const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.Float32BufferAttribute(pos,3));g.setAttribute("uv",new THREE.Float32BufferAttribute(uv,2));g.setIndex(idx);g.computeVertexNormals();
+ const group=new THREE.Group();group.add(new THREE.Mesh(g,new THREE.MeshBasicMaterial({map:texture,transparent:true,opacity:.78,depthWrite:false,side:THREE.DoubleSide})));globeRoot.add(group);group.visible=layerVisibility.bathymetry;
+ layerGroups.bathymetry=group;geographyLayers.bathymetry=group;document.querySelector("#bathyStatus").textContent=loaded+" tiles"+(failed?" · "+failed+" unavailable":"")+" · shaded relief";
+}
+async function loadNaturalGeography(){
+ const tasks=[
+ (async()=>{try{const d=await fetchArcGISCollection("https://hydro.nationalmap.gov/arcgis/rest/services/wbd/FeatureServer/3","1=1","huc6,name,areasqkm,states","huc6",1800);if(!d.features.length)throw Error("No HUC-6 basins");
+  layerGroups.basins=addGeoJSONLines(d,()=>hydroMaterials.basin,"basins");layerGroups.basins.visible=layerVisibility.basins;geographyLayers.basins=layerGroups.basins;
+  document.querySelector("#basinStatus").textContent=d.features.length+" major basins";
+ }catch(e){document.querySelector("#basinStatus").textContent="Unavailable";console.warn("WBD HUC-6:",e);}})(),
+ (async()=>{try{const d=await fetchArcGISCollection("https://hydro.nationalmap.gov/arcgis/rest/services/wbd/FeatureServer/4","1=1","huc8,name,areasqkm,states","huc8",3600);if(!d.features.length)throw Error("No HUC-8 polygons");
+  layerGroups.watersheds=addGeoJSONLines(d,()=>hydroMaterials.watershed,"watersheds");layerGroups.watersheds.visible=layerVisibility.watersheds;geographyLayers.watersheds=layerGroups.watersheds;
+  document.querySelector("#watershedStatus").textContent=d.features.length+" HUC-8 units"+(d.exceededTransferLimit?" · capped":"");
+ }catch(e){document.querySelector("#watershedStatus").textContent="Unavailable";console.warn("WBD:",e);}})(),
+ (async()=>{try{const d=await fetchArcGISCollection("https://3dhp.nationalmap.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer/50","featuretype IN (1,2,3)","id3dhp,gnisidlabel,featuretype,featuretypelabel,flowdirectionlabel,streamorder,lengthkm,mainstemid","streamorder DESC,lengthkm DESC",7200);if(!d.features.length)throw Error("No flowlines");
+  layerGroups.flowlines=addHydroFlowlines(d);geographyLayers.flowlines=layerGroups.flowlines;document.querySelector("#flowStatus").textContent=d.features.length+" features"+(d.exceededTransferLimit?" · capped":"");
+ }catch(e){document.querySelector("#flowStatus").textContent="Unavailable";console.warn("3DHP flowlines:",e);}})(),
+ (async()=>{try{const d=await fetchArcGISCollection("https://3dhp.nationalmap.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer/60","featuretype IN (1,4)","id3dhp,gnisidlabel,featuretype,featuretypelabel,areasqkm","",3600);if(!d.features.length)throw Error("No waterbody polygons");
+  layerGroups.waterbodies=addClippedWaterbodyEdges(d);geographyLayers.waterbodies=layerGroups.waterbodies;document.querySelector("#waterbodyStatus").textContent=d.features.length+" polygons";
+ }catch(e){document.querySelector("#waterbodyStatus").textContent="Unavailable";console.warn("3DHP waterbodies:",e);}})(),
+ (async()=>{try{const d=await fetchArcGISCollection("https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0","WETLAND_TYPE IN ('Estuarine and Marine Wetland','Freshwater Emergent Wetland','Freshwater Forested/Shrub Wetland')","WETLAND_TYPE,ATTRIBUTE,QAQC_CODE,ACRES","",2000,500);if(!d.features.length)throw Error("No NWI wetland polygons");
+  layerGroups.wetlands=addWetlandBoundaries(d);geographyLayers.wetlands=layerGroups.wetlands;document.querySelector("#wetlandStatus").textContent=d.features.length+" polygons"+(d.exceededTransferLimit?" · capped":"");
+ }catch(e){document.querySelector("#wetlandStatus").textContent="Unavailable";console.warn("USFWS NWI:",e);}})(),
+ (async()=>{try{await loadGulfBathymetry();}catch(e){document.querySelector("#bathyStatus").textContent="Unavailable";console.warn("Bathymetry:",e);}})()
+ ];await Promise.all(tasks);
+}
+
+let walkingRouteGroup=null;
+function parseLonLat(value){
+ const parts=value.split(",").map(v=>Number(v.trim()));
+ if(parts.length!==2||!parts.every(Number.isFinite)||parts[0]<-180||parts[0]>180||parts[1]<-85||parts[1]>85)throw Error("Enter valid longitude, latitude values.");
+ return parts;
+}
+function drawWalkingRoute(coords){
+ if(walkingRouteGroup){globeRoot.remove(walkingRouteGroup);walkingRouteGroup.traverse(o=>{if(o.geometry)o.geometry.dispose();});}
+ walkingRouteGroup=new THREE.Group();
+ const points=coords.map(([lon,lat])=>latLonVector(lon,lat,1.016));
+ const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),new THREE.LineBasicMaterial({color:0xffd36e,linewidth:3}));
+ walkingRouteGroup.add(line);
+ for(const [lon,lat] of [coords[0],coords[coords.length-1]]){
+  const marker=new THREE.Mesh(new THREE.SphereGeometry(.006,12,8),new THREE.MeshBasicMaterial({color:0xffe2a1}));
+  marker.position.copy(latLonVector(lon,lat,1.019));walkingRouteGroup.add(marker);
+ }
+ globeRoot.add(walkingRouteGroup);
+}
+document.querySelector("#walkRoute").addEventListener("click",async()=>{
+ const button=document.querySelector("#walkRoute"),result=document.querySelector("#walkResult");
+ try{
+  const from=parseLonLat(document.querySelector("#walkFrom").value),to=parseLonLat(document.querySelector("#walkTo").value);
+  button.disabled=true;result.textContent="Finding a pedestrian route…";
+  const url="https://routing.openstreetmap.de/routed-foot/route/v1/driving/"+from.join(",")+";"+to.join(",")+"?overview=full&geometries=geojson&steps=false&alternatives=false";
+  const response=await fetch(url);if(!response.ok)throw Error("Walking route service returned HTTP "+response.status);
+  const data=await response.json();if(data.code!=="Ok"||!data.routes?.length)throw Error("No pedestrian route was found between those positions.");
+  const route=data.routes[0];if(!route.geometry?.coordinates?.length)throw Error("The route service returned no route geometry.");
+  drawWalkingRoute(route.geometry.coordinates);
+  const km=route.distance/1000,minutes=Math.round(route.duration/60);
+  const duration=minutes>=60?Math.floor(minutes/60)+" hr "+(minutes%60)+" min":minutes+" min";
+  result.textContent=km.toFixed(2)+" km · "+duration+" estimated walking time (OpenStreetMap pedestrian routing).";
+  focusLatLon((from[0]+to[0])/2,(from[1]+to[1])/2,Math.max(1.55,Math.min(2.4,1.55+km/80)));
+ }catch(error){result.textContent=error.message;console.warn("Walking route:",error);}
+ finally{button.disabled=false;}
+});
 async function loadGeography(){
   const txUrl="https://tigerweb.geo.census.gov/arcgis/rest/services/Generalized_ACS2024/State_County/MapServer/4/query?where=GEOID%3D%2748%27&outFields=GEOID%2CNAME&returnGeometry=true&outSR=4326&f=geojson";
   const houstonUrl="https://services.arcgis.com/NummVBqZSIJKUeVR/ArcGIS/rest/services/COH_City_Limit_view/FeatureServer/0/query?where=1%3D1&outFields=OBJECTID_1%2CSERVICE_TY&returnGeometry=true&outSR=4326&f=geojson";
@@ -167,11 +307,17 @@ async function loadGeography(){
     document.querySelector("#houstonStatus").textContent=houston.features.length+" polygons · "+types;
   }catch(error){document.querySelector("#houstonStatus").textContent="Unavailable";console.warn("Houston boundary:",error);}
   const txOk=!!geographyLayers.texas,houOk=!!geographyLayers.houston;
-  document.querySelector("#gridStatus").textContent=txOk&&houOk?"Texas + Houston geometry loaded":txOk?"Texas loaded · Houston unavailable":houOk?"Houston loaded · Texas unavailable":"Geographic sources unavailable";
+  document.querySelector("#gridStatus").textContent=txOk&&houOk?"Texas + Houston loaded":txOk?"Texas loaded · Houston unavailable":houOk?"Houston loaded · Texas unavailable":"Administrative sources unavailable";
+  loadNaturalGeography();
 }
 document.querySelector("#focusTexas").addEventListener("click",()=>focusLatLon(-99.0,31.0,1.85));
 document.querySelector("#focusHouston").addEventListener("click",()=>focusLatLon(-95.37,29.76,1.68));
+document.querySelector("#focusBay").addEventListener("click",()=>focusLatLon(-94.85,29.55,1.55));
+document.querySelector("#focusGulf").addEventListener("click",()=>focusLatLon(-94.4,28.6,1.72));
 document.querySelector("#showEarth").addEventListener("click",()=>{globeRoot.quaternion.identity();camera.position.set(0,-.15,3.25);controls.autoRotate=true;controls.update();});
+for(const [id,name] of [["toggleBasins","basins"],["toggleWatersheds","watersheds"],["toggleFlowlines","flowlines"],["toggleWaterbodies","waterbodies"],["toggleWetlands","wetlands"],["toggleBathymetry","bathymetry"]]){
+ document.querySelector("#"+id).addEventListener("change",e=>setLayerVisibility(name,e.target.checked));
+}
 
 const raycaster=new THREE.Raycaster();const pointer=new THREE.Vector2();
 const cellGroup=new THREE.Group();globeRoot.add(cellGroup);
@@ -211,7 +357,7 @@ function redraw(){
   while(cellGroup.children.length){const o=cellGroup.children[0];cellGroup.remove(o);o.traverse(x=>{x.geometry?.dispose();if(x.material){if(Array.isArray(x.material))x.material.forEach(m=>m.dispose());else x.material.dispose();}});}
   for(const [key,cell] of visible){const g=buildCell(cell.id);cellGroup.add(g);}
   document.querySelector('#visibleCount').textContent=visible.size;
-  document.querySelector('#gridStatus').textContent=visible.size+' cells visible';
+  document.querySelector('#gridStatus').textContent='S2 · '+visible.size+' cells visible';
   renderList();updatePanel();
 }
 function renderList(){

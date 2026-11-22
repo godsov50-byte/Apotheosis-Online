@@ -1,0 +1,52 @@
+name: AO Houston citywide road graph
+
+on:
+  push:
+    branches:
+      - feature/houston-gps-spatial-data
+    paths:
+      - "scripts/geography/acquire_houston_road_centerlines.py"
+      - "scripts/geography/build_houston_road_graph.py"
+      - ".github/workflows/houston-road-network-build.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ao-houston-road-network
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out AO geography branch
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify diagnostic downloader revision
+        run: |
+          echo "Build commit: $(git rev-parse HEAD)"
+          grep -n "ArcGIS request (" scripts/geography/acquire_houston_road_centerlines.py
+          grep -n "HTTP {exc.code}" scripts/geography/acquire_houston_road_centerlines.py
+      - name: Test graph builder
+        run: python scripts/geography/build_houston_road_graph.py --self-test
+      - name: Acquire complete Houston road-centerline snapshot
+        run: python scripts/geography/acquire_houston_road_centerlines.py --output-dir build/houston-road-network --batch-size 500 --timeout 90 --pause 0.15
+      - name: Build endpoint connectivity graph
+        run: python scripts/geography/build_houston_road_graph.py --input build/houston-road-network/roads.geojson --output-dir build/houston-road-network --snap-tolerance-m 1.5
+      - name: Upload versioned build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ao-houston-road-network-${{ github.sha }}
+          path: |
+            build/houston-road-network/roads.geojson
+            build/houston-road-network/manifest.json
+            build/houston-road-network/graph.json
+            build/houston-road-network/topology-report.json
+          if-no-files-found: error
+          retention-days: 14
