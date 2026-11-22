@@ -32,6 +32,8 @@ jobs:
         run: node --check geography/ao-city-console.js
       - name: Check city registry adapter JavaScript syntax
         run: node --check geography/ao-city-registry.js
+      - name: Check city navigation adapter JavaScript syntax
+        run: node --check geography/ao-city-navigation.js
       - name: Test Houston building footprint acquisition
         run: python scripts/geography/acquire_houston_building_footprints.py --self-test
       - name: Test deterministic registry helpers
