@@ -18,12 +18,14 @@ function parseArgs(argv) {
   const args = { input: "build/houston-road-grid/roads-local-mm.json",
     output: "build/houston-road-grid/road-centerline-cells.json",
     manifest: "build/houston-road-grid/road-centerline-cells-manifest.json",
+    inputManifest: "build/houston-road-grid/roads-local-mm-manifest.json",
     maxCellsPerFeature: 100000, maxTotalCells: 10000000 };
   for (let i = 0; i < argv.length; i++) {
     const key = argv[i];
     if (key === "--input") args.input = argv[++i];
     else if (key === "--output") args.output = argv[++i];
     else if (key === "--manifest") args.manifest = argv[++i];
+    else if (key === "--input-manifest") args.inputManifest = argv[++i];
     else if (key === "--max-cells-per-feature") args.maxCellsPerFeature = Number(argv[++i]);
     else if (key === "--max-total-cells") args.maxTotalCells = Number(argv[++i]);
     else if (key === "--help") args.help = true;
@@ -69,6 +71,11 @@ function main() {
   }
   const inputBytes = fs.readFileSync(args.input);
   const input = JSON.parse(inputBytes.toString("utf8"));
+  const inputManifest = JSON.parse(fs.readFileSync(args.inputManifest, "utf8"));
+  if (inputManifest.status !== "preview_only_not_importable" || inputManifest.profile_version !== 2 ||
+      inputManifest.local_geometry_sha256 !== sha256(inputBytes)) {
+    throw new Error("Local geometry manifest is missing, mismatched, or not a Houston v2 preview.");
+  }
   if (input.type !== "AOGridInputFeatureCollection" || input.schema_version !== "1.0.0" ||
       input.profile_key !== "houston" || input.profile_version !== 2 ||
       input.coordinate_space !== "houston-v2-local-mm-preview") {
@@ -137,6 +144,7 @@ function main() {
     authoritative_world_state: false,
     kernel_approval_required_for_import: true,
     source_local_geometry_sha256: sha256(inputBytes),
+    source_manifest_profile_version: inputManifest.profile_version,
     output_sha256: sha256(outputBytes),
     source_feature_count: input.features.length,
     rasterized_feature_count: features.length,
