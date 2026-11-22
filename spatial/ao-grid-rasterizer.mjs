@@ -134,10 +134,10 @@ function rasterizePolygon(rings, cells, cellSizeMm, maxCells) {
   const maxU = Math.max(...all.map(p => p[0]));
   const minV = Math.min(...all.map(p => p[1]));
   const maxV = Math.max(...all.map(p => p[1]));
-  const u0 = floorCell(minU, cellSizeMm) - (minU % cellSizeMm === 0 ? 1 : 0);
-  const u1 = floorCell(maxU, cellSizeMm);
-  const v0 = floorCell(minV, cellSizeMm) - (minV % cellSizeMm === 0 ? 1 : 0);
-  const v1 = floorCell(maxV, cellSizeMm);
+  const u0 = floorCell(minU, cellSizeMm);
+  const u1 = Math.ceil(maxU / cellSizeMm) - 1;
+  const v0 = floorCell(minV, cellSizeMm);
+  const v1 = Math.ceil(maxV / cellSizeMm) - 1;
   const candidates = (u1 - u0 + 1) * (v1 - v0 + 1);
   if (!Number.isSafeInteger(candidates) || candidates > maxCells) {
     throw new RangeError("Polygon candidate window exceeds maxCells; split or tile the source feature");
