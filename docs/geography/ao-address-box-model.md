@@ -19,9 +19,10 @@ The initial projection is one box per entrance record. This allows a building wi
 A door is not connected merely because an entrance is near a road or has a nearest-road projection. The optional pedestrian link must reference an explicit access point and an edge in the shape emitted by `buildPedestrianGraph`. The edge must have:
 - `routingApproved: true`;
 - a status of `source_verified`, `accepted_for_staging`, or `verified`;
-- `modes` containing `"walk"`.
+- `modes` containing `"walk"`;
+- the access-point ID matching one of the edge endpoints.
 
-These values match the staging graph contract in the pedestrian-access builder. An entrance without that evidence remains a valid address box with an unconnected door. The existing interior-destination validation remains separate and is not bypassed.
+These values match the staging graph contract in the pedestrian-access builder. The endpoint check ensures the supplied access point is actually part of the referenced directed edge. An entrance without that evidence remains a valid address box with an unconnected door. The existing interior-destination validation remains separate and is not bypassed.
 
 ## Compatibility and safety
 
