@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apotheosis.online/contracts/v1/event.schema.json",
+  "title": "AO Committed World Event",
+  "type": "object",
+  "required": [
+    "event_id",
+    "type",
+    "actor_id",
+    "source_request_id",
+    "execution_id",
+    "timestamp",
+    "world_revision",
+    "affected_entities",
+    "changes"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "type": {
+      "type": "string",
+      "minLength": 1
+    },
+    "actor_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source_request_id": {
+      "type": "string"
+    },
+    "execution_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "world_revision": {
+      "type": "string"
+    },
+    "affected_entities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "changes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "entity_id",
+          "field",
+          "before",
+          "after"
+        ],
+        "properties": {
+          "entity_id": {
+            "type": "string"
+          },
+          "field": {
+            "type": "string"
+          },
+          "before": {},
+          "after": {}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apotheosis.online/contracts/v1/status.request.schema.json",
+  "title": "AO Execution Status Request",
+  "allOf": [
+    {
+      "$ref": "common.schema.json#/$defs/requestEnvelope"
+    }
+  ],
+  "properties": {
+    "request_type": {
+      "const": "status"
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "execution_id"
+      ],
+      "properties": {
+        "execution_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
