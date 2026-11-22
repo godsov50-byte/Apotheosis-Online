@@ -67,7 +67,6 @@ def acquire_layer(source: dict[str, Any], output_dir: Path, bbox: list[float] | 
     features: list[dict[str, Any]] = []
     seen: set[str] = set()
     null_geometry = 0
-    invalid_identity = 0
     for offset in range(0, len(ids), batch_size):
         batch = ids[offset:offset + batch_size]
         params = {
@@ -154,7 +153,7 @@ def main() -> int:
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config",type=Path,default=DEFAULT_CONFIG)
     parser.add_argument("--output-dir",type=Path,default=Path("build/houston-ao-source-data"))
-    parser.add_argument("--bbox",help="Optional WGS84 west,south,east,north extent applied to all registered layers")
+    parser.add_argument("--bbox",required=True,help="Required WGS84 west,south,east,north extent; prevents accidental whole-service downloads")
     parser.add_argument("--source",action="append",help="Acquire only this source ID; repeatable")
     parser.add_argument("--batch-size",type=int,default=500)
     parser.add_argument("--timeout",type=int,default=90)
