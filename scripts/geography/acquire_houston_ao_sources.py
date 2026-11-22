@@ -153,7 +153,7 @@ def main() -> int:
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config",type=Path,default=DEFAULT_CONFIG)
     parser.add_argument("--output-dir",type=Path,default=Path("build/houston-ao-source-data"))
-    parser.add_argument("--bbox",required=True,help="Required WGS84 west,south,east,north extent; prevents accidental whole-service downloads")
+    parser.add_argument("--bbox",help="Required for acquisition: WGS84 west,south,east,north extent; prevents accidental whole-service downloads")
     parser.add_argument("--source",action="append",help="Acquire only this source ID; repeatable")
     parser.add_argument("--batch-size",type=int,default=500)
     parser.add_argument("--timeout",type=int,default=90)
@@ -162,6 +162,8 @@ def main() -> int:
     args=parser.parse_args()
     if args.self_test:
         self_test(); return 0
+    if not args.bbox:
+        parser.error("--bbox is required for acquisition (it is not needed for --self-test)")
     if not 1 <= args.batch_size <= 1000: raise AcquireError("--batch-size must be 1..1000")
     bbox=None
     if args.bbox:
