@@ -43,6 +43,10 @@ def build(output: Path, preview_only: bool) -> dict:
          "--manifest", str(grid_dir/"roads-local-mm-manifest.json"),
          "--output", str(grid_dir/"endpoint-topology.json"),
          "--report", str(grid_dir/"endpoint-topology-report.json")])
+    run([sys.executable, str(TOPOLOGY_V2), "--input", str(grid_dir/"roads-local-mm.json"),
+         "--manifest", str(grid_dir/"roads-local-mm-manifest.json"),
+         "--output", str(grid_dir/"endpoint-topology-v2.json"),
+         "--report", str(grid_dir/"endpoint-topology-v2-report.json")])
     source_manifest = json.loads((road_dir/"manifest.json").read_text(encoding="utf-8"))
     registry_manifest = json.loads((road_dir/"street-registry-manifest.json").read_text(encoding="utf-8"))
     grid_manifest = json.loads((grid_dir/"roads-local-mm-manifest.json").read_text(encoding="utf-8"))
@@ -64,7 +68,8 @@ def build(output: Path, preview_only: bool) -> dict:
       "candidate_cells":raster_manifest["total_sparse_cells"],
       "road_paths":topology_report["road_paths"],
       "endpoint_node_candidates":topology_report["endpoint_node_candidates"],
-      "endpoint_node_candidates_v2":topology_v2_report["endpoint_node_candidates"],\n      "endpoint_snap_tolerance_mm_v2":topology_v2_report["snap_tolerance_mm"],
+      "endpoint_node_candidates_v2":topology_v2_report["endpoint_node_candidates"],
+      "endpoint_snap_tolerance_mm_v2":topology_v2_report["snap_tolerance_mm"],
       "source_crs":"EPSG:4326",
       "working_crs":"EPSG:2278",
       "local_grid_cell_size_mm":grid_manifest["cell_size_mm"],
@@ -79,7 +84,8 @@ def build(output: Path, preview_only: bool) -> dict:
         "candidate_cells_manifest":str(grid_dir/"road-centerline-cells-manifest.json"),
         "endpoint_topology":str(grid_dir/"endpoint-topology.json"),
         "endpoint_topology_report":str(grid_dir/"endpoint-topology-report.json"),
-        "endpoint_topology_v2":str(grid_dir/"endpoint-topology-v2.json"),\n        "endpoint_topology_v2_report":str(grid_dir/"endpoint-topology-v2-report.json")
+        "endpoint_topology_v2":str(grid_dir/"endpoint-topology-v2.json"),
+        "endpoint_topology_v2_report":str(grid_dir/"endpoint-topology-v2-report.json")
       },
       "restrictions":[
         "Road-centerline cells are candidate indexes, not walkable road surfaces.",
