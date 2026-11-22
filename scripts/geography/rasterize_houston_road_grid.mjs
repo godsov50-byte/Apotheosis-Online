@@ -7,6 +7,7 @@
  */
 import fs from "node:fs";
 import crypto from "node:crypto";
+import path from "node:path";
 import { rasterizeGeometry } from "../../spatial/ao-grid-rasterizer.mjs";
 
 function sha256(buffer) {
@@ -153,9 +154,8 @@ function main() {
       "Preview output is not a Kernel proposal and is never written to WorldHeart or Supabase."
     ]
   };
-  fs.mkdirSync(new URL(".", "file://" + process.cwd() + "/"), { recursive: true });
-  fs.mkdirSync(args.output.slice(0, args.output.lastIndexOf("/")) || ".", { recursive: true });
-  fs.mkdirSync(args.manifest.slice(0, args.manifest.lastIndexOf("/")) || ".", { recursive: true });
+  fs.mkdirSync(path.dirname(args.output), { recursive: true });
+  fs.mkdirSync(path.dirname(args.manifest), { recursive: true });
   fs.writeFileSync(args.output, outputBytes);
   fs.writeFileSync(args.manifest, JSON.stringify(manifest, null, 2) + "\n");
   process.stdout.write(JSON.stringify({
