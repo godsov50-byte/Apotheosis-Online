@@ -12,13 +12,16 @@ This is an admin prototype and exportable proposal tool. It does not write to th
 - Display imported building footprint GeoJSON or query an ArcGIS FeatureServer layer for the current map extent as source reference geometry.
 - Draw admin-authored building footprints and record name, purpose, floor count, notes and configured interior cell size.
 - Add entrance records with access states, nearest road edge/projection and an explicit admin-confirmed connector state.
+- Bind one explicitly selected cell in an Entrance hall room as the interior threshold for an entrance.
+- Enter/exit only through a bound, admin-confirmed portal after the avatar reaches the exterior threshold. Restricted entrances require matching actor permissions.
 - Create per-floor measured grid plans. Each cell represents the configured cell size in metres; the default plan is 20 × 20 cells.
 - Assign cells to named rooms with room types.
 - Record door connections between adjacent room areas, with width derived from the number of selected door cells and cell size.
 - Record stair connections between floors from designated stairwell areas.
 - Place local occupant records into individual floor cells, preventing two occupants from using the same cell.
 - Place an admin avatar on the nearest road segment.
-- Save browser-local data and import/export a versioned JSON proposal.
+- Save browser-local building/occupant data and import/export a versioned JSON proposal.
+- Record local walk, enter and exit transitions in a separate browser-local spatial ledger, storing each immutable event and the actor's derived current address in one local-storage value.
 
 ## Important limitations
 
@@ -29,7 +32,9 @@ This is an admin prototype and exportable proposal tool. It does not write to th
 - Stair records identify a stairwell and destination floor, but reciprocal stair geometry and continuous vertical movement are not yet simulated.
 - Occupants are local placement records; they do not yet have persistent autonomous movement, collision, initiative or perception.
 - Automatic source loading is viewport-based, not a complete citywide offline download. It requires browser CORS access and source-service availability; failed requests need retry/manual fallback. The default H-GAC footprint source is partial-area, not citywide, so unmapped footprints remain gaps rather than fabricated buildings. Large Houston GIS performance and real-device browser behavior require runtime testing.
-- Browser local storage is not shared persistence. Export JSON for backup and transfer.
+- Browser local storage is not shared persistence. The spatial transition ledger is separate from the building proposal export and is not a portable or authoritative world history.
+- The local ledger's single-key write is a staging-only atomicity approximation. It is not multi-tab safe, authenticated, durable across browser data clearing, or a production WorldHeart adapter.
+- The shared repository contract now requires an expected-origin compare inside commitTransitionAtomic, so a real adapter must reject stale movement/portal commits in the same transaction that appends history and updates current position.
 
 ## Data authority
 
@@ -57,6 +62,24 @@ The builder now imports the isolated AO spatial movement module and adds a two-s
 5. Inspect it, then explicitly click "Confirm route & walk" to approve that route for this local staging run.
 6. The blue avatar advances along the route using the movement engine's elapsed-time integration and the selected walking speed.
 
-This is a local, reversible staging assertion. The generated graph edges are marked accepted_for_staging only for the preview run; they are not source-verified road topology, persistent world state, or canon. The preview does not currently add building-footprint collision obstacles, simulate sidewalk width, validate crossings, or enter the building's interior. Reaching the entrance connector is not the same as entering a building. The movement result is not written to Kernel, WorldHeart or Supabase.
+This is a local, reversible staging assertion. The generated graph edges are marked accepted_for_staging only for the preview run; they are not source-verified road topology, persistent world state, or canon. The preview does not currently add building-footprint collision obstacles, simulate sidewalk width, or validate crossings. Reaching the entrance connector is not the same as entering a building. A portal must be explicitly bound to one cell in an Entrance hall room; the actor must be at that exterior threshold, and the road connector and interior binding must both be admin-confirmed. Entry/exit creates immutable enter/exit transition records and updates the local current address. Restricted entrances require the actor to possess the declared permission set.
 
 The browser preview uses the same movement module as the deterministic unit tests. A static contract test extracts the module script and runs Node's syntax checker during CI.
+
+
+## Exterior-to-interior transition and persistence staging
+
+The builder now uses the shared spatial resolver for exterior coordinates and floor-local interior addresses. A portal binds a building entrance to one measured interior grid cell in an Entrance hall room. The binding records building, entrance, floor, room, row/column, cell size, access state and the admin confirmation provenance. The resolver keeps the physical exterior threshold linked to the interior address while treating the interior as a separate simulation space.
+
+The local workflow is:
+
+1. Place the blue avatar on the road graph; this establishes a browser-local spatial baseline.
+2. Walk the approved-for-staging route to the selected entrance. On arrival, the builder appends one walk event and updates the local current address.
+3. Assign selected interior cells to a room whose type is Entrance hall.
+4. Select the entrance and exactly one cell in that room, then bind it as the interior threshold.
+5. Enter only while the avatar is at the entrance threshold, the connector is admin-confirmed, the access state is usable, and any restricted-access permissions are present.
+6. Exit through the same bound threshold. The ledger records each transition and updates the current address.
+
+spatial/ao-building-transitions.mjs provides portal validation, address resolution, stale-origin checks, a Kernel authorization seam and a browser-local staging adapter. The generic spatial repository passes expectedOriginAddressKey to the adapter; a production adapter must compare it atomically before appending the event and updating current state.
+
+**Production boundary:** the repository does not yet expose a production Kernel authorization implementation or a WorldHeart-backed spatial adapter for this workflow. authorizeAndCommitSpatialTransition() requires a real kernel.authorizeSpatialTransition() implementation and a repository adapter. The Houston builder deliberately uses only localStorage and labels these records as staging-only. No Supabase migration is applied and no live AO world state is written.

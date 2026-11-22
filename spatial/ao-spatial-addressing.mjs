@@ -476,11 +476,14 @@ export function createSpatialResolver({
  *   getChunk(chunkId) -> chunk|null
  *   putChunk(chunkRecord) -> void
  *   getEntityAddress(entityId) -> address|null
- *   commitTransitionAtomic({event, destinationAddress, destinationChunk}) -> void
+ *   commitTransitionAtomic({event, destinationAddress, destinationChunk,
+ *     expectedOriginAddressKey}) -> void
  *
- * commitTransitionAtomic must atomically append the immutable event and update
- * the entity's current address. The Kernel decides whether a transition is
- * legal before calling it. This library never writes directly to Supabase.
+ * commitTransitionAtomic MUST compare the entity's current address key with
+ * expectedOriginAddressKey inside the same database transaction that appends
+ * the immutable event and replaces the current address. Reject stale origins.
+ * The Kernel decides whether a transition is legal before calling it. This
+ * library never writes directly to Supabase.
  */
 export function createSpatialRepository(adapter) {
   if (!adapter || typeof adapter.getChunk !== "function" ||
@@ -505,8 +508,12 @@ export function createSpatialRepository(adapter) {
     return address;
   }
 
-  async function commitTransition(event) {
+  async function commitTransition(event, { expectedOriginAddressKey = event?.originAddressKey } = {}) {
     if (!event || event.schemaVersion !== SPATIAL_SCHEMA_VERSION) throw new TypeError("Invalid transition event");
+    if (typeof expectedOriginAddressKey !== "string" || !expectedOriginAddressKey.trim() ||
+        expectedOriginAddressKey !== event.originAddressKey) {
+      throw new Error("Expected origin address key must match the immutable transition origin");
+    }
     assertSpatialAddress(event.from);
     assertSpatialAddress(event.to);
     requiredString(event.entityId, "event.entityId");
@@ -522,7 +529,8 @@ export function createSpatialRepository(adapter) {
     await adapter.commitTransitionAtomic({
       event: clone(event),
       destinationAddress: clone(event.to),
-      destinationChunk: clone(destinationChunk)
+      destinationChunk: clone(destinationChunk),
+      expectedOriginAddressKey
     });
     return event;
   }
@@ -544,7 +552,11 @@ export function samePhysicalPlace(a, b) {
   assertSpatialAddress(a);
   assertSpatialAddress(b);
   if (a.worldId !== b.worldId) return false;
-  const physicalA = a.physicalAddressKey || spatialAddressKey(a);
-  const physicalB = b.physicalAddressKey || spatialAddressKey(b);
+  const keyA = spatialAddressKey(a), keyB = spatialAddressKey(b);
+  // A portal-linked interior address is a different simulation space but
+  // retains the exact exterior threshold key for physical-place comparison.
+  if (a.exteriorAddressKey === keyB || b.exteriorAddressKey === keyA) return true;
+  const physicalA = a.physicalAddressKey || keyA;
+  const physicalB = b.physicalAddressKey || keyB;
   return physicalA === physicalB;
 }
