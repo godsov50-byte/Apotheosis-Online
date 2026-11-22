@@ -34,6 +34,7 @@ jobs:
           cp geography/ao-city-console.js site/
           cp geography/ao-city-registry.js site/
           cp geography/ao-city-road-import.js site/
+          cp geography/ao-city-navigation.js site/
           cp geography/ao-street-name-overlay.js site/
           cp geography/ao-city-console.css site/ 2>/dev/null || true
 
