@@ -25,12 +25,15 @@ test("does not mutate source building or entrance", () => {
   assert.deepEqual({ building, entrance }, before);
 });
 
-test("links only an explicitly approved pedestrian access edge", () => {
+test("accepts an explicitly approved edge in pedestrian-graph output shape", () => {
   const box = createAddressBox({
     building, entrance,
     pedestrianAccess: {
       accessPoint: { id: "pa-1" },
-      edge: { id: "walk-1", routingApproved: true, status: "accepted", walkAccess: true }
+      edge: {
+        id: "walk-1", routingApproved: true, status: "verified",
+        modes: ["walk"], from: "sidewalk-node", to: "entrance-anchor"
+      }
     }
   });
   assert.deepEqual(box.door.pedestrianAccess, {
@@ -38,14 +41,31 @@ test("links only an explicitly approved pedestrian access edge", () => {
   });
 });
 
-test("rejects unapproved pedestrian links", () => {
-  assert.throws(() => createAddressBox({
-    building, entrance,
-    pedestrianAccess: {
-      accessPoint: { id: "pa-1" },
-      edge: { id: "walk-1", routingApproved: false, status: "candidate", walkAccess: true }
-    }
-  }), /not explicitly approved/);
+test("accepts each status emitted by the pedestrian graph builder", () => {
+  for (const status of ["source_verified", "accepted_for_staging", "verified"]) {
+    assert.doesNotThrow(() => createAddressBox({
+      building, entrance,
+      pedestrianAccess: {
+        accessPoint: { id: "pa-1" },
+        edge: { id: `walk-${status}`, routingApproved: true, status, modes: ["walk"] }
+      }
+    }));
+  }
+});
+
+test("rejects edges without explicit walk mode or approval", () => {
+  const edge = { id: "walk-1", routingApproved: true, status: "verified", modes: ["walk"] };
+  for (const invalid of [
+    { ...edge, routingApproved: false },
+    { ...edge, status: "candidate" },
+    { ...edge, modes: ["drive"] },
+    { ...edge, modes: undefined }
+  ]) {
+    assert.throws(() => createAddressBox({
+      building, entrance,
+      pedestrianAccess: { accessPoint: { id: "pa-1" }, edge: invalid }
+    }), /not explicitly approved/);
+  }
 });
 
 test("rejects blocked entrances", () => {
