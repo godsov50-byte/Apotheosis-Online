@@ -30,6 +30,8 @@ These values match the staging graph contract in the pedestrian-access builder. 
 - No changes to road acquisition, topology, rasterization, or PR #89.
 - No writes to Kernel, WorldHeart, Supabase, or live AO state.
 - The existing Houston builder remains the source of building and entrance proposals.
+- An optional read-only address-box preview is available in the Houston staging builder; it projects current entrance records without changing them.
+- The preview does not synthesize pedestrian links. The pedestrian graph must provide a matching approved edge before a door can be linked.
 - This is a staging adapter, not a canonical import format.
 
 ## Validation
