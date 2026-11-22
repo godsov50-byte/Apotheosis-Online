@@ -4,6 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
+import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -14,6 +15,7 @@ function runFixture() {
   const input = path.join(dir, "input.json");
   const output = path.join(dir, "cells.json");
   const manifest = path.join(dir, "manifest.json");
+  const inputManifest = path.join(dir, "input-manifest.json");
   const fixture = {
     type: "AOGridInputFeatureCollection",
     schema_version: "1.0.0",
@@ -38,13 +40,19 @@ function runFixture() {
       }
     }]
   };
-  fs.writeFileSync(input, JSON.stringify(fixture));
-  return { dir, input, output, manifest, fixture };
+  const inputBytes = Buffer.from(JSON.stringify(fixture));
+  fs.writeFileSync(input, inputBytes);
+  fs.writeFileSync(inputManifest, JSON.stringify({
+    status: "preview_only_not_importable",
+    profile_version: 2,
+    local_geometry_sha256: crypto.createHash("sha256").update(inputBytes).digest("hex")
+  }));
+  return { dir, input, output, manifest, inputManifest, fixture };
 }
 
 test("rasterizes preview road centerline, retaining identity and source attributes", () => {
   const f = runFixture();
-  const result = spawnSync(process.execPath, [script, "--input", f.input, "--output", f.output, "--manifest", f.manifest], { encoding: "utf8" });
+  const result = spawnSync(process.execPath, [script, "--input", f.input, "--input-manifest", f.inputManifest, "--output", f.output, "--manifest", f.manifest], { encoding: "utf8" });
   assert.equal(result.status, 0, result.stderr);
   const output = JSON.parse(fs.readFileSync(f.output, "utf8"));
   const manifest = JSON.parse(fs.readFileSync(f.manifest, "utf8"));
