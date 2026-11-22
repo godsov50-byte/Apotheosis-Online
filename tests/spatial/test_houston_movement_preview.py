@@ -50,6 +50,25 @@ class HoustonMovementPreviewTests(unittest.TestCase):
         self.assertIn("(now-lastFrameAt)/1000", self.script)
         self.assertIn("No AO world state is being changed", self.script)
 
+    def test_address_box_preview_uses_existing_entrance_records_read_only(self):
+        self.assertIn('../spatial/ao-address-box.mjs', self.script)
+        self.assertIn('id="buildAddressBoxPreview"', self.html)
+        self.assertIn('id="clearAddressBoxPreview"', self.html)
+        self.assertIn('id="addressBoxList"', self.html)
+        self.assertIn("function renderAddressBoxPreview()", self.script)
+        self.assertIn("createAddressBox({building:b,entrance:en})", self.script)
+        self.assertIn("for(const b of buildings)for(const en of b.entrances)", self.script)
+        self.assertIn("Source data was not changed", self.script)
+
+    def test_address_box_preview_does_not_infer_walk_access_from_nearest_road(self):
+        preview_start = self.script.index("$('buildAddressBoxPreview').onclick=")
+        preview_end = self.script.index("$('placeOccupant').onclick=", preview_start)
+        preview = self.script[preview_start:preview_end]
+        self.assertNotIn("roadPoint", preview)
+        self.assertNotIn("roadEdgeId", preview)
+        self.assertNotIn("connectorState", preview)
+        self.assertIn("pedestrian links remain unconnected without an approved graph edge", preview)
+
     def test_selection_changes_clear_stale_route_preview(self):
         self.assertIn("function selectBuilding(bid){clearMovementPreview();", self.script)
         self.assertIn("function clearMovementPreview", self.script)
