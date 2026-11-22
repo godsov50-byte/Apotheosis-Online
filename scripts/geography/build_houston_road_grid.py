@@ -158,6 +158,8 @@ def build(source: dict[str, Any], source_manifest: dict[str, Any],
     manifest = {
         "artifact_id": "ao-houston-road-centerline-grid-input",
         "schema_version": "1.0.0",
+        "profile_key": "houston",
+        "profile_version": 2,
         "status": "preview_only_not_importable" if preview_only else "profile_approved_local_grid_input",
         "authoritative_world_state": False,
         "kernel_approval_required_for_import": True,
@@ -218,7 +220,7 @@ def self_test() -> None:
     try:
         build(source, {}, profile, False)
     except BuildError as exc:
-        assert "not Kernel-approved" in str(exc)
+        assert "only emits non-authoritative preview" in str(exc)
     else:
         raise AssertionError("Unapproved profile must not build importable output.")
     print("self-test passed: WGS84 projection, selected origin, integer-mm axes, provenance, and approval gate")
