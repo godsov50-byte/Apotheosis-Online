@@ -2,6 +2,10 @@
  * AO Pedestrian Network Builder (staging-only).
  * Builds a directed walk graph from explicitly approved sidewalk segments and
  * entrance connectors. Geometry alone never implies pedestrian access.
+ *
+ * The coordinate-backed node registry is derived only from the endpoints of
+ * eligible, explicitly approved edges. Reusing a node ID at a different
+ * coordinate is rejected instead of silently snapping or merging geometry.
  */
 const ACCEPTED = new Set(["source_verified", "accepted_for_staging", "verified"]);
 
@@ -27,6 +31,9 @@ function toEdge(record, kind) {
     provenance: record.provenance ?? null
   };
 }
+function samePosition(a, b) {
+  return a.x === b.x && a.y === b.y && a.z === b.z;
+}
 export function buildPedestrianGraph({ sidewalks = [], entranceConnectors = [] } = {}) {
   if (!Array.isArray(sidewalks) || !Array.isArray(entranceConnectors)) throw new TypeError("Expected sidewalk and connector arrays");
   const edges = [];
@@ -39,6 +46,29 @@ export function buildPedestrianGraph({ sidewalks = [], entranceConnectors = [] }
       if (edgeEligible(record)) edges.push(toEdge(record, kind));
     }
   }
-  const nodes = [...new Set(edges.flatMap(edge => [edge.from, edge.to]))].sort();
-  return { nodes, edges, mode: "walk", stagingOnly: true };
+  const nodeMap = new Map();
+  for (const edge of edges) {
+    const endpoints = [
+      { id: edge.from, position: edge.geometry[0] },
+      { id: edge.to, position: edge.geometry[edge.geometry.length - 1] }
+    ];
+    for (const endpoint of endpoints) {
+      const existing = nodeMap.get(endpoint.id);
+      if (existing && !samePosition(existing.position, endpoint.position)) {
+        throw new Error(`Conflicting coordinates for pedestrian node ${endpoint.id}`);
+      }
+      if (!existing) {
+        nodeMap.set(endpoint.id, {
+          id: endpoint.id,
+          position: { ...endpoint.position },
+          layer: "ground",
+          spaceId: "world",
+          provenance: edge.provenance
+        });
+      }
+    }
+  }
+  const nodeRegistry = [...nodeMap.values()].sort((a, b) => a.id.localeCompare(b.id));
+  const nodes = nodeRegistry.map(node => node.id);
+  return { nodes, nodeRegistry, edges, mode: "walk", stagingOnly: true };
 }
