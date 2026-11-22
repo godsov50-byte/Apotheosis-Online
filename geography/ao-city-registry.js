@@ -380,7 +380,7 @@
         const aoName = record.kind === "street" && window.AOStreetNames ? window.AOStreetNames.getName(record) : null;
         if (record.name.toLocaleLowerCase().includes(query) || (aoName && aoName.toLocaleLowerCase().includes(query))) {
           const button = document.createElement("button");
-          button.textContent = (record.kind === "street" ? "Road · " : "Building · ") + record.name;
+          button.textContent = (record.kind === "street" ? (aoName ? "Road · " + aoName + " · " : "Road · ") : "Building · ") + record.name;
           button.onclick = () => showRecord(record);
           results.append(button);
           found++;
