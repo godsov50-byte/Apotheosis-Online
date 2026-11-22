@@ -1,0 +1,31 @@
+name: AO WorldHeart Edge Function checks
+
+on:
+  pull_request:
+    paths:
+      - "supabase/functions/ao-chatgpt-mcp/**"
+      - "supabase/functions/ao-worldheart-review/**"
+      - "supabase/migrations/**"
+      - ".github/workflows/ao-worldheart-functions.yml"
+  push:
+    branches: [main]
+    paths:
+      - "supabase/functions/ao-chatgpt-mcp/**"
+      - "supabase/functions/ao-worldheart-review/**"
+      - "supabase/migrations/**"
+
+permissions:
+  contents: read
+
+jobs:
+  deno-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Check AO MCP function
+        run: deno check supabase/functions/ao-chatgpt-mcp/index.ts
+      - name: Check Sovereign review console
+        run: deno check supabase/functions/ao-worldheart-review/index.ts
