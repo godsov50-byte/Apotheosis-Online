@@ -13,6 +13,9 @@ These layers must not be collapsed into one table or treated as interchangeable.
 | Path | Purpose | Status |
 |---|---|---|
 | `HOUSTON_SPATIAL_ADAPTER_SPEC.md` | Multi-resolution spatial architecture and safeguards | Design specification |
+| `AO_HOUSTON_GRID_CONVERSION_PIPELINE_v1.md` | Source-to-S2-to-sparse-square-cell conversion pipeline and acceptance gates | Implementation foundation; staging only |
+| `../spatial/ao-grid-rasterizer.mjs` | Deterministic line/polygon geometry-to-cell rasterizer | Pure utility; requires approved local metric input |
+| `../tests/spatial/ao-grid-rasterizer.test.mjs` | Rasterization contract tests | Node test suite |
 | `HOUSTON_GIS_SOURCE_MANIFEST.md` | Candidate Houston sources, provenance and coverage limitations | Working source register |
 | `profiles/houston-v1.json` | Machine-readable Houston coordinate profile | Draft; origin deliberately unset |
 | `adapter/coords.py` | Deterministic projected-coordinate/local-AO conversion | Implemented utility; requires approved profile |
