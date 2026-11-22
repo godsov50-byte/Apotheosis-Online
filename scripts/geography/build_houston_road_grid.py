@@ -94,11 +94,7 @@ def build(source: dict[str, Any], source_manifest: dict[str, Any],
         raise BuildError("Houston v2 origin is missing or has an unexpected status.")
     origin_e, origin_n = Decimal(origin["easting"]), Decimal(origin["northing"])
     if not preview_only:
-        approval = profile.get("approval") or {}
-        if profile.get("profile_state") != "approved" or approval.get("approved_by_kernel") is not True:
-            raise BuildError("Houston v2 is not Kernel-approved. Use --preview-only for a non-authoritative preview.")
-        if not profile.get("source_to_working_crs_pipeline"):
-            raise BuildError("Approved profile must pin its source-to-working CRS operation.")
+        raise BuildError("This builder only emits non-authoritative preview artifacts. A future canonical importer must be implemented against a separately reviewed and Kernel-approved profile.")
 
     transformer = Transformer.from_crs(CRS.from_epsg(4326), CRS.from_epsg(2278), always_xy=True)
     accuracy = transformer.accuracy
