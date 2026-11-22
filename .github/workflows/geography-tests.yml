@@ -42,7 +42,7 @@ jobs:
         run: |
           python -m py_compile scripts/geography/acquire_houston_ao_sources.py
           python scripts/geography/acquire_houston_ao_sources.py --self-test
-          python -m unittest tests.spatial.test_houston_ao_source_catalog -v
+          python -m unittest discover -s tests/spatial -p "test_houston_ao_source_catalog.py" -v
       - name: Test deterministic registry helpers
         run: node tests/spatial/consistency-registry.test.js
       - name: Test Houston street registry compiler
