@@ -89,9 +89,29 @@
     if(String(p.motor_vehicle||"").toLowerCase()==="no" && !p.foot)return false;
     return true;
   }
-  function nodeKey(point,layer){const lat=Math.round(point[1]*1e5),lng=Math.round(point[0]*1e5);return layer+"|"+lat+"|"+lng;}
   function buildGraph(records){
-    const nodes=new Map(),edges=[];
+    const nodes=new Map(),edges=[],buckets=new Map();
+    const cellMeters=3,joinMeters=2.5;
+    function getNode(point,layer){
+      const lat=Number(point[1]),lng=Number(point[0]),cos=Math.max(.1,Math.cos(lat*RAD));
+      const y=Math.floor(lat*111320/cellMeters),x=Math.floor(lng*111320*cos/cellMeters);
+      let best=null,bestDistance=Infinity;
+      for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+        const bucket=buckets.get(layer+"|"+(x+dx)+"|"+(y+dy))||[];
+        for(const node of bucket){
+          const d=meters({lat,lng},node);
+          if(d<bestDistance){best=node;bestDistance=d;}
+        }
+      }
+      if(best&&bestDistance<=joinMeters)return best;
+      const key=layer+"|node:"+nodes.size;
+      const node={key,lat,lng,edges:[]};
+      nodes.set(key,node);
+      const bucketKey=layer+"|"+x+"|"+y;
+      if(!buckets.has(bucketKey))buckets.set(bucketKey,[]);
+      buckets.get(bucketKey).push(node);
+      return node;
+    }
     for(const record of records){
       if(!roadAllowed(record)||record.geometry?.type!=="LineString")continue;
       const props=record.rawProperties||record.properties||{};
@@ -100,12 +120,12 @@
       for(let i=1;i<coords.length;i++){
         const a=coords[i-1],b=coords[i];
         if(!Array.isArray(a)||!Array.isArray(b)||a.length<2||b.length<2)continue;
-        const ka=nodeKey(a,layer),kb=nodeKey(b,layer);
-        if(ka===kb)continue;
-        if(!nodes.has(ka))nodes.set(ka,{key:ka,lat:a[1],lng:a[0],edges:[]});
-        if(!nodes.has(kb))nodes.set(kb,{key:kb,lat:b[1],lng:b[0],edges:[]});
-        const edge={a:ka,b:kb,cost:meters(nodes.get(ka),nodes.get(kb)),recordId:record.id};
-        edges.push(edge);nodes.get(ka).edges.push({to:kb,cost:edge.cost});nodes.get(kb).edges.push({to:ka,cost:edge.cost});
+        const na=getNode(a,layer),nb=getNode(b,layer);
+        if(na.key===nb.key)continue;
+        const edge={a:na.key,b:nb.key,cost:meters(na,nb),recordId:record.id};
+        edges.push(edge);
+        na.edges.push({to:nb.key,cost:edge.cost});
+        nb.edges.push({to:na.key,cost:edge.cost});
       }
     }
     return {nodes,edges};
