@@ -101,7 +101,7 @@ class HoustonAOSourceCatalogTests(unittest.TestCase):
             layer_dir.mkdir()
             feature_bytes = b'{"type":"FeatureCollection","features":[]}'
             (layer_dir / "features.geojson").write_bytes(feature_bytes)
-            manifest = {"dataset_id": source["id"], "query_bbox_wgs84": [-95.5,29.6,-95.2,29.9], "pagination_complete": True, "status": "staging_source_evidence_not_world_state", "feature_sha256": MODULE.hashlib.sha256(feature_bytes).hexdigest(), "source_last_edit_date": 100, "source_data_last_edit_date": 200, "downloaded_feature_count": 0, "source_feature_id_count": 0}
+            manifest = {"dataset_id": source["id"], "source_url": source["layer_url"], "source_layer_id": source["layer_id"], "query_bbox_wgs84": [-95.5,29.6,-95.2,29.9], "pagination_complete": True, "status": "staging_source_evidence_not_world_state", "feature_sha256": MODULE.hashlib.sha256(feature_bytes).hexdigest(), "source_last_edit_date": 100, "source_data_last_edit_date": 200, "downloaded_feature_count": 0, "source_feature_id_count": 0}
             (layer_dir / "manifest.json").write_text(json.dumps(manifest))
             self.assertIsNone(MODULE.reusable_layer_manifest(source, Path(directory), [-95.5,29.6,-95.2,29.9], {"lastEditDate": 101, "dataLastEditDate": 200}))
 
