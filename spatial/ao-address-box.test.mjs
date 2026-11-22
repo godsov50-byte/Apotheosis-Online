@@ -1,0 +1,55 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { createAddressBox } from "./ao-address-box.mjs";
+
+const building = {
+  id: "b-1", name: "Test Shop", purpose: "Shop", floors: 1,
+  footprint: [[-95.1, 29.7], [-95.099, 29.7], [-95.099, 29.701], [-95.1, 29.7]]
+};
+const entrance = {
+  id: "e-1", position: [-95.1, 29.7005],
+  access: "Usable", connectorState: "Candidate — unverified"
+};
+
+test("projects a building entrance into one lightweight address box", () => {
+  const box = createAddressBox({ building, entrance });
+  assert.equal(box.buildingId, "b-1");
+  assert.equal(box.door.entranceId, "e-1");
+  assert.equal(box.door.pedestrianAccess, null);
+  assert.equal(Object.keys(box).includes("floorPlans"), false);
+});
+
+test("does not mutate source building or entrance", () => {
+  const before = structuredClone({ building, entrance });
+  createAddressBox({ building, entrance });
+  assert.deepEqual({ building, entrance }, before);
+});
+
+test("links only an explicitly approved pedestrian access edge", () => {
+  const box = createAddressBox({
+    building, entrance,
+    pedestrianAccess: {
+      accessPoint: { id: "pa-1" },
+      edge: { id: "walk-1", routingApproved: true, status: "accepted", walkAccess: true }
+    }
+  });
+  assert.deepEqual(box.door.pedestrianAccess, {
+    accessPointId: "pa-1", edgeId: "walk-1"
+  });
+});
+
+test("rejects unapproved pedestrian links", () => {
+  assert.throws(() => createAddressBox({
+    building, entrance,
+    pedestrianAccess: {
+      accessPoint: { id: "pa-1" },
+      edge: { id: "walk-1", routingApproved: false, status: "candidate", walkAccess: true }
+    }
+  }), /not explicitly approved/);
+});
+
+test("rejects blocked entrances", () => {
+  assert.throws(() => createAddressBox({
+    building, entrance: { ...entrance, access: "Blocked / unusable" }
+  }), /blocked entrance/);
+});
