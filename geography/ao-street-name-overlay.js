@@ -107,7 +107,7 @@
     await putAlias(row);
     status("Saved locally: " + aoName + ". All segments sharing this source name group will use it.");
     window.dispatchEvent(new Event("ao:street-names-updated"));
-    if (window.AOCityRegistryRefresh) window.AOCityRegistryRefresh();
+
   }
   async function exportAliases() {
     const db = await openDB(), tx = db.transaction("streetAliases", "readonly"), req = tx.objectStore("streetAliases").getAll();
@@ -129,7 +129,7 @@
       }
       status("Imported " + count + " valid aliases. Source geometry and official names were not changed.");
       window.dispatchEvent(new Event("ao:street-names-updated"));
-      if (window.AOCityRegistryRefresh) window.AOCityRegistryRefresh();
+
       if (selectedStreet) show(selectedStreet);
     } catch (error) { status("Import failed: " + (error.message || String(error))); }
     finally { $("aoStreetNamesFile").value = ""; }
@@ -143,13 +143,13 @@
     $("aoStreetNameInput").value = "";
     status("AO alias removed. Source street name restored for this group.");
     window.dispatchEvent(new Event("ao:street-names-updated"));
-    if (window.AOCityRegistryRefresh) window.AOCityRegistryRefresh();
+
   });
   $("exportAoStreetNames").addEventListener("click", () => exportAliases().catch(error => status(error.message || String(error))));
   $("importAoStreetNames").addEventListener("click", () => $("aoStreetNamesFile").click());
   $("aoStreetNamesFile").addEventListener("change", event => importAliases(event.target.files && event.target.files[0]));
   loadAliases().then(() => {
     status("Loaded " + aliases.size + " local AO street aliases.");
-    if (window.AOCityRegistryRefresh) window.AOCityRegistryRefresh();
+
   }).catch(error => status(error.message || String(error)));
 })();
