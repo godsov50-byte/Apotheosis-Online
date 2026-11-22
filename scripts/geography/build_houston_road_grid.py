@@ -241,8 +241,12 @@ def main() -> int:
     if args.self_test:
         self_test()
         return 0
-    source = load_json(args.input)
+    input_bytes = args.input.read_bytes()
+    source = json.loads(input_bytes.decode("utf-8"))
     source_manifest = load_json(args.source_manifest) if args.source_manifest.exists() else {}
+    declared_hash = source_manifest.get("geometry_sha256")
+    if declared_hash and sha256(input_bytes) != declared_hash:
+        raise BuildError("Source snapshot SHA-256 does not match its acquisition manifest.")
     profile = load_json(args.profile)
     output, manifest = build(source, source_manifest, profile, args.preview_only)
     args.output_dir.mkdir(parents=True, exist_ok=True)
