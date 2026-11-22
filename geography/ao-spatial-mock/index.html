@@ -36,13 +36,13 @@
  let player={x:35,y:18},target=null,path=[],grid=false,route=true,zoom=1,offsetX=0,offsetY=0,drag=null,panMode=false,selected=null;
  // Location identity is layer-based. Interior extents are independent of exterior shells.
  const spatialLayers={"district:ashen-row":{kind:"district",name:"Ashen Row",parent:null,extent:{w:W,h:H}}};
- let activeLayer="district:ashen-row",layerReturn={layer:"district:ashen-row",position:{x:35,y:18}},interiorPosition={x:2,y:3};
+ let activeLayer="district:ashen-row",layerReturn={layer:"district:ashen-row",position:{x:35,y:18}},interiorPosition={x:2,y:3},pendingDoor=null;
  function updateLayerText(){
    const inside=activeLayer!=="district:ashen-row";
    document.getElementById("layerLabel").textContent=inside?"Interior · "+spatialLayers[activeLayer].name:"District · Ashen Row";
    document.getElementById("layerId").textContent=activeLayer;
    document.getElementById("worldText").textContent=inside?"You are inside this structure. Interior geometry has its own coordinate system and extent, which can exceed the exterior shell. The entrance is a cross-layer link.":"You are in Ashen Row. Exterior building shells do not define interior size. Entrances link distinct spatial layers; GPS is tracked within the active context.";
-   document.getElementById("exitLayer").style.display=inside?"inline-block":"none";
+   document.getElementById("exitLayer").style.display=inside?"inline-block":"none";document.getElementById("enterLayer").style.display=(!inside&&pendingDoor)?"inline-block":"none";
    document.getElementById("pos").textContent=inside?interiorPosition.x+", "+interiorPosition.y:player.x+", "+player.y;
  }
  function resize(){const dpr=window.devicePixelRatio||1,rect=canvas.getBoundingClientRect();canvas.width=rect.width*dpr;canvas.height=rect.height*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);draw()}
