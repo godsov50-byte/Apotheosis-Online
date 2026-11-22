@@ -9,6 +9,9 @@
   const TILE_DEGREES = 0.02;
   const MAX_VIEW_TILES = 240;
   const MAX_RENDER_FEATURES = 2200;
+  const ADDRESS_KEY = "ao-city-entrance-addresses-v1";
+  let entrancePins = loadEntrancePins();
+  let entranceLayer = L.layerGroup().addTo(map);
   const $ = (id) => document.getElementById(id);
   const map = window.AOCityConsoleMap;
   if (!map || !window.L) {
@@ -23,6 +26,12 @@
   let selectedRecord = null;
   let searchTimer = null;
 
+  function loadEntrancePins(){try{return JSON.parse(localStorage.getItem(ADDRESS_KEY)||"[]")}catch{return []}}
+  function saveEntrancePins(){try{localStorage.setItem(ADDRESS_KEY,JSON.stringify(entrancePins))}catch(e){status("Could not save entrance/address markers locally: "+e.message)}}
+  function entranceIcon(){return L.divIcon({className:"",html:'<div class="ao-address-icon" aria-label="Address or entrance">⌂</div>',iconSize:[28,28],iconAnchor:[14,25]})}
+  function openEntranceCard(pin){const card=$("aoEntranceCard"),body=$("aoEntranceCardBody");if(!card||!body)return;body.replaceChildren();const title=document.createElement("h2");title.textContent=pin.address||"Entrance";body.append(title);const subtitle=document.createElement("div");subtitle.className="hint";subtitle.textContent="AO entrance/address marker · browser-local record";body.append(subtitle);const info=document.createElement("p");info.textContent=pin.description||"Door position recorded. Interior visibility and access are not assumed.";body.append(info);const coords=document.createElement("div");coords.className="hint";coords.textContent=Number(pin.lat).toFixed(7)+", "+Number(pin.lng).toFixed(7);body.append(coords);if(pin.parentName){const p=document.createElement("div");p.className="hint";p.textContent="Building: "+pin.parentName;body.append(p)}const btn=document.createElement("button");btn.className="primary ao-card-action";btn.textContent="Inspect location";btn.onclick=()=>{card.hidden=true;map.setView([pin.lat,pin.lng],19)};body.append(btn);card.hidden=false}
+  $("aoEntranceClose").onclick=()=>{$("aoEntranceCard").hidden=true};
+  function renderEntrancePins(){entranceLayer.clearLayers();entrancePins.forEach(pin=>{const marker=L.marker([pin.lat,pin.lng],{icon:entranceIcon()}).addTo(entranceLayer);marker.on("click",e=>{if(e.originalEvent)L.DomEvent.stopPropagation(e.originalEvent);openEntranceCard(pin)});marker.bindTooltip(pin.address||"Entrance")})}
   function status(message) {
     const el = $("registryStatus");
     if (el) el.textContent = message;
@@ -202,17 +211,17 @@
       const props=item.properties||item.raw_source_attributes||{}, sourceIdentity=item.identity_key||item.source_global_id||item.source_record_key||("row-"+index);
       return {id:"street:"+String(sourceIdentity),kind:"street",dataset:item.registry_id||"ao-houston-street-registry",name:pickName(props,item.display_name),geometry:item.geometry,properties:props,rawProperties:item.raw_source_attributes||{},provenance:item.provenance||{},sourceIdentity,nameGroupKey:item.name_group_key||null,sourceStatus:"source-reported centerline; not a validated route edge"};
     }
-    const p=item.properties||{},sourceId=p.GlobalID||p.GLOBALID||p.globalid||p.FID||p.OBJECTID||p.OBJECTID_1||p.id||item.id||("feature-"+index);
-    return {id:"building:"+sourceLabel+":"+String(sourceId),kind:"building",dataset:sourceLabel,name:pickName(p,"Building "+sourceId),geometry:item.geometry,properties:p,rawProperties:p,provenance:{publisher:sourceLabel,source_record_id:String(sourceId)},sourceIdentity:String(sourceId),sourceStatus:"source footprint; not field-verified building truth"};
+    const p=item.properties||{},sourceId=p.GlobalID||p.GLOBALID||p.globalid||p.FID||p.OBJECTID||p.OBJECTID_1||p.id||item.id||("feature-"+index),featureKind=kind==="lot"?"lot":"building";
+    return {id:featureKind+":"+sourceLabel+":"+String(sourceId),kind:featureKind,dataset:sourceLabel,name:pickName(p,(kind==="lot"?"Parcel ":"Building ")+sourceId),geometry:item.geometry,properties:p,rawProperties:p,provenance:{publisher:sourceLabel,source_record_id:String(sourceId)},sourceIdentity:String(sourceId),sourceStatus:kind==="lot"?"source parcel boundary; not field-verified property truth":"source footprint; not field-verified building truth"};
   }
   async function importFile(file,kind){
     if(!file)return;
-    const sourceLabel=kind==="building"?($("buildingSource").value||"user-imported-building-footprints"):"";
+    const sourceLabel=kind==="building"?($("buildingSource").value||"user-imported-building-footprints"):kind==="lot"?"user-imported-parcel-boundaries":"";
     const arrayName=kind==="street"?"street_segments":"features";
     status("Streaming "+file.name+" — large-file mode…");
     try{
       let accepted=0,rejected=0,batch=[],bounds=null;
-      const db=await openDB(),datasetKey=(kind==="street"?"street:":"building:")+sourceLabelOrDefault(kind,sourceLabel);
+      const db=await openDB(),datasetKey=(kind==="street"?"street:":kind==="lot"?"lot:":"building:")+sourceLabelOrDefault(kind,sourceLabel);
       const oldTx=db.transaction("datasets","readonly");
       const old=await new Promise((resolve,reject)=>{const req=oldTx.objectStore("datasets").get(datasetKey);req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error);});
       await transactionDone(oldTx);
@@ -230,13 +239,13 @@
       const tx=db.transaction("datasets","readwrite");
       tx.objectStore("datasets").put({id:datasetKey,kind,name:file.name,importedAt:new Date().toISOString(),sourceLabel:sourceLabelOrDefault(kind,sourceLabel),accepted:(old&&old.accepted||0)+accepted,rejected:(old&&old.rejected||0)+rejected,fileBytes:file.size,importMode:"streaming-batches"});
       await transactionDone(tx);
-      status("Streaming import complete: "+accepted.toLocaleString()+" new "+(kind==="street"?"street segments":"building footprints")+(rejected?"; skipped "+rejected.toLocaleString()+".":".")+" Saved in IndexedDB.");
+      status("Streaming import complete: "+accepted.toLocaleString()+" new "+(kind==="street"?"street segments":kind==="lot"?"parcel / lot boundaries":"building footprints")+(rejected?"; skipped "+rejected.toLocaleString()+".":".")+" Saved in IndexedDB.");
       await updateCounts();await refreshVisible();
       if(bounds)map.fitBounds([[bounds[1],bounds[0]],[bounds[3],bounds[2]]],{padding:[24,24],maxZoom:16});
     }catch(error){status("Import failed: "+(error&&error.message?error.message:String(error)));}
   }
   function sourceLabelOrDefault(kind, label) {
-    return kind === "street" ? "ao-houston-street-registry" : (label || "user-imported-building-footprints");
+    return kind === "street" ? "ao-houston-street-registry" : (kind==="lot"?"user-imported-parcel-boundaries":label || "user-imported-building-footprints");
   }
   async function updateCounts() {
     try {
@@ -298,10 +307,12 @@
         const drawn = L.geoJSON(feature, {
           style: () => record.kind === "street"
             ? { color: "#64c7e8", weight: 2.2, opacity: 0.86 }
-            : { color: "#e0b65e", weight: 1.5, fillColor: "#d9b66d", fillOpacity: 0.18 }
+            : record.kind === "lot"
+              ? { color: "#b68a48", weight: 1.5, fillColor: "#b68a48", fillOpacity: 0.05, dashArray: "5 4" }
+              : { color: "#e0b65e", weight: 1.5, fillColor: "#d9b66d", fillOpacity: 0.18 }
         }).addTo(layer);
         const aoName = record.kind === "street" && window.AOStreetNames ? window.AOStreetNames.getName(record) : null;
-        drawn.bindTooltip(aoName ? (aoName + " · " + record.name) : record.name, { sticky: true });
+        drawn.bindTooltip((record.kind==="lot"?"Lot / Parcel · ":"Building · ")+(aoName ? (aoName + " · ") : "")+record.name, { sticky: true });
         drawn.on("click", (event) => {
           if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
           showRecord(record);
@@ -329,7 +340,7 @@
     window.dispatchEvent(new CustomEvent("ao:registry-record-selected", { detail: record }));
     const type = document.createElement("div");
     type.className = "hint";
-    type.textContent = (record.kind === "street" ? "Street centerline segment" : "Building footprint") +
+    type.textContent = (record.kind === "street" ? "Street centerline segment" : record.kind==="lot" ? "Parcel / lot boundary" : "Building footprint") +
       " · " + record.sourceIdentity;
     panel.append(type);
     const provenance = document.createElement("div");
@@ -362,6 +373,7 @@
     }
     const bounds = L.geoJSON({ type: "Feature", geometry: record.geometry, properties: {} }).getBounds();
     if (bounds.isValid()) map.fitBounds(bounds.pad(0.8), { maxZoom: 19 });
+    if(record.kind==="building"){const add=document.createElement("button");add.className="primary";add.textContent="Add address / entrance pin at door";add.onclick=()=>{pinAuthoring=true;status("Click the map exactly where the doorway is; then enter its address/label. No entrance is inferred.");};panel.append(add);}
   }
   async function searchRecords() {
     const query = ($("registrySearch").value || "").trim().toLocaleLowerCase();
@@ -400,6 +412,7 @@
 
   $("importStreets").addEventListener("click", () => $("streetRegistryFile").click());
   $("importBuildings").addEventListener("click", () => $("buildingRegistryFile").click());
+  $("importLots").addEventListener("click", () => $("lotRegistryFile").click());
   $("streetRegistryFile").addEventListener("change", (event) => {
     importFile(event.target.files && event.target.files[0], "street");
     event.target.value = "";
@@ -408,10 +421,17 @@
     importFile(event.target.files && event.target.files[0], "building");
     event.target.value = "";
   });
+  $("lotRegistryFile").addEventListener("change", (event) => {
+    importFile(event.target.files && event.target.files[0], "lot");
+    event.target.value = "";
+  });
   $("registrySearch").addEventListener("input", () => {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(() => searchRecords().catch((error) => status(error.message || String(error))), 180);
   });
   map.on("moveend", refreshVisible);
+  renderEntrancePins();
+  let pinAuthoring = false;
+  map.on("click",e=>{if(!pinAuthoring)return;pinAuthoring=false;const address=prompt("Address / entrance label (do not guess):","");if(address===null||!address.trim())return;const description=prompt("Optional description / access note (leave blank if unknown):","")||"";const parentName=selectedRecord&&selectedRecord.kind==="building"?selectedRecord.name:"";const pin={id:"ao-door-"+Date.now(),lat:e.latlng.lat,lng:e.latlng.lng,address:address.trim(),description,parentName,createdAt:new Date().toISOString(),source:"user-authored"};entrancePins.push(pin);saveEntrancePins();renderEntrancePins();openEntranceCard(pin);status("Entrance/address pin added at clicked door location (local-only).");});
   openDB().then(updateCounts).then(refreshVisible).catch((error) => status(error.message || String(error)));
 })();
