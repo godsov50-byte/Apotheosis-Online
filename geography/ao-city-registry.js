@@ -342,7 +342,7 @@
               : { color: "#e0b65e", weight: 1.5, fillColor: "#d9b66d", fillOpacity: 0.18 }
         }).addTo(layer);
         const aoName = record.kind === "street" && window.AOStreetNames ? window.AOStreetNames.getName(record) : null;
-        drawn.bindTooltip((record.kind==="lot"?"Lot / Parcel · ":"Building · ")+(aoName ? (aoName + " · ") : "")+record.name, { sticky: true });
+        drawn.bindTooltip((record.kind==="street"?"Road · ":record.kind==="lot"?"Lot / Parcel · ":"Building · ")+(aoName ? (aoName + " · ") : "")+record.name, { sticky: true });
         drawn.on("click", (event) => {
           if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
           if(pinAuthoring){addEntrancePinAt(event.latlng);return;}
@@ -358,6 +358,7 @@
     }
   }
   window.AOCityRegistryRefresh = refreshVisible;
+  window.AOCityRegistryUpdateCounts = updateCounts;
   window.addEventListener("ao:street-names-updated", refreshVisible);
   function showRecord(record) {
     selectedRecord = record;
@@ -380,7 +381,7 @@
     panel.append(provenance);
     const props = record.rawProperties || record.properties || {};
     const preferred = record.kind === "street"
-      ? ["roadclass", "onewaydir", "lanes", "speed", "funcclass", "munileft", "muniright", "fromleft", "toleft", "fromright", "toright", "zipleft", "zipright"]
+      ? ["highway", "ref", "oneway", "lanes", "maxspeed", "surface", "access", "bridge", "tunnel", "layer", "roadclass", "onewaydir", "speed", "funcclass", "munileft", "muniright", "fromleft", "toleft", "fromright", "toright", "zipleft", "zipright"]
       : ["Parcel_ID", "PARCEL_ID", "Address", "ADDRESS", "address", "height", "HEIGHT", "zipcode", "ZIP", "department", "CreationDate", "EditDate"];
     let shown = 0;
     preferred.forEach((key) => {
@@ -404,7 +405,7 @@
     }
     const bounds = L.geoJSON({ type: "Feature", geometry: record.geometry, properties: {} }).getBounds();
     if (bounds.isValid()) map.fitBounds(bounds.pad(0.8), { maxZoom: 19 });
-    if(record.kind==="building"){const add=document.createElement("button");add.className="primary";add.textContent="Add address / entrance pin at door";add.onclick=()=>{pinAuthoring=true;status("Click the map exactly where the doorway is; then enter its address/label. No entrance is inferred.");};panel.append(add);}
+    if(record.kind==="building"){const trace=document.createElement("button");trace.className="primary";trace.textContent="Trace / save this building in AO";trace.onclick=()=>{window.dispatchEvent(new CustomEvent("ao:trace-building",{detail:record}));status("Source footprint sent to AO local building authoring.");};panel.append(trace);const add=document.createElement("button");add.textContent="Manually place entrance pin";add.onclick=()=>{pinAuthoring=true;status("Click the map exactly where the doorway is; then enter its address/label. No entrance is inferred.");};panel.append(add);}
   }
   async function searchRecords() {
     const query = ($("registrySearch").value || "").trim().toLocaleLowerCase();
