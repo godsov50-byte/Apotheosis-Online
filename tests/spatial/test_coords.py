@@ -109,6 +109,17 @@ class CoordinateTransformTests(unittest.TestCase):
         with self.assertRaises(ProfileNotReadyError):
             profile.assert_ready()
 
+
+    def test_houston_v2_records_user_selected_map_anchor_but_remains_gated(self):
+        path = Path(__file__).parents[2] / "geography" / "profiles" / "houston-v2.json"
+        profile = load_profile(path)
+        self.assertEqual(profile.horizontal_crs, "EPSG:2278")
+        self.assertEqual(profile.origin_easting, Decimal("3120240.6422613035"))
+        self.assertEqual(profile.origin_northing, Decimal("13841829.94490538"))
+        self.assertEqual(profile.profile_state, "origin_selected_pending_validation")
+        with self.assertRaises(ProfileNotReadyError):
+            profile.assert_ready()
+
     def test_negative_cell_and_chunk_indices_use_floor(self):
         self.assertEqual(cell_index(-1), -1)
         self.assertEqual(cell_index(-1000), -1)

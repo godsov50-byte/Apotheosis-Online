@@ -46,6 +46,10 @@ jobs:
         run: node --test spatial/ao-global-geographic-reference.test.mjs
       - name: Check AO geographic feature registry syntax
         run: node --check spatial/ao-geographic-feature-registry.mjs
+      - name: Check AO grid rasterizer syntax
+        run: node --check spatial/ao-grid-rasterizer.mjs
+      - name: Test deterministic AO grid rasterizer
+        run: node --test tests/spatial/ao-grid-rasterizer.test.mjs
       - name: Test AO spatial movement kernel
         run: node --test spatial/ao-spatial-movement.test.mjs
       - name: Compile Python modules
