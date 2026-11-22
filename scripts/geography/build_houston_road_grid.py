@@ -21,7 +21,6 @@ from pyproj import CRS, Transformer, __proj_version__, __version__
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_PROFILE = ROOT / "geography/profiles/houston-v2.json"
 METRES_PER_US_SURVEY_FOOT = Decimal(1200) / Decimal(3937)
-SUPPORTED = {"LineString", "MultiLineString"}
 
 
 class BuildError(ValueError):
@@ -140,7 +139,7 @@ def build(source: dict[str, Any], source_manifest: dict[str, Any],
                 "ao_working_crs": "EPSG:2278",
                 "ao_local_coordinate_unit": "millimetre",
                 "ao_local_axis_order": "x-east,y-south",
-                "ao_preview_only": bool(preview_only),
+                "ao_preview_only": True,
             },
         })
     features.sort(key=lambda f: str(f["properties"]["ao_source_identity"]))
@@ -149,7 +148,7 @@ def build(source: dict[str, Any], source_manifest: dict[str, Any],
         "schema_version": "1.0.0",
         "profile_key": "houston",
         "profile_version": 2,
-        "coordinate_space": "houston-v2-local-mm-preview" if preview_only else "houston-v2-local-mm-approved",
+        "coordinate_space": "houston-v2-local-mm-preview",
         "cell_size_mm": int(profile["surface_cell_size_mm"]),
         "features": features,
     }
@@ -160,7 +159,7 @@ def build(source: dict[str, Any], source_manifest: dict[str, Any],
         "schema_version": "1.0.0",
         "profile_key": "houston",
         "profile_version": 2,
-        "status": "preview_only_not_importable" if preview_only else "profile_approved_local_grid_input",
+        "status": "preview_only_not_importable",
         "authoritative_world_state": False,
         "kernel_approval_required_for_import": True,
         "source_dataset_id": source_manifest.get("dataset_id", "ao-earth-houston-road-centerlines"),
@@ -233,7 +232,7 @@ def main() -> int:
     parser.add_argument("--profile", type=Path, default=DEFAULT_PROFILE)
     parser.add_argument("--output-dir", type=Path, default=Path("build/houston-road-grid"))
     parser.add_argument("--preview-only", action="store_true",
-                        help="Allow non-authoritative output while Houston v2 remains unapproved.")
+                        help="Required explicit acknowledgement that output is a non-authoritative preview only.")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
     if args.self_test:
