@@ -20,7 +20,15 @@ Each stage has a distinct responsibility:
 
 ## 2. Coordinate safety gate
 
-The current Houston profile `geography/profiles/houston-v1.json` is deliberately draft: its origin is unset, its source-to-working CRS operation is unset, its vertical reference is unknown and its approval is false. **Do not run Houston geometry through a city import until those fields are resolved and reviewed.**
+The user selected the existing downtown Houston map anchor **29.760193, -95.369361 (WGS84)** as the AO local origin. It is recorded in the new immutable-by-version profile `geography/profiles/houston-v2.json` as:
+
+- EPSG:2278 Easting: `3120240.6422613035` US survey feet
+- EPSG:2278 Northing: `13841829.94490538` US survey feet
+- AO local coordinate at that anchor: (0 mm, 0 mm)
+
+The WGS84-to-EPSG:2278 conversion used PROJ 9.5.1 / pyproj 3.7.2 and the available operation "Inverse of NAD83 to WGS 84 (1) + SPCS83 Texas South Central zone (US survey foot)", whose stated operation accuracy is 4 m. This makes the selected map anchor reproducible; it is **not** a survey monument or a claim of sub-metre absolute positioning. The origin is fixed for profile v2; changing it requires a new profile version and a migration.
+
+Profile v1 remains untouched as the original unconfigured template. Profile v2 records the selected origin but remains `origin_selected_pending_validation`, with Kernel approval false. The source-to-working operation is still dataset-specific, the vertical reference remains unknown, and the horizontal accuracy budget and axis/chunk compatibility review remain open. **Do not run Houston geometry through a city import until those remaining gates are resolved and reviewed.**
 
 There is also a coordinate-contract reconciliation task before runtime integration:
 
