@@ -38,6 +38,11 @@ jobs:
         run: node --check geography/ao-city-navigation.js
       - name: Test Houston building footprint acquisition
         run: python scripts/geography/acquire_houston_building_footprints.py --self-test
+      - name: Test Houston AO GIS source conversion
+        run: |
+          python -m py_compile scripts/geography/acquire_houston_ao_sources.py
+          python scripts/geography/acquire_houston_ao_sources.py --self-test
+          python -m unittest tests.spatial.test_houston_ao_source_catalog -v
       - name: Test deterministic registry helpers
         run: node tests/spatial/consistency-registry.test.js
       - name: Test Houston street registry compiler
