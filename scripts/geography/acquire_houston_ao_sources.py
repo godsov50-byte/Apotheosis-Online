@@ -84,7 +84,13 @@ def reusable_layer_manifest(source: dict[str, Any], output_dir: Path, bbox: list
     actual_hash = hashlib.sha256(feature_bytes).hexdigest()
     if manifest.get("dataset_id") != source["id"]:
         return None
+    if manifest.get("source_url") != source.get("layer_url"):
+        return None
+    if manifest.get("source_layer_id") != source.get("layer_id"):
+        return None
     if manifest.get("query_bbox_wgs84") != bbox:
+        return None
+    if current_metadata.get("lastEditDate") is None and current_metadata.get("dataLastEditDate") is None:
         return None
     if manifest.get("pagination_complete") is not True:
         return None
