@@ -28,7 +28,7 @@ These layers must not be collapsed into one table or treated as interchangeable.
 | `database/migrations/20261121000200_ao_houston_spatial_scaffold.sql` | Spatial objects, typed connections, and admin development queue | Migration artifact; not applied |
 | `../docs/geography/houston-spatial-profile-and-storage.md` | Coordinate/storage architecture and developer walkthrough | Documentation |
 | `../docs/geography/houston-admin-place-development.md` | Empty spatial scaffold and incremental admin workflow | Documentation |
-| `ao-city-console.html` | Interactive text/GPS/tactical/navigation/narration/admin browser prototype | Local demo only; not Kernel-connected |
+| `ao-city-console.html` | Interactive text/GPS/tactical/navigation/narration/admin browser prototype | Local demo only; not Kernel-connected |\n| `ao-houston-buildings-roads-world-builder.html` | Local Houston builder with a read-only overlay for converted AO source GeoJSON FeatureCollections | Local staging preview; source evidence only, not movement graph or live-world state |
 | `ao-city-registry.js` | IndexedDB import, viewport rendering, search and inspection for street/building source artifacts | Local browser evidence cache; not trusted persistence |
 | `../docs/geography/ao-city-console.md` | Console behavior, boundaries, and integration roadmap | Documentation |
 | `consistency-registry.js` | Deterministic identity, retrieval, coordinate keys, correction proposals and generation manifests | Utility; not yet wired to trusted API |
