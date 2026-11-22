@@ -54,7 +54,9 @@ class HoustonRoadGridBuildTests(unittest.TestCase):
         output, manifest = build(fixture(), {}, self.profile, True)
         first = output["features"][0]
         self.assertEqual(first["properties"]["ao_source_identity"], "road-a")
-        self.assertEqual(first["properties"]["lanes"], None)
+        self.assertNotIn("lanes", first["properties"])
+        road_b = next(item for item in output["features"] if item["properties"]["ao_source_identity"] == "road-b")
+        self.assertEqual(road_b["properties"]["lanes"], "2")
         self.assertEqual(first["properties"]["ao_geometry_role"], "centerline_candidate")
         self.assertEqual(first["geometry"]["coordinates"][0][0], [0, 0])
         self.assertEqual(manifest["features_missing_geometry"], 1)
