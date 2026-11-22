@@ -148,12 +148,14 @@
   function snapToNetwork(graph,point,maxMeters,keyPrefix){
     let best=null,bestDistance=Infinity;
     for(const node of graph.nodes.values()){
+      if(node.key.startsWith("route-"))continue;
       const d=meters(point,node);
       if(d<bestDistance){best={kind:"node",node};bestDistance=d;}
     }
     // Project onto every imported centerline segment, not just sparse OSM vertices.
     const cos=Math.max(.1,Math.cos(point.lat*RAD));
     for(const edge of graph.edges){
+      if(edge.virtual)continue;
       const a=graph.nodes.get(edge.a),b=graph.nodes.get(edge.b);
       const ax=(a.lng-point.lng)*111320*cos, ay=(a.lat-point.lat)*111320;
       const bx=(b.lng-point.lng)*111320*cos, by=(b.lat-point.lat)*111320;
@@ -172,14 +174,14 @@
     if(t>0.99999)return {node:graph.nodes.get(edge.b),distance:bestDistance};
     const key=keyPrefix+"|"+edge.a+"|"+edge.b;
     const node={key,lat:best.lat,lng:best.lng,edges:[]};
+    // Preserve the original edge. Splitting it twice for two endpoints disconnects
+    // the first virtual node; attach each endpoint to both original endpoints.
     const a=graph.nodes.get(edge.a),b=graph.nodes.get(edge.b);
-    a.edges=a.edges.filter(e=>e.to!==edge.b);
-    b.edges=b.edges.filter(e=>e.to!==edge.a);
     const costA=meters(a,node),costB=meters(node,b);
     a.edges.push({to:key,cost:costA});b.edges.push({to:key,cost:costB});
     node.edges.push({to:edge.a,cost:costA},{to:edge.b,cost:costB});
     graph.nodes.set(key,node);
-    graph.edges.push({a:edge.a,b:key,cost:costA},{a:key,b:edge.b,cost:costB});
+    graph.edges.push({a:edge.a,b:key,cost:costA,virtual:true},{a:key,b:edge.b,cost:costB,virtual:true});
     return {node,distance:bestDistance};
   }
   function shortestPath(graph,startKey,endKey){
