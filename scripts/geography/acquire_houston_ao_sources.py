@@ -68,10 +68,56 @@ def geometry_extent(features: list[dict[str, Any]]) -> list[float] | None:
         return None
     return [min(xs), min(ys), max(xs), max(ys)]
 
+def reusable_layer_manifest(source: dict[str, Any], output_dir: Path, bbox: list[float] | None,
+                             current_metadata: dict[str, Any]) -> dict[str, Any] | None:
+    """Return a verified cached layer manifest only when source and extent still match."""
+    layer_dir = output_dir / source["id"]
+    manifest_path = layer_dir / "manifest.json"
+    feature_path = layer_dir / "features.geojson"
+    if not manifest_path.is_file() or not feature_path.is_file():
+        return None
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        feature_bytes = feature_path.read_bytes()
+    except (OSError, json.JSONDecodeError):
+        return None
+    actual_hash = hashlib.sha256(feature_bytes).hexdigest()
+    if manifest.get("dataset_id") != source["id"]:
+        return None
+    if manifest.get("source_url") != source.get("layer_url"):
+        return None
+    if manifest.get("source_layer_id") != source.get("layer_id"):
+        return None
+    if manifest.get("query_bbox_wgs84") != bbox:
+        return None
+    if current_metadata.get("lastEditDate") is None and current_metadata.get("dataLastEditDate") is None:
+        return None
+    if manifest.get("pagination_complete") is not True:
+        return None
+    if manifest.get("status") != "staging_source_evidence_not_world_state":
+        return None
+    if manifest.get("feature_sha256") != actual_hash:
+        return None
+    if manifest.get("source_last_edit_date") != current_metadata.get("lastEditDate"):
+        return None
+    if manifest.get("source_data_last_edit_date") != current_metadata.get("dataLastEditDate"):
+        return None
+    if manifest.get("downloaded_feature_count") != manifest.get("source_feature_id_count"):
+        return None
+    manifest["reused_existing_snapshot"] = True
+    return manifest
+
+
 def acquire_layer(source: dict[str, Any], output_dir: Path, bbox: list[float] | None,
-                  batch_size: int, timeout: int, pause: float) -> dict[str, Any]:
+                  batch_size: int, timeout: int, pause: float,
+                  reuse_existing: bool = False) -> dict[str, Any]:
     url = source["layer_url"].rstrip("/")
     before = layer_metadata(url, timeout)
+    if reuse_existing:
+        cached = reusable_layer_manifest(source, output_dir, bbox, before)
+        if cached is not None:
+            print(f"REUSED {source['id']}: verified cached snapshot", flush=True)
+            return cached
     object_id_field = before.get("objectIdField") or before.get("objectIdFieldName")
     if not object_id_field:
         fields = before.get("fields", [])
@@ -176,6 +222,7 @@ def acquire_layer(source: dict[str, Any], output_dir: Path, bbox: list[float] | 
         "source_fields_requested": requested_fields,
         "feature_sha256": hashlib.sha256(output_bytes).hexdigest(),
         "status": "staging_source_evidence_not_world_state",
+        "reused_existing_snapshot": False,
         "geometry_role": source["geometry_role"],
         "limitations": source.get("limitations", [])
     }
@@ -196,6 +243,7 @@ def main() -> int:
     parser.add_argument("--batch-size",type=int,default=500)
     parser.add_argument("--timeout",type=int,default=90)
     parser.add_argument("--pause",type=float,default=0.1)
+    parser.add_argument("--reuse-existing",action="store_true",help="Reuse cached layers only when checksum, bbox and source edit dates still match")
     parser.add_argument("--self-test",action="store_true")
     args=parser.parse_args()
     if args.self_test:
@@ -216,13 +264,14 @@ def main() -> int:
     for source in selected:
         try:
             print(f"Acquiring {source['id']}...",flush=True)
-            results.append(acquire_layer(source,args.output_dir,bbox,args.batch_size,args.timeout,args.pause))
+            results.append(acquire_layer(source,args.output_dir,bbox,args.batch_size,args.timeout,args.pause,args.reuse_existing))
         except Exception as exc:
             failures.append({"dataset_id":source["id"],"error":str(exc)})
             print(f"FAILED {source['id']}: {exc}",file=sys.stderr,flush=True)
     run={"schema_version":"1.0.0","run_at_utc":dt.datetime.now(dt.timezone.utc).isoformat(),
          "target":"Houston staging; WGS84 source feature registry","bbox_wgs84":bbox,
-         "completed":results,"failures":failures,
+         "completed":results,"reused_layers":[r["dataset_id"] for r in results if r.get("reused_existing_snapshot")],
+         "failures":failures,
          "not_registered_yet":config.get("not_registered_yet",[]),
          "authority":"No Kernel/WorldHeart/Supabase writes; GIS source data is not canon world state"}
     atomic_write(args.output_dir/"run-manifest.json",json.dumps(run,ensure_ascii=False,sort_keys=True,indent=2).encode()+b"\n")

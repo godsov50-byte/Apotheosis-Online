@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { buildPedestrianGraph } from "./ao-pedestrian-access.mjs";
+import { createNavigationGraph } from "./ao-spatial-movement.mjs";
 
 const geom = [{x:0,y:0},{x:5,y:0}];
 const eligible = (id, from, to, kind="sidewalk", geometry=geom) => ({
@@ -26,13 +27,16 @@ test("includes only explicitly approved pedestrian edges", () => {
  ]);
 });
 
-test("coordinate-backed nodes can be passed directly to the movement graph",()=>{
- const graph=buildPedestrianGraph({sidewalks:[
+test("coordinate-backed pedestrian output builds a usable AO movement graph",()=>{
+ const pedestrian=buildPedestrianGraph({sidewalks:[
   eligible("walk-a","n1","n2"),
   eligible("walk-b","n2","n3","sidewalk",[{x:5,y:0},{x:10,y:0}])
  ]});
- assert.deepEqual(graph.nodeRegistry.map(n=>n.id),["n1","n2","n3"]);
- assert.deepEqual(graph.nodeRegistry.find(n=>n.id==="n2").position,{x:5,y:0,z:0});
+ const movement=createNavigationGraph({nodes:pedestrian.nodeRegistry,edges:pedestrian.edges});
+ assert.deepEqual(movement.nodeIds,["n1","n2","n3"]);
+ assert.deepEqual(movement.edgeIds,["walk-a","walk-b"]);
+ assert.equal(movement.edges.get("walk-a").lengthM,5);
+ assert.equal(movement.edges.get("walk-a").modes[0],"walk");
 });
 
 test("rejects a reused node ID whose coordinates disagree",()=>{

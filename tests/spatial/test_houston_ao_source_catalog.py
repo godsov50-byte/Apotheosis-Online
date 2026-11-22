@@ -66,6 +66,44 @@ class HoustonAOSourceCatalogTests(unittest.TestCase):
         self.assertIn("houston-ao-source-data", workflow)
         self.assertIn("actions/upload-artifact@v4", workflow)
         self.assertIn("retention-days: 14", workflow)
+        self.assertIn("actions/cache@v4", workflow)
+        self.assertIn("--reuse-existing", workflow)
+        self.assertIn("city-harris-3d-building-footprints,houston-road-centerlines,houston-sidewalks-hpw,houston-site-addresses", workflow)
+        self.assertIn('if not completed:', workflow)
+
+    def test_verified_cached_layer_is_reused_without_feature_queries(self):
+        layer_url = "https://example.invalid/FeatureServer/0"
+        metadata = {"objectIdField": "OBJECTID", "fields": [{"name": "OBJECTID", "type": "esriFieldTypeOID"}], "lastEditDate": 100, "dataLastEditDate": 200}
+        source = {"id": "fixture-layer", "title": "Fixture", "publisher": "Test Publisher", "layer_url": layer_url, "layer_id": 0, "ao_feature_class": "test", "geometry_role": "test_candidate"}
+        def initial_get_json(url, params, timeout):
+            if url == layer_url: return metadata
+            if params.get("returnIdsOnly") == "true": return {"objectIds": [7]}
+            return {"features": [{"type": "Feature", "properties": {"OBJECTID": 7}, "geometry": {"type": "Point", "coordinates": [-95.4, 29.7]}}]}
+        bbox = [-95.5, 29.6, -95.2, 29.9]
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(MODULE, "get_json", side_effect=initial_get_json):
+                first = MODULE.acquire_layer(source, Path(directory), bbox, 50, 10, 0)
+            self.assertFalse(first.get("reused_existing_snapshot"))
+            def metadata_only(url, params, timeout):
+                self.assertEqual(url, layer_url)
+                self.assertEqual(params, {"f": "pjson"})
+                return metadata
+            with patch.object(MODULE, "get_json", side_effect=metadata_only) as mocked:
+                reused = MODULE.acquire_layer(source, Path(directory), bbox, 50, 10, 0, True)
+            self.assertTrue(reused["reused_existing_snapshot"])
+            self.assertEqual(mocked.call_count, 1)
+            self.assertEqual(reused["downloaded_feature_count"], 1)
+
+    def test_cached_layer_is_not_reused_after_source_edit_date_changes(self):
+        source = {"id": "fixture-layer", "title": "Fixture", "publisher": "Test", "layer_url": "https://example.invalid/FeatureServer/0", "layer_id": 0, "ao_feature_class": "test", "geometry_role": "test_candidate"}
+        with tempfile.TemporaryDirectory() as directory:
+            layer_dir = Path(directory) / source["id"]
+            layer_dir.mkdir()
+            feature_bytes = b'{"type":"FeatureCollection","features":[]}'
+            (layer_dir / "features.geojson").write_bytes(feature_bytes)
+            manifest = {"dataset_id": source["id"], "source_url": source["layer_url"], "source_layer_id": source["layer_id"], "query_bbox_wgs84": [-95.5,29.6,-95.2,29.9], "pagination_complete": True, "status": "staging_source_evidence_not_world_state", "feature_sha256": MODULE.hashlib.sha256(feature_bytes).hexdigest(), "source_last_edit_date": 100, "source_data_last_edit_date": 200, "downloaded_feature_count": 0, "source_feature_id_count": 0}
+            (layer_dir / "manifest.json").write_text(json.dumps(manifest))
+            self.assertIsNone(MODULE.reusable_layer_manifest(source, Path(directory), [-95.5,29.6,-95.2,29.9], {"lastEditDate": 101, "dataLastEditDate": 200}))
 
     def test_canonical_hash_is_order_independent(self):
         self.assertEqual(MODULE.digest({"b": 2, "a": 1}), MODULE.digest({"a": 1, "b": 2}))
