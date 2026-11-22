@@ -240,6 +240,25 @@
       "access_confidence": "source_mapped_not_legal_survey"
     },
     {
+      "id": "houston-fema-nfhl-floodplain",
+      "title": "FEMA National Flood Hazard Layer — H-GAC 8-County 2026",
+      "publisher": "FEMA / Houston-Galveston Area Council",
+      "layer_url": "https://services1.arcgis.com/Z6SBWLWGRRejblAA/arcgis/rest/services/FEMA_NFHL_Floodplain_8co/FeatureServer/0",
+      "layer_id": 0,
+      "ao_feature_class": "flood_hazard_polygon",
+      "geometry_role": "flood_hazard_candidate",
+      "vertical_layer": "surface",
+      "item_id": "7ccc7191bf8349b0a477946d87cc6856",
+      "item_url": "https://www.arcgis.com/home/item.html?id=7ccc7191bf8349b0a477946d87cc6856",
+      "source_modified_at": "2026-09-18T20:18:34Z",
+      "source_authoritative": false,
+      "access_confidence": "regional_hazard_reference",
+      "limitations": [
+        "Regional FEMA NFHL snapshot for the H-GAC 8-county area; preserve effective dates, zone codes and source metadata.",
+        "Flood hazard classification is not a real-time flood forecast or a guarantee of on-the-ground conditions."
+      ]
+    },
+    {
       "id": "houston-fire-districts",
       "title": "Houston Fire Districts",
       "publisher": "City of Houston / Houston Fire Department / HITS-GIS",
@@ -257,6 +276,46 @@
       "source_access_information": "Houston Fire Department, HITS-GIS; City of Houston Open Data",
       "source_license_info": "COHGIS informational-use disclaimer.",
       "access_confidence": "public_source_mapped"
+    },
+    {
+      "id": "houston-fire-stations",
+      "title": "Fire Stations Within City of Houston Boundary",
+      "publisher": "City of Houston / Houston Fire Department",
+      "layer_url": "https://services.arcgis.com/NummVBqZSIJKUeVR/arcgis/rest/services/Fire_Stations___Hospitals_Within_City_of_Houston_Boundary_4_WFL1/FeatureServer/7",
+      "layer_id": 7,
+      "ao_feature_class": "fire_station_poi",
+      "geometry_role": "emergency_facility_candidate",
+      "vertical_layer": "surface",
+      "item_id": "1759efcc4899408992ddb79cc6bae48d",
+      "item_url": "https://www.arcgis.com/home/item.html?id=1759efcc4899408992ddb79cc6bae48d",
+      "source_modified_at": "2023-03-24T14:07:11Z",
+      "source_authoritative": false,
+      "access_confidence": "historical_source_candidate",
+      "limitations": [
+        "Published item is an older 2023 snapshot; verify station locations and operational status before use.",
+        "The service title mentions hospitals, but the inspected service exposes a Fire Stations point layer and a city boundary layer only; no hospital layer is registered from this service."
+      ]
+    },
+    {
+      "id": "houston-historic-sites-landmarks",
+      "title": "Houston Historic Sites and Landmarks",
+      "publisher": "City of Houston Historic Preservation Office / Planning & Development",
+      "layer_url": "https://services.arcgis.com/NummVBqZSIJKUeVR/arcgis/rest/services/COH_Historic_Sites_and_Landmarks_view/FeatureServer/6",
+      "layer_id": 6,
+      "ao_feature_class": "historic_site_poi",
+      "geometry_role": "historic_site_candidate",
+      "vertical_layer": "surface",
+      "item_id": "fb42aab095bc4850b8eae1aa6b643b43",
+      "item_url": "https://www.arcgis.com/home/item.html?id=fb42aab095bc4850b8eae1aa6b643b43",
+      "source_modified_at": "2025-08-19T20:56:21Z",
+      "source_authoritative": true,
+      "source_access_information": "City of Houston Historic Preservation Office, Planning and Development Department, HITS-GIS",
+      "source_license_info": "COHGIS informational-use disclaimer.",
+      "access_confidence": "public_source_mapped",
+      "limitations": [
+        "Historic designation and site-reference data; verify designation type and effective status in original attributes.",
+        "Point geometry is a mapped location, not a complete property boundary or building footprint."
+      ]
     },
     {
       "id": "houston-hpb-trails-conceptual",
@@ -549,6 +608,69 @@
       "source_access_information": "City of Houston, Harris County Appraisal District, CenterPoint",
       "source_license_info": "COHGIS informational-use disclaimer; approximate relative locations, not survey-grade.",
       "access_confidence": "source_mapped_not_field_verified"
+    },
+    {
+      "id": "houston-vision-zero-bike-dangerous-roads-2022",
+      "title": "Houston Vision Zero Bike Dangerous Roads 2022",
+      "publisher": "City of Houston Planning & Development / Public Works",
+      "layer_url": "https://services.arcgis.com/NummVBqZSIJKUeVR/arcgis/rest/services/COH_Vision_Zero_Bike_Dangerous_Roads_(HIN_2022)_view/FeatureServer/22",
+      "layer_id": 22,
+      "ao_feature_class": "bicycle_safety_risk_segment",
+      "geometry_role": "bike_safety_risk_candidate",
+      "vertical_layer": "surface",
+      "item_id": "d01d5b98c6ae4ad794e6745bbd706eec",
+      "item_url": "https://www.arcgis.com/home/item.html?id=d01d5b98c6ae4ad794e6745bbd706eec",
+      "source_modified_at": "2025-08-19T21:27:29Z",
+      "source_authoritative": true,
+      "source_access_information": "City of Houston Planning & Development Department, Public Works, HITS-GIS",
+      "source_license_info": "COHGIS informational-use disclaimer.",
+      "access_confidence": "public_source_mapped",
+      "limitations": [
+        "Vision Zero HIN 2022 bicycle-dangerous-road layer; not a current crash feed or real-time risk score.",
+        "Risk overlay does not alter physical geometry or automatically block bicycle movement."
+      ]
+    },
+    {
+      "id": "houston-vision-zero-high-injury-network-2022",
+      "title": "Houston Vision Zero High Injury Network 2022",
+      "publisher": "City of Houston Planning & Development / Public Works",
+      "layer_url": "https://services.arcgis.com/NummVBqZSIJKUeVR/arcgis/rest/services/COH_Vision_Zero_High_Injury_Network_2022_view/FeatureServer/19",
+      "layer_id": 19,
+      "ao_feature_class": "transport_safety_risk_segment",
+      "geometry_role": "high_injury_network_candidate",
+      "vertical_layer": "surface",
+      "item_id": "3d341f479f5e4d7db05fc583d24de976",
+      "item_url": "https://www.arcgis.com/home/item.html?id=3d341f479f5e4d7db05fc583d24de976",
+      "source_modified_at": "2025-08-19T21:24:53Z",
+      "source_authoritative": true,
+      "source_access_information": "City of Houston Planning & Development Department, Public Works, HITS-GIS",
+      "source_license_info": "COHGIS informational-use disclaimer.",
+      "access_confidence": "public_source_mapped",
+      "limitations": [
+        "2022 high-injury network reference; not a current crash feed or live safety score.",
+        "Risk overlay does not alter physical geometry or automatically block movement."
+      ]
+    },
+    {
+      "id": "houston-vision-zero-ped-dangerous-roads-2022",
+      "title": "Houston Vision Zero Pedestrian Dangerous Roads 2022",
+      "publisher": "City of Houston Planning & Development / Public Works",
+      "layer_url": "https://services.arcgis.com/NummVBqZSIJKUeVR/arcgis/rest/services/COH_Vision_Zero_Ped_Dangerous_Roads_(HIN_2022)_view/FeatureServer/23",
+      "layer_id": 23,
+      "ao_feature_class": "pedestrian_safety_risk_segment",
+      "geometry_role": "pedestrian_safety_risk_candidate",
+      "vertical_layer": "surface",
+      "item_id": "c7da3917162842e786c182ca1d200f7a",
+      "item_url": "https://www.arcgis.com/home/item.html?id=c7da3917162842e786c182ca1d200f7a",
+      "source_modified_at": "2025-08-19T21:24:44Z",
+      "source_authoritative": true,
+      "source_access_information": "City of Houston Planning & Development Department, Public Works, HITS-GIS",
+      "source_license_info": "COHGIS informational-use disclaimer.",
+      "access_confidence": "public_source_mapped",
+      "limitations": [
+        "Vision Zero HIN 2022 pedestrian-dangerous-road layer; not a current crash feed or real-time risk score.",
+        "Risk overlay does not alter physical geometry or automatically block pedestrian movement."
+      ]
     },
     {
       "id": "metro-bus-routes",
