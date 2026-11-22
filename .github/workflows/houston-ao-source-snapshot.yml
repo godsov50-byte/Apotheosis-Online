@@ -29,11 +29,23 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Derive a cache-safe extent key
+        id: cache-key
+        env:
+          BBOX_WGS84: ${{ inputs.bbox_wgs84 }}
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import hashlib
+          import os
+          bbox = os.environ["BBOX_WGS84"].strip()
+          print("extent_hash=" + hashlib.sha256(bbox.encode("utf-8")).hexdigest())
+          PY
+
       - name: Restore cached Houston source snapshots for this exact extent
         uses: actions/cache@v4
         with:
           path: build/houston-ao-source-data
-          key: houston-ao-v1-${{ hashFiles('geography/houston-source-catalog.json') }}-${{ inputs.bbox_wgs84 }}
+          key: houston-ao-v1-${{ hashFiles('geography/houston-source-catalog.json') }}-${{ steps.cache-key.outputs.extent_hash }}
 
       - name: Acquire registered GIS sources into AO staging GeoJSON
         id: acquire
