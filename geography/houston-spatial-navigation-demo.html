@@ -14,6 +14,8 @@ h1{font-size:18px;margin:0}header small,.muted{color:var(--muted)}main{max-width
 .panel h2{font-size:14px;margin:0 0 10px}.kv{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid #293943;font-size:12px}.kv:last-child{border:0}.kv span:first-child{color:var(--muted)}.kv b{font-variant-numeric:tabular-nums;text-align:right;overflow-wrap:anywhere}
 button{background:#223441;color:var(--text);border:1px solid #405665;border-radius:8px;padding:9px 11px;font-weight:600;cursor:pointer}button:hover{background:#2d4658}button.primary{background:#075ba6;border-color:#168cff}button:disabled{opacity:.5;cursor:wait}.buttons{display:flex;gap:7px;flex-wrap:wrap}.notice{font-size:11px;line-height:1.5;color:var(--muted)}#status{font-size:12px;color:#c5d7e1;min-height:32px}
 .envoy-icon{background:#168cff;border:3px solid white;border-radius:50%;box-shadow:0 0 0 5px #168cff55;width:20px;height:20px}.dest-icon{background:#ff5d65;border:3px solid white;border-radius:50%;width:18px;height:18px}
+.location-search{display:flex;gap:6px}.location-search input{min-width:0;flex:1;background:#0f1a22;color:var(--text);border:1px solid #405665;border-radius:8px;padding:9px}.location-dot{background:#ffd45a;border:2px solid #fff;border-radius:50%;width:12px;height:12px;box-shadow:0 0 0 3px #ffd45a55}
+#locationEntry{display:none;position:fixed;inset:0;z-index:2000;background:#0c141beF;padding:20px;overflow:auto}#locationEntry .entry-card{max-width:760px;margin:5vh auto;background:#17232d;border:1px solid #405665;border-radius:14px;padding:20px;box-shadow:0 18px 60px #0009}#locationEntry h2{margin:0 0 8px}#locationEntry .entry-state{border:1px solid #405665;border-radius:10px;padding:14px;margin:16px 0;background:#101820}
 @media(max-width:800px){main{grid-template-columns:1fr}#map{height:58vh;min-height:380px}}
 </style>
 </head>
@@ -23,6 +25,8 @@ button{background:#223441;color:var(--text);border:1px solid #405665;border-radi
 <section><div id="map" aria-label="Interactive map of Houston"></div><p class="notice">Map tiles © OpenStreetMap contributors. Tap or click anywhere on the map to place the Envoy. The map is real geographic mapping; the Envoy is a simulated marker unless you explicitly enable device GPS.</p></section>
 <aside>
 <div class="panel"><h2>Envoy position</h2><div class="buttons"><button class="primary" id="gps">Use device GPS</button><button id="reset">Reset to City Hall</button></div><div class="kv"><span>Latitude</span><b id="lat">29.760193</b></div><div class="kv"><span>Longitude</span><b id="lon">-95.369361</b></div><div class="kv"><span>Accuracy</span><b id="accuracy">Address anchor</b></div><div class="kv"><span>Coordinate system</span><b>WGS84 · EPSG:4326</b></div></div>
+<div class="panel"><h2>Find a location</h2><div class="location-search"><input id="locationQuery" type="search" placeholder="Street address in Houston" autocomplete="street-address"><button class="primary" id="locationSearch">Find</button></div><p class="notice">Searches official City of Houston address points. Select a result on the map or from search to open its location.</p><div id="locationResults" class="notice">No location selected.</div></div>
+<div class="panel"><h2>Selected location</h2><div class="kv"><span>Name / address</span><b id="selectedLocationName">None</b></div><div class="kv"><span>Coordinates</span><b id="selectedLocationCoords">—</b></div><div class="buttons"><button class="primary" id="enterLocation" disabled>Enter location</button><button id="showLocation" disabled>Show on map</button></div></div>
 <div class="panel"><h2>Destination</h2><div class="kv"><span>Address</span><b>6801 Bacher St, Houston</b></div><div class="kv"><span>Latitude</span><b>29.824681</b></div><div class="kv"><span>Longitude</span><b>-95.277697</b></div><div class="buttons"><button class="primary" id="route">Calculate driving route</button><button id="clear">Clear route</button></div></div>
 <div class="panel"><h2>Spatial measurements</h2><div class="kv"><span>Direct distance</span><b id="distance">—</b></div><div class="kv"><span>Bearing</span><b id="bearing">—</b></div><div class="kv"><span>Route distance</span><b id="routeDistance">—</b></div><div class="kv"><span>Estimated drive time</span><b id="routeTime">—</b></div><div class="kv"><span>Map zoom</span><b id="zoom">—</b></div></div>
 <div class="panel"><h2>Map layers</h2><div class="buttons"><button id="streets" class="primary">Basemap on</button><button id="roads" class="primary">Houston roads on</button><button id="grid">Grid off</button></div><p class="notice">The grid is a visual reference only. It does not constrain movement or replace the underlying coordinate system.</p></div>
@@ -30,6 +34,7 @@ button{background:#223441;color:var(--text);border:1px solid #405665;border-radi
 <div class="notice">City address anchors: City of Houston GIS COH_ADDRESS_INFO layer. Route: OSRM public routing service using OpenStreetMap road data. Device GPS requires browser permission and HTTPS. This is a spatial prototype, not a live AO Kernel / WorldHeart connection. No character movement is committed to AO.</div>
 </aside>
 </main>
+<div id="locationEntry" role="dialog" aria-modal="true" aria-labelledby="entryTitle"><div class="entry-card"><button id="leaveLocation">← Return to map</button><p class="muted">AO · LOCATION ENTRY</p><h2 id="entryTitle">Location</h2><div id="entryAddress" class="muted"></div><div class="entry-state"><strong>Location context entered</strong><p id="entryDescription">You have entered this location's context.</p><div class="kv"><span>Spatial anchor</span><b id="entryCoordinates">—</b></div><div class="kv"><span>Interior geometry</span><b>Not yet mapped</b></div></div><p class="notice">This prototype confirms entry into the selected address/location. It does not invent rooms, entrances, or an interior floor plan. Those become navigable when verified building and interior geometry is added.</p></div></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="https://unpkg.com/esri-leaflet@3.0.15/dist/esri-leaflet.js"></script>
 <script>
@@ -72,6 +77,57 @@ button{background:#223441;color:var(--text);border:1px solid #405665;border-radi
   $('status').textContent='Road overlay library did not load; basemap remains available.';
  }
  const $=id=>document.getElementById(id);
+
+ const addressUrl='https://mycity2.houstontx.gov/gisweb01/rest/services/EGIS/HOUSTON_CITYINFO/MapServer/0';
+ let addressLayer=null, selectedLocation=null, searchResultLayers=[];
+ const locationIcon=L.divIcon({className:'',html:'<div class="location-dot"></div>',iconSize:[12,12],iconAnchor:[6,6]});
+ function chooseLocation(feature,marker){
+  const p=feature.properties||{},ll=marker.getLatLng();
+  selectedLocation={properties:p,lat:ll.lat,lng:ll.lng,marker};
+  $('selectedLocationName').textContent=p.FULLADDRESS||[p.STREET_NUM,p.STREET_NAME,p.STREET_TYPE].filter(Boolean).join(' ')||'Address point';
+  $('selectedLocationCoords').textContent=ll.lat.toFixed(6)+', '+ll.lng.toFixed(6);
+  $('enterLocation').disabled=false;$('showLocation').disabled=false;
+  $('locationResults').textContent='Selected: '+$('selectedLocationName').textContent;
+  marker.openPopup();
+ }
+ function addAddressFeature(feature){
+  const xy=feature.geometry&&feature.geometry.coordinates;if(!xy)return;
+  const marker=L.marker([xy[1],xy[0]],{icon:locationIcon});
+  marker.bindPopup('<b>'+String(feature.properties.FULLADDRESS||'Address location').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))+'</b><br><button type="button" class="select-address">Select location</button>');
+  marker.on('popupopen',()=>{const el=marker.getPopup().getElement()?.querySelector('.select-address');if(el)el.onclick=()=>chooseLocation(feature,marker);});
+  marker.addTo(map);searchResultLayers.push(marker);
+ }
+ if(L.esri&&L.esri.featureLayer){
+  addressLayer=L.esri.featureLayer({url:addressUrl,where:"STATUS='COH'",fields:['OBJECTID','ADDR_ID','FULLADDRESS','STATUS','STREET_NUM','STREET_NAME','STREET_TYPE','CITY','ZIPCODE','Latitude','Longitude'],minZoom:16,pointToLayer:(geojson,latlng)=>L.circleMarker(latlng,{radius:3,color:'#ffd45a',weight:1,fillColor:'#ffd45a',fillOpacity:.8}),attribution:'City of Houston GIS · Address points'}).addTo(map);
+  addressLayer.on('click',e=>chooseLocation(e.layer.feature,e.layer));
+  addressLayer.on('requesterror',()=>{$('locationResults').textContent='Address points could not be loaded from City GIS.';});
+ }
+ $('locationQuery').addEventListener('keydown',e=>{if(e.key==='Enter')$('locationSearch').click();});
+ $('locationEntry').addEventListener('keydown',e=>{if(e.key==='Escape')$('leaveLocation').click();});
+ $('locationSearch').onclick=()=>{
+  const q=$('locationQuery').value.trim();if(q.length<4){$('locationResults').textContent='Enter at least four characters of an address.';return;}
+  $('locationSearch').disabled=true;$('locationResults').textContent='Searching official City of Houston address points…';
+  const safe=q.toUpperCase().replace(/'/g,"''");
+  L.esri.query({url:addressUrl}).where("STATUS='COH' AND FULLADDRESS LIKE '%"+safe.replace(/[%_]/g,'')+"%'").fields(['OBJECTID','ADDR_ID','FULLADDRESS','STATUS','STREET_NUM','STREET_NAME','STREET_TYPE','CITY','ZIPCODE','Latitude','Longitude']).limit(10).run((err,fc)=>{
+   $('locationSearch').disabled=false;searchResultLayers.forEach(x=>map.removeLayer(x));searchResultLayers=[];selectedLocation=null;$('selectedLocationName').textContent='None';$('selectedLocationCoords').textContent='—';$('enterLocation').disabled=true;$('showLocation').disabled=true;
+   if(err||!fc||!fc.features||!fc.features.length){$('locationResults').textContent='No matching official address points found. Try a street number and name.';return;}
+   fc.features.forEach(addAddressFeature);
+   $('locationResults').textContent=fc.features.length+' address result(s). Tap a yellow point, then choose Select location.';
+   const bounds=L.featureGroup(searchResultLayers).getBounds();if(bounds.isValid())map.fitBounds(bounds.pad(.25));
+  });
+ };
+ $('enterLocation').onclick=()=>{
+  if(!selectedLocation)return;
+  const p=selectedLocation.properties;
+  $('entryTitle').textContent=p.FULLADDRESS||'Selected location';
+  $('entryAddress').textContent=[p.CITY,p.ZIPCODE].filter(Boolean).join(' ');
+  $('entryCoordinates').textContent=selectedLocation.lat.toFixed(7)+', '+selectedLocation.lng.toFixed(7);
+  $('entryDescription').textContent='The Envoy has entered the location context for '+(p.FULLADDRESS||'this address')+'. You are no longer viewing only the road network.';
+  $('locationEntry').style.display='block';$('status').textContent='Entered location context: '+(p.FULLADDRESS||'selected address')+'.';
+ };
+ $('leaveLocation').onclick=()=>{$('locationEntry').style.display='none';$('status').textContent='Returned to exterior map view.';map.invalidateSize();};
+ $('showLocation').onclick=()=>{if(selectedLocation){$('locationEntry').style.display='none';map.setView([selectedLocation.lat,selectedLocation.lng],18);selectedLocation.marker.openPopup();}};
+
  function rad(x){return x*Math.PI/180}
  function measure(a,b){
   const R=6371008.8,lat1=rad(a[0]),lat2=rad(b[0]),dlat=lat2-lat1,dlon=rad(b[1]-a[1]);
