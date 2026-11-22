@@ -32,6 +32,8 @@
   function openEntranceCard(pin){const card=$("aoEntranceCard"),body=$("aoEntranceCardBody");if(!card||!body)return;body.replaceChildren();const title=document.createElement("h2");title.textContent=pin.address||"Entrance";body.append(title);const subtitle=document.createElement("div");subtitle.className="hint";subtitle.textContent="AO entrance/address marker · browser-local record";body.append(subtitle);const info=document.createElement("p");info.textContent=pin.description||"Door position recorded. Interior visibility and access are not assumed.";body.append(info);const coords=document.createElement("div");coords.className="hint";coords.textContent=Number(pin.lat).toFixed(7)+", "+Number(pin.lng).toFixed(7);body.append(coords);if(pin.parentName){const p=document.createElement("div");p.className="hint";p.textContent="Building: "+pin.parentName;body.append(p)}const btn=document.createElement("button");btn.className="primary ao-card-action";btn.textContent="Inspect location";btn.onclick=()=>{card.hidden=true;map.setView([pin.lat,pin.lng],19)};body.append(btn);card.hidden=false}
   $("aoEntranceClose").onclick=()=>{$("aoEntranceCard").hidden=true};
   function renderEntrancePins(){entranceLayer.clearLayers();entrancePins.forEach(pin=>{const marker=L.marker([pin.lat,pin.lng],{icon:entranceIcon()}).addTo(entranceLayer);marker.on("click",e=>{if(e.originalEvent)L.DomEvent.stopPropagation(e.originalEvent);openEntranceCard(pin)});marker.bindTooltip(pin.address||"Entrance")})}
+  function addEntrancePinAt(latlng){if(!pinAuthoring)return;pinAuthoring=false;const address=prompt("Address / entrance label (do not guess):","");if(address===null||!address.trim())return;const description=prompt("Optional description / access note (leave blank if unknown):","")||"";const parentName=selectedRecord&&selectedRecord.kind==="building"?selectedRecord.name:"";const pin={id:"ao-door-"+Date.now(),lat:latlng.lat,lng:latlng.lng,address:address.trim(),description,parentName,createdAt:new Date().toISOString(),source:"user-authored"};entrancePins.push(pin);saveEntrancePins();renderEntrancePins();openEntranceCard(pin);status("Entrance/address pin added at clicked door location (local-only).")}
+
   function status(message) {
     const el = $("registryStatus");
     if (el) el.textContent = message;
@@ -315,6 +317,7 @@
         drawn.bindTooltip((record.kind==="lot"?"Lot / Parcel · ":"Building · ")+(aoName ? (aoName + " · ") : "")+record.name, { sticky: true });
         drawn.on("click", (event) => {
           if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
+          if(pinAuthoring){addEntrancePinAt(event.latlng);return;}
           showRecord(record);
         });
       });
@@ -432,6 +435,6 @@
   map.on("moveend", refreshVisible);
   renderEntrancePins();
   let pinAuthoring = false;
-  map.on("click",e=>{if(!pinAuthoring)return;pinAuthoring=false;const address=prompt("Address / entrance label (do not guess):","");if(address===null||!address.trim())return;const description=prompt("Optional description / access note (leave blank if unknown):","")||"";const parentName=selectedRecord&&selectedRecord.kind==="building"?selectedRecord.name:"";const pin={id:"ao-door-"+Date.now(),lat:e.latlng.lat,lng:e.latlng.lng,address:address.trim(),description,parentName,createdAt:new Date().toISOString(),source:"user-authored"};entrancePins.push(pin);saveEntrancePins();renderEntrancePins();openEntranceCard(pin);status("Entrance/address pin added at clicked door location (local-only).");});
+  map.on("click",e=>{if(pinAuthoring)addEntrancePinAt(e.latlng);});
   openDB().then(updateCounts).then(refreshVisible).catch((error) => status(error.message || String(error)));
 })();
