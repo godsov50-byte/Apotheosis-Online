@@ -33,7 +33,7 @@ export function materializeChunk(w, address, options = {}) {
   const existing = getChunkAt(w, x, y);
   if (existing) return existing;
   const chunkId = options.chunkId ?? `chunk:${x},${y}`;
-  const chunk = createChunk({ chunkId, x, y, ...options });
+  const chunk = createChunk({ ...options, chunkId, x, y });
   if (w.chunks.some(c => c.chunkId === chunk.chunkId)) throw new Error("duplicate chunk ID");
   w.chunks.push(chunk);
   return chunk;
