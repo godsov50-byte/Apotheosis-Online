@@ -1,0 +1,155 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Catalog of Houston source layers that can be converted into AO staging feature collections. Geometry is retained in WGS84; AO local-grid conversion remains separately gated by approved Houston coordinate profile.",
+  "sources": [
+    {
+      "id": "houston-road-centerlines",
+      "title": "City of Houston Road Centerlines",
+      "publisher": "City of Houston GIS",
+      "layer_url": "https://services.arcgis.com/NummVBqZSIJKUeVR/arcgis/rest/services/COH_RoadCenterline/FeatureServer/0",
+      "layer_id": 0,
+      "ao_feature_class": "road_centerline",
+      "geometry_role": "centerline_candidate",
+      "vertical_layer": "surface",
+      "access_confidence": "not_assessed",
+      "limitations": [
+        "Centerlines are not road-surface polygons or sidewalks.",
+        "No legal pedestrian access, crossing, or turn permission inferred."
+      ]
+    },
+    {
+      "id": "hgac-building-footprints-2018",
+      "title": "H-GAC 2018 LiDAR Building Footprints",
+      "publisher": "Houston-Galveston Area Council / Harris County GIS",
+      "layer_url": "https://services1.arcgis.com/euMKmvUChvyJxWq2/arcgis/rest/services/LiDAR_Building_Footprints_2018_gdb/FeatureServer/0",
+      "layer_id": 0,
+      "ao_feature_class": "building_footprint",
+      "geometry_role": "building_footprint_candidate",
+      "vertical_layer": "surface",
+      "limitations": [
+        "2018 LiDAR-derived approximate footprints; known classification errors and omissions.",
+        "Not a verified entrance, floor count, room, ownership, or occupancy source."
+      ]
+    },
+    {
+      "id": "city-harris-3d-building-footprints",
+      "title": "City/Harris Building Department 3D Footprints",
+      "publisher": "Harris County / City of Houston",
+      "layer_url": "https://services6.arcgis.com/2yF1BNcZtu43QAOt/arcgis/rest/services/BldgDept3D_new_Jul282026/FeatureServer/0",
+      "layer_id": 0,
+      "ao_feature_class": "building_footprint_enriched",
+      "geometry_role": "building_footprint_candidate",
+      "vertical_layer": "surface",
+      "limitations": [
+        "Downtown-focused extent, not citywide.",
+        "Height/address/parcel fields are source attributes, not verified interior geometry or entrance locations."
+      ]
+    },
+    {
+      "id": "downtown-tunnel-businesses",
+      "title": "Downtown Tunnel Businesses",
+      "publisher": "City of Houston",
+      "layer_url": "https://services5.arcgis.com/eTnR8egNkl9d8CQM/arcgis/rest/services/City_of_Houston_Downtown_Tunnel_System_view/FeatureServer/0",
+      "layer_id": 0,
+      "ao_feature_class": "business_poi",
+      "geometry_role": "point_of_interest_candidate",
+      "vertical_layer": "underground_associated",
+      "limitations": [
+        "Business records do not establish current operating status unless source fields explicitly do so."
+      ]
+    },
+    {
+      "id": "downtown-tunnel-access-points",
+      "title": "Downtown Tunnel Access Points",
+      "publisher": "City of Houston",
+      "layer_url": "https://services5.arcgis.com/eTnR8egNkl9d8CQM/arcgis/rest/services/City_of_Houston_Downtown_Tunnel_System_view/FeatureServer/1",
+      "layer_id": 1,
+      "ao_feature_class": "access_point",
+      "geometry_role": "portal_candidate",
+      "vertical_layer": "underground_associated",
+      "access_confidence": "source_mapped_not_field_verified",
+      "limitations": [
+        "No automatic building-door mapping; access status is source evidence, not current field verification."
+      ]
+    },
+    {
+      "id": "downtown-tunnel-ingress-egress",
+      "title": "Downtown Tunnel Ingress/Egress Points",
+      "publisher": "City of Houston",
+      "layer_url": "https://services5.arcgis.com/eTnR8egNkl9d8CQM/arcgis/rest/services/City_of_Houston_Downtown_Tunnel_System_view/FeatureServer/2",
+      "layer_id": 2,
+      "ao_feature_class": "entrance_portal_candidate",
+      "geometry_role": "portal_candidate",
+      "vertical_layer": "underground_associated",
+      "limitations": [
+        "Building and address attributes were null in inspected sample; do not auto-link to buildings."
+      ]
+    },
+    {
+      "id": "downtown-tunnel-paths",
+      "title": "Downtown Tunnel Paths",
+      "publisher": "City of Houston",
+      "layer_url": "https://services5.arcgis.com/eTnR8egNkl9d8CQM/arcgis/rest/services/City_of_Houston_Downtown_Tunnel_System_view/FeatureServer/3",
+      "layer_id": 3,
+      "ao_feature_class": "tunnel_path",
+      "geometry_role": "underground_path_candidate",
+      "vertical_layer": "underground",
+      "limitations": [
+        "No vertical datum/level evidence in current manifest; preserve as underground-associated geometry, not a metrically resolved Z surface.",
+        "Do not connect to street network without explicit portal evidence."
+      ]
+    },
+    {
+      "id": "downtown-tunnel-restrictions",
+      "title": "Downtown Tunnel Access/Restriction Areas",
+      "publisher": "City of Houston",
+      "layer_url": "https://services5.arcgis.com/eTnR8egNkl9d8CQM/arcgis/rest/services/City_of_Houston_Downtown_Tunnel_System_view/FeatureServer/4",
+      "layer_id": 4,
+      "ao_feature_class": "access_restriction_zone",
+      "geometry_role": "restriction_area_candidate",
+      "vertical_layer": "underground_associated",
+      "limitations": [
+        "Source restriction polygons require interpretation; preserve attributes and do not invent access rules."
+      ]
+    },
+    {
+      "id": "downtown-tunnel-connected-buildings",
+      "title": "Buildings With Tunnel Access",
+      "publisher": "City of Houston / H-GAC",
+      "layer_url": "https://services5.arcgis.com/eTnR8egNkl9d8CQM/arcgis/rest/services/City_of_Houston_Downtown_Tunnel_System_view/FeatureServer/5",
+      "layer_id": 5,
+      "ao_feature_class": "building_footprint_tunnel_related",
+      "geometry_role": "building_footprint_candidate",
+      "vertical_layer": "surface",
+      "limitations": [
+        "Building polygons/parcel identifiers do not explicitly relate each building to a particular tunnel access point."
+      ]
+    }
+  ],
+  "not_registered_yet": [
+    {
+      "dataset": "City limits",
+      "reason": "Exact public-view layer URL and layer IDs must be resolved before registration; pending polygons are omitted by that public view."
+    },
+    {
+      "dataset": "Parcels",
+      "reason": "HCAD publishes downloadable snapshots; choose a dated snapshot, verify licence/schema, and implement its archive/GeoPackage adapter. City cadastral layer also requires exact layer ID and bounded extraction."
+    },
+    {
+      "dataset": "Road nodes and links",
+      "reason": "City GIS Nodes layer 10 and Links layer 12 are referenced in the source manifest; exact service URL and layer schemas must be resolved."
+    },
+    {
+      "dataset": "Elevation/terrain",
+      "reason": "No selected authoritative local source, vertical datum, resolution, or coverage."
+    },
+    {
+      "dataset": "Sidewalks/road surfaces",
+      "reason": "No verified complete source registered; road centerlines must not be used as substitutes."
+    },
+    {
+      "dataset": "Building entrances/floors/basements",
+      "reason": "No complete source; retain source portals as candidates and add verified detail separately."
+    }
+  ]
+}
