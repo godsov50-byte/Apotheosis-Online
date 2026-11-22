@@ -7,11 +7,11 @@ const validId = v => typeof v === "string" && v.trim().length > 0;
 const clone = v => structuredClone(v);
 const coord = (x, y) => `${x},${y}`;
 function req(v, name) { if (!validId(v)) throw new TypeError(name + " required"); return v.trim(); }
-function dir(v) { if (!DIRECTIONS.includes(v)) throw new TypeTypeError("invalid direction"); return v; }
+function dir(v) { if (!DIRECTIONS.includes(v)) throw new TypeError("invalid direction"); return v; }
 function connectors() {
   return Object.fromEntries(DIRECTIONS.map(d => [d, { direction: d, neighborChunkId: null, environmentId: null, access: { mode: "open", allow: [] } }]));
 }
-function assertCoordinate(x, y) { if (!Number.isInteger(x) || !Number.isInteger(y)) throw new TypeTypeError("coordinates must be integers"); }
+function assertCoordinate(x, y) { if (!Number.isInteger(x) || !Number.isInteger(y)) throw new TypeError("coordinates must be integers"); }
 function expectedNeighbor(a, d) { const [dx, dy] = offset[d]; return { x: a.x + dx, y: a.y + dy }; }
 
 export function createWorld({ worldId, name = "AO World" } = {}) {
@@ -23,7 +23,7 @@ export function chunkAddress(x, y) { assertCoordinate(x, y); return { x, y, key:
 export function getChunkAt(w, x, y) { assertCoordinate(x, y); return w.chunks.find(c => c.x === x && c.y === y) ?? null; }
 export function createChunk({ chunkId, x, y, token = "🌿", terrainTag = "wilderness", regionId = null } = {}) {
   req(chunkId, "chunkId"); assertCoordinate(x, y);
-  if (typeof token !== "string" || !token.trim()) throw new TypeTypeError("token required");
+  if (typeof token !== "string" || !token.trim()) throw new TypeError("token required");
   return { chunkId: chunkId.trim(), x, y, token: token.trim(), terrainTag, regionId, connectors: connectors() };
 }
 function getChunk(w, id) { const c = w.chunks.find(c => c.chunkId === id); if (!c) throw new Error("unknown chunk " + id); return c; }
@@ -74,7 +74,7 @@ export function attachEnvironment(w, { chunkId, direction, environmentId, enviro
 }
 export function claimRegion(w, { regionId, ownerId, chunkIds }) {
   req(regionId, "regionId"); req(ownerId, "ownerId");
-  if (!Array.isArray(chunkIds) || !chunkIds.length) throw new TypeTypeError("chunkIds required");
+  if (!Array.isArray(chunkIds) || !chunkIds.length) throw new TypeError("chunkIds required");
   const ids = [...new Set(chunkIds)]; ids.forEach(id => getChunk(w, id));
   const r = w.regions.find(v => v.regionId === regionId);
   if (r) { r.ownerId = ownerId; r.chunkIds = ids; } else w.regions.push({ regionId, ownerId, chunkIds: ids });
@@ -83,7 +83,7 @@ export function claimRegion(w, { regionId, ownerId, chunkIds }) {
 export function setConnectorAccess(w, { chunkId, direction, mode, allow = [] }) {
   const c = getChunk(w, chunkId).connectors[dir(direction)];
   if (!["open", "restricted", "closed"].includes(mode)) throw new TypeError("invalid access mode");
-  if (!Array.isArray(allow) || allow.some(v => !validId(v))) throw new TypeTypeError("allow must be string IDs");
+  if (!Array.isArray(allow) || allow.some(v => !validId(v))) throw new TypeError("allow must be string IDs");
   c.access = { mode, allow: [...new Set(allow.map(v => v.trim()))] }; return w;
 }
 export function canAccessConnector(c, actorId) {
