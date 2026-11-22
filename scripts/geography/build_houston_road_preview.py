@@ -18,7 +18,8 @@ ACQUIRE = ROOT / "scripts/geography/acquire_houston_road_centerlines.py"
 REGISTRY = ROOT / "scripts/geography/build_houston_street_registry.py"
 GRID = ROOT / "scripts/geography/build_houston_road_grid.py"
 RASTER = ROOT / "scripts/geography/rasterize_houston_road_grid.mjs"
-TOPOLOGY = ROOT / "scripts/geography/build_houston_endpoint_topology_preview.py"\nTOPOLOGY_V2 = ROOT / "scripts/geography/build_houston_endpoint_topology_preview_v2.py"
+TOPOLOGY = ROOT / "scripts/geography/build_houston_endpoint_topology_preview.py"
+TOPOLOGY_V2 = ROOT / "scripts/geography/build_houston_endpoint_topology_preview_v2.py"
 
 def run(command: list[str]) -> None:
     print("+", " ".join(map(str, command)), flush=True)
@@ -46,7 +47,8 @@ def build(output: Path, preview_only: bool) -> dict:
     registry_manifest = json.loads((road_dir/"street-registry-manifest.json").read_text(encoding="utf-8"))
     grid_manifest = json.loads((grid_dir/"roads-local-mm-manifest.json").read_text(encoding="utf-8"))
     raster_manifest = json.loads((grid_dir/"road-centerline-cells-manifest.json").read_text(encoding="utf-8"))
-    topology_report = json.loads((grid_dir/"endpoint-topology-report.json").read_text(encoding="utf-8"))\n    topology_v2_report = json.loads((grid_dir/"endpoint-topology-v2-report.json").read_text(encoding="utf-8"))
+    topology_report = json.loads((grid_dir/"endpoint-topology-report.json").read_text(encoding="utf-8"))
+    topology_v2_report = json.loads((grid_dir/"endpoint-topology-v2-report.json").read_text(encoding="utf-8"))
     summary = {
       "build_id":"ao-houston-road-network-preview-v1",
       "status":"preview_only_not_importable",
@@ -61,7 +63,8 @@ def build(output: Path, preview_only: bool) -> dict:
       "transformed_vertices":grid_manifest["transformed_vertex_count"],
       "candidate_cells":raster_manifest["total_sparse_cells"],
       "road_paths":topology_report["road_paths"],
-      "endpoint_node_candidates":topology_report["endpoint_node_candidates"],\n      "endpoint_node_candidates_v2":topology_v2_report["endpoint_node_candidates"],\n      "endpoint_snap_tolerance_mm_v2":topology_v2_report["snap_tolerance_mm"],
+      "endpoint_node_candidates":topology_report["endpoint_node_candidates"],
+      "endpoint_node_candidates_v2":topology_v2_report["endpoint_node_candidates"],\n      "endpoint_snap_tolerance_mm_v2":topology_v2_report["snap_tolerance_mm"],
       "source_crs":"EPSG:4326",
       "working_crs":"EPSG:2278",
       "local_grid_cell_size_mm":grid_manifest["cell_size_mm"],
@@ -75,7 +78,8 @@ def build(output: Path, preview_only: bool) -> dict:
         "candidate_cells":str(grid_dir/"road-centerline-cells.json"),
         "candidate_cells_manifest":str(grid_dir/"road-centerline-cells-manifest.json"),
         "endpoint_topology":str(grid_dir/"endpoint-topology.json"),
-        "endpoint_topology_report":str(grid_dir/"endpoint-topology-report.json"),\n        "endpoint_topology_v2":str(grid_dir/"endpoint-topology-v2.json"),\n        "endpoint_topology_v2_report":str(grid_dir/"endpoint-topology-v2-report.json")
+        "endpoint_topology_report":str(grid_dir/"endpoint-topology-report.json"),
+        "endpoint_topology_v2":str(grid_dir/"endpoint-topology-v2.json"),\n        "endpoint_topology_v2_report":str(grid_dir/"endpoint-topology-v2-report.json")
       },
       "restrictions":[
         "Road-centerline cells are candidate indexes, not walkable road surfaces.",
