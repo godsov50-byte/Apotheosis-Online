@@ -59,6 +59,14 @@ class HoustonAOSourceCatalogTests(unittest.TestCase):
         for source in trails:
             self.assertTrue(any("No automatic walk-routing approval" in note for note in source["limitations"]))
 
+    def test_manual_snapshot_workflow_is_bounded_and_exports_artifact(self):
+        workflow = (ROOT / ".github/workflows/houston-ao-source-snapshot.yml").read_text()
+        self.assertIn("workflow_dispatch:", workflow)
+        self.assertIn("--bbox", workflow)
+        self.assertIn("houston-ao-source-data", workflow)
+        self.assertIn("actions/upload-artifact@v4", workflow)
+        self.assertIn("retention-days: 14", workflow)
+
     def test_canonical_hash_is_order_independent(self):
         self.assertEqual(MODULE.digest({"b": 2, "a": 1}), MODULE.digest({"a": 1, "b": 2}))
 
