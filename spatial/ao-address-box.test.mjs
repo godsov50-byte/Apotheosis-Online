@@ -47,7 +47,7 @@ test("accepts each status emitted by the pedestrian graph builder", () => {
       building, entrance,
       pedestrianAccess: {
         accessPoint: { id: "pa-1" },
-        edge: { id: `walk-${status}`, routingApproved: true, status, modes: ["walk"] }
+        edge: { id: `walk-${status}`, from: "pa-1", to: "entrance-anchor", routingApproved: true, status, modes: ["walk"] }
       }
     }));
   }
