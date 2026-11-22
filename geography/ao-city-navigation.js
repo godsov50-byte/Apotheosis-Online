@@ -89,9 +89,29 @@
     if(String(p.motor_vehicle||"").toLowerCase()==="no" && !p.foot)return false;
     return true;
   }
-  function nodeKey(point,layer){const lat=Math.round(point[1]*1e5),lng=Math.round(point[0]*1e5);return layer+"|"+lat+"|"+lng;}
   function buildGraph(records){
-    const nodes=new Map(),edges=[];
+    const nodes=new Map(),edges=[],buckets=new Map();
+    const cellMeters=3,joinMeters=2.5;
+    function getNode(point,layer){
+      const lat=Number(point[1]),lng=Number(point[0]),cos=Math.max(.1,Math.cos(lat*RAD));
+      const y=Math.floor(lat*111320/cellMeters),x=Math.floor(lng*111320*cos/cellMeters);
+      let best=null,bestDistance=Infinity;
+      for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+        const bucket=buckets.get(layer+"|"+(x+dx)+"|"+(y+dy))||[];
+        for(const node of bucket){
+          const d=meters({lat,lng},node);
+          if(d<bestDistance){best=node;bestDistance=d;}
+        }
+      }
+      if(best&&bestDistance<=joinMeters)return best;
+      const key=layer+"|node:"+nodes.size;
+      const node={key,lat,lng,edges:[]};
+      nodes.set(key,node);
+      const bucketKey=layer+"|"+x+"|"+y;
+      if(!buckets.has(bucketKey))buckets.set(bucketKey,[]);
+      buckets.get(bucketKey).push(node);
+      return node;
+    }
     for(const record of records){
       if(!roadAllowed(record)||record.geometry?.type!=="LineString")continue;
       const props=record.rawProperties||record.properties||{};
@@ -100,15 +120,30 @@
       for(let i=1;i<coords.length;i++){
         const a=coords[i-1],b=coords[i];
         if(!Array.isArray(a)||!Array.isArray(b)||a.length<2||b.length<2)continue;
-        const ka=nodeKey(a,layer),kb=nodeKey(b,layer);
-        if(ka===kb)continue;
-        if(!nodes.has(ka))nodes.set(ka,{key:ka,lat:a[1],lng:a[0],edges:[]});
-        if(!nodes.has(kb))nodes.set(kb,{key:kb,lat:b[1],lng:b[0],edges:[]});
-        const edge={a:ka,b:kb,cost:meters(nodes.get(ka),nodes.get(kb)),recordId:record.id};
-        edges.push(edge);nodes.get(ka).edges.push({to:kb,cost:edge.cost});nodes.get(kb).edges.push({to:ka,cost:edge.cost});
+        const na=getNode(a,layer),nb=getNode(b,layer);
+        if(na.key===nb.key)continue;
+        const edge={a:na.key,b:nb.key,cost:meters(na,nb),recordId:record.id};
+        edges.push(edge);
+        na.edges.push({to:nb.key,cost:edge.cost});
+        nb.edges.push({to:na.key,cost:edge.cost});
       }
     }
     return {nodes,edges};
+  }
+  function graphDiagnostics(graph,start,end){
+    const seen=new Set(),components=[];
+    for(const key of graph.nodes.keys()){
+      if(seen.has(key))continue;
+      const queue=[key];seen.add(key);let count=0;
+      while(queue.length){
+        const current=queue.pop();count++;
+        for(const edge of graph.nodes.get(current).edges)if(!seen.has(edge.to)){seen.add(edge.to);queue.push(edge.to);}
+      }
+      components.push(count);
+    }
+    components.sort((a,b)=>b-a);
+    const nearest=(point)=>{let best=Infinity;for(const node of graph.nodes.values())best=Math.min(best,meters(point,node));return Number.isFinite(best)?Math.round(best):null;};
+    return {nodes:graph.nodes.size,edges:graph.edges.length,components:components.length,largestComponent:components[0]||0,envoyNearestRoadMeters:nearest(start),entranceNearestRoadMeters:nearest(end)};
   }
   function snapToNetwork(graph,point,maxMeters,keyPrefix){
     let best=null,bestDistance=Infinity;
@@ -185,7 +220,7 @@
     const north=Math.max(start.lat,end.lat)+0.0035;
     const west=Math.min(start.lng,end.lng)-0.0045;
     const east=Math.max(start.lng,end.lng)+0.0045;
-    const query='[out:json][timeout:25];way["highway"]('+south+','+west+','+north+','+east+');out meta geom;';
+    const query='[out:json][timeout:25];way["highway"]('+south+','+west+','+north+','+east+');out body geom;';
     const endpoints=["https://overpass-api.de/api/interpreter","https://overpass.kumi.systems/api/interpreter"];
     let lastError=null;
     for(const endpoint of endpoints){
@@ -223,12 +258,14 @@
       if(!records.length)throw new Error("Could not load roads automatically: "+error.message);
     }
     const graph=buildGraph(records);
-    if(!graph.nodes.size)throw new Error("No walkable OSM centerlines are available for this route. Check the road data service or choose another mapped street.");
-    const start=snapToNetwork(graph,state.position,60,"route-start"),end=snapToNetwork(graph,entranceMatch.entrance,60,"route-end");
-    if(!start||!end)throw new Error("The Envoy or entrance is more than 60 m from the imported road/path centerlines. The route is not connected.");
+    const diagnostics=graphDiagnostics(graph,state.position,entranceMatch.entrance);
+    window.AONavDiagnostics=diagnostics;
+    if(!graph.nodes.size)throw new Error("ROUTE DIAGNOSTIC: OSM returned "+records.length+" ways, but none produced walkable graph segments. Check the imported highway tags and road response.");
+    const start=snapToNetwork(graph,state.position,150,"route-start"),end=snapToNetwork(graph,entranceMatch.entrance,150,"route-end");
+    if(!start||!end)throw new Error("ROUTE DIAGNOSTIC: "+diagnostics.nodes+" graph nodes across "+diagnostics.components+" disconnected components. Envoy nearest road: "+diagnostics.envoyNearestRoadMeters+" m; entrance nearest road: "+diagnostics.entranceNearestRoadMeters+" m. Need both endpoints within 150 m of a walkable mapped way.");
     const roadPath=shortestPath(graph,start.node.key,end.node.key);
-    if(!roadPath)throw new Error("No connected road/path centerline route reaches that entrance. No direct-line fallback will be used.");
-    return {points:[{lat:state.position.lat,lng:state.position.lng},...roadPath.map(n=>({lat:n.lat,lng:n.lng})),{lat:entranceMatch.entrance.lat,lng:entranceMatch.entrance.lng}],entrance:entranceMatch.entrance,roadMeters:roadPath.reduce((sum,n,i)=>i?sum+meters(roadPath[i-1],n):sum,0)};
+    if(!roadPath)throw new Error("ROUTE DIAGNOSTIC: both endpoints snapped, but the graph has "+diagnostics.components+" disconnected components (largest "+diagnostics.largestComponent+" nodes). The mapped ways do not share connected junction coordinates between Envoy and entrance.");
+    return {points:[{lat:state.position.lat,lng:state.position.lng},...roadPath.map(n=>({lat:n.lat,lng:n.lng})),{lat:entranceMatch.entrance.lat,lng:entranceMatch.entrance.lng}],entrance:entranceMatch.entrance,roadMeters:roadPath.reduce((sum,n,i)=>i?sum+meters(roadPath[i-1],n):sum,0),diagnostics};
   }
   function drawPath(path){
     routeLayer.clearLayers();
@@ -244,7 +281,7 @@
   $("previewRoute").onclick=async()=>{
     if(routeBusy)return;routeBusy=true;$("previewRoute").disabled=true;
     try{const path=await calculatePath();drawPath(path);map.fitBounds(L.latLngBounds(path.points.map(p=>[p.lat,p.lng])),{padding:[35,35]});}
-    catch(error){routeLayer.clearLayers();activePath=null;$("navStatus").textContent="No connected route";chat("AO",error.message);}
+    catch(error){routeLayer.clearLayers();activePath=null;$("navStatus").textContent="No route · see diagnostic";chat("AO",error.message);}
     finally{routeBusy=false;$("previewRoute").disabled=false;}
   };
   async function walkActivePath(){
