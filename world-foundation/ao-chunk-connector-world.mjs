@@ -28,7 +28,7 @@ export function createChunk({ chunkId, x, y, token = "🌿", terrainTag = "wilde
 }
 function getChunk(w, id) { const c = w.chunks.find(c => c.chunkId === id); if (!c) throw new Error("unknown chunk " + id); return c; }
 export function materializeChunk(w, address, options = {}) {
-  const { x, y } = typeof address === "string" ? (() => { const parts = address.split(",").map(Number); if (parts.length !== 2 || parts.some(n => !Number.isInteger(n)) throw new TypeError("invalid chunk address"); return { x: parts[0], y: parts[1] }; })() : address;
+  const { x, y } = typeof address === "string" ? (() => { const parts = address.split(",").map(Number); if (parts.length !== 2 || parts.some(n => !Number.isInteger(n))) throw new TypeError("invalid chunk address"); return { x: parts[0], y: parts[1] }; })() : address;
   assertCoordinate(x, y);
   const existing = getChunkAt(w, x, y);
   if (existing) return existing;
