@@ -19,6 +19,7 @@ These layers must not be collapsed into one table or treated as interchangeable.
 | `../scripts/geography/build_houston_road_grid.py` | WGS84 road snapshot → EPSG:2278 → Houston-local integer millimetres | Preview-only while Houston v2 remains unapproved; preserves source IDs/attributes and projection metadata |
 | `../scripts/geography/rasterize_houston_road_grid.mjs` | Converts local-mm road centerlines into sparse 1 m AO candidate cells | Bounded deterministic preview; centerlines are not walkable surfaces or route edges |
 | `../tests/spatial/test_houston_road_grid.py` and `rasterize-houston-road-grid.test.mjs` | Coordinate conversion, approval gate, provenance and cell rasterization tests | CI contract tests |
+| `.github/workflows/houston-road-grid-preview.yml` | Manual acquisition + full road-centerline preview artifact build | Manual-only; preview artifacts, no persistence or world commit |
 | `../tests/spatial/ao-grid-rasterizer.test.mjs` | Rasterization contract tests | Node test suite |
 | `HOUSTON_GIS_SOURCE_MANIFEST.md` | Candidate Houston sources, provenance and coverage limitations | Working source register |
 | `profiles/houston-v1.json` | Machine-readable Houston coordinate profile | Draft; origin deliberately unset |
