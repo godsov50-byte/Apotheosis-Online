@@ -207,6 +207,7 @@
         return;
       }
       for (let i = 0; i < records.length; i += 200) await writeRoads(records.slice(i, i + 200));
+      if (window.AOCityRegistryUpdateCounts) await window.AOCityRegistryUpdateCounts();
       if (window.AOCityRegistryRefresh) await window.AOCityRegistryRefresh();
       const count = $("registryStreetCount");
       const total = count ? count.textContent : "updated";
