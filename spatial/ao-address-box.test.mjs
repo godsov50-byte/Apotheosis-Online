@@ -32,7 +32,7 @@ test("accepts an explicitly approved edge in pedestrian-graph output shape", () 
       accessPoint: { id: "pa-1" },
       edge: {
         id: "walk-1", routingApproved: true, status: "verified",
-        modes: ["walk"], from: "sidewalk-node", to: "entrance-anchor"
+        modes: ["walk"], from: "pa-1", to: "entrance-anchor"
       }
     }
   });
@@ -66,6 +66,19 @@ test("rejects edges without explicit walk mode or approval", () => {
       pedestrianAccess: { accessPoint: { id: "pa-1" }, edge: invalid }
     }), /not explicitly approved/);
   }
+});
+
+test("rejects an access point not attached to the supplied edge", () => {
+  assert.throws(() => createAddressBox({
+    building, entrance,
+    pedestrianAccess: {
+      accessPoint: { id: "unrelated-node" },
+      edge: {
+        id: "walk-1", routingApproved: true, status: "verified",
+        modes: ["walk"], from: "sidewalk-node", to: "entrance-anchor"
+      }
+    }
+  }), /not explicitly approved/);
 });
 
 test("rejects blocked entrances", () => {
