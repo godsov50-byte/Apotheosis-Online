@@ -63,3 +63,15 @@ Each workflow uploads an artifact with a GeoJSON/JSON payload and a provenance m
 ## Rollback
 
 The feature is isolated to the city-console browser adapter, one acquisition script, one manual workflow and documentation. Close the draft PR or revert the feature branch. No live AO world, Supabase schema, source GIS service or production dataset is changed.
+
+
+## AO Street Name Overlay
+
+The city console supports a browser-local street naming overlay. Selecting an imported street segment exposes a rename control for its source name group. Segments retain their source identity, geometry, and official/source name; AO names are stored separately by the compiler-provided `name_group_key`. The feature does not change street geometry or route connectivity.
+
+- Local IndexedDB store: `streetAliases` in `ao-city-registry-cache-v1` (database version 2).
+- Rename is group-based: segments sharing the registry's source name group use one AO alias.
+- Search and map tooltips show AO aliases alongside source names.
+- Alias sets can be exported/imported as JSON for transfer between browsers.
+- Renames remain local staging data; no Kernel, WorldHeart, Supabase, or canonical world-state write occurs.
+- Existing version-1 IndexedDB stores are upgraded without recreating or overwriting their current stores.
