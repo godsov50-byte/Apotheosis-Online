@@ -128,3 +128,25 @@ This first implementation slice adds a pure deterministic rasterizer and contrac
 5. Extend the same pipeline to sidewalks, bridges and the downtown tunnel source after its schema, vertical reference and portal relationships are verified.
 
 Do not start citywide rasterization until the coordinate approval gate is satisfied.
+
+
+## 9. Road-centerline preview builder (implemented)
+
+The first executable road conversion slice now consists of:
+
+1. `scripts/geography/build_houston_road_grid.py` — reads the acquired City of Houston GeoJSON snapshot in EPSG:4326, transforms longitude/latitude to EPSG:2278 with a pinned pyproj/PROJ runtime, subtracts the selected Houston v2 origin, converts US survey feet to millimetres using the exact rational factor, and writes integer `[x_mm,y_mm]` geometry.
+2. `scripts/geography/rasterize_houston_road_grid.mjs` — feeds that local geometry into the shared AO supercover rasterizer and writes sparse 1 m cell candidates with source identity and attributes retained.
+
+The builder records the selected PROJ operation, its stated accuracy, pyproj/PROJ versions, input snapshot checksum, profile origin, axis mapping, and output checksum. It rejects mismatched snapshot checksums, unsupported geometry, duplicate source GlobalIDs, malformed coordinates, and 3D input while the vertical reference is unknown.
+
+**Current execution is preview-only.** The profile remains `origin_selected_pending_validation`, Kernel approval is false, and the WGS84-to-EPSG:2278 operation reports 4 m accuracy. Millimetre integer coordinates are a fixed-point storage representation, not a claim of millimetre ground accuracy. The rasterizer refuses input not explicitly marked as the Houston v2 preview format and cannot mark cells walkable or traversable.
+
+Run after acquiring a source snapshot:
+
+```bash
+python -m pip install pyproj==3.7.2
+python scripts/geography/build_houston_road_grid.py --preview-only
+node scripts/geography/rasterize_houston_road_grid.mjs
+```
+
+The build artifacts are local files under `build/houston-road-grid/`; they are not committed, uploaded to Supabase, submitted as Kernel proposals, or written to WorldHeart. CI exercises the conversion and rasterization with fixtures. A full Houston snapshot build remains a deliberate manual operation and should follow a small-area visual/coverage QA pass.

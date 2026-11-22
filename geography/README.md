@@ -15,7 +15,11 @@ These layers must not be collapsed into one table or treated as interchangeable.
 | `HOUSTON_SPATIAL_ADAPTER_SPEC.md` | Multi-resolution spatial architecture and safeguards | Design specification |
 | `profiles/houston-v2.json` | User-selected downtown Houston map origin in EPSG:2278; still import-gated pending validation | Staging profile v2 |
 | `AO_HOUSTON_GRID_CONVERSION_PIPELINE_v1.md` | Source-to-S2-to-sparse-square-cell conversion pipeline and acceptance gates | Implementation foundation; staging only |
-| `../spatial/ao-grid-rasterizer.mjs` | Deterministic line/polygon geometry-to-cell rasterizer | Pure utility; requires approved local metric input |
+| `../spatial/ao-grid-rasterizer.mjs` | Deterministic line/polygon geometry-to-cell rasterizer | Pure utility; requires local metric input |
+| `../scripts/geography/build_houston_road_grid.py` | WGS84 road snapshot → EPSG:2278 → Houston-local integer millimetres | Preview-only while Houston v2 remains unapproved; preserves source IDs/attributes and projection metadata |
+| `../scripts/geography/rasterize_houston_road_grid.mjs` | Converts local-mm road centerlines into sparse 1 m AO candidate cells | Bounded deterministic preview; centerlines are not walkable surfaces or route edges |
+| `../tests/spatial/test_houston_road_grid.py` and `rasterize-houston-road-grid.test.mjs` | Coordinate conversion, approval gate, provenance and cell rasterization tests | CI contract tests |
+| `.github/workflows/houston-road-grid-preview.yml` | Manual acquisition + full road-centerline preview artifact build | Manual-only; preview artifacts, no persistence or world commit |
 | `../tests/spatial/ao-grid-rasterizer.test.mjs` | Rasterization contract tests | Node test suite |
 | `HOUSTON_GIS_SOURCE_MANIFEST.md` | Candidate Houston sources, provenance and coverage limitations | Working source register |
 | `profiles/houston-v1.json` | Machine-readable Houston coordinate profile | Draft; origin deliberately unset |
@@ -50,7 +54,7 @@ The S2 cell registry and its proposed `ao_geo` schema are a separate layer curre
 - One chunk: 64 × 64 cells (64 m × 64 m).
 - US survey foot to metre: exactly 1200 / 3937.
 - Rounding: decimal half away from zero.
-- The Houston profile origin is intentionally null until selected and approved.
+- Houston v2 records the selected downtown map origin but remains blocked from authoritative imports until coordinate, source-operation, vertical-reference, error-budget and Kernel approval gates are complete.
 - Vertical CRS/datum is unknown; this adapter does not transform Z.
 
 Do not use the draft profile for import. A caller must load an approved profile with an origin and explicit transformation metadata; the adapter raises `ProfileNotReadyError` otherwise.
