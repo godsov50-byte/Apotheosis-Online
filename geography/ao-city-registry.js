@@ -5,7 +5,7 @@
 (() => {
   "use strict";
   const DB_NAME = "ao-city-registry-cache-v1";
-  const DB_VERSION = 1;
+  const DB_VERSION = 2;
   const TILE_DEGREES = 0.02;
   const MAX_VIEW_TILES = 240;
   const MAX_RENDER_FEATURES = 2200;
@@ -33,13 +33,18 @@
       const request = indexedDB.open(DB_NAME, DB_VERSION);
       request.onupgradeneeded = () => {
         const db = request.result;
-        const features = db.createObjectStore("features", { keyPath: "id" });
-        features.createIndex("kind", "kind", { unique: false });
-        features.createIndex("dataset", "dataset", { unique: false });
-        const refs = db.createObjectStore("tileRefs", { keyPath: "key" });
-        refs.createIndex("tile", "tile", { unique: false });
-        refs.createIndex("featureId", "featureId", { unique: false });
-        db.createObjectStore("datasets", { keyPath: "id" });
+        if (!db.objectStoreNames.contains("features")) {
+          const features = db.createObjectStore("features", { keyPath: "id" });
+          features.createIndex("kind", "kind", { unique: false });
+          features.createIndex("dataset", "dataset", { unique: false });
+        }
+        if (!db.objectStoreNames.contains("tileRefs")) {
+          const refs = db.createObjectStore("tileRefs", { keyPath: "key" });
+          refs.createIndex("tile", "tile", { unique: false });
+          refs.createIndex("featureId", "featureId", { unique: false });
+        }
+        if (!db.objectStoreNames.contains("datasets")) db.createObjectStore("datasets", { keyPath: "id" });
+        if (!db.objectStoreNames.contains("streetAliases")) db.createObjectStore("streetAliases", { keyPath: "groupKey" });
       };
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error || new Error("Could not open the local registry database."));
@@ -101,6 +106,7 @@
       rawProperties: item.raw_source_attributes || {},
       provenance: item.provenance || {},
       sourceIdentity: item.identity_key || item.source_global_id || item.source_record_key,
+      nameGroupKey: item.name_group_key || null,
       sourceStatus: "source-reported centerline; not a validated route edge"
     }));
   }
@@ -194,7 +200,7 @@
   function normalizeStreamingItem(item,kind,sourceLabel,index){
     if(kind==="street"){
       const props=item.properties||item.raw_source_attributes||{}, sourceIdentity=item.identity_key||item.source_global_id||item.source_record_key||("row-"+index);
-      return {id:"street:"+String(sourceIdentity),kind:"street",dataset:item.registry_id||"ao-houston-street-registry",name:pickName(props,item.display_name),geometry:item.geometry,properties:props,rawProperties:item.raw_source_attributes||{},provenance:item.provenance||{},sourceIdentity,sourceStatus:"source-reported centerline; not a validated route edge"};
+      return {id:"street:"+String(sourceIdentity),kind:"street",dataset:item.registry_id||"ao-houston-street-registry",name:pickName(props,item.display_name),geometry:item.geometry,properties:props,rawProperties:item.raw_source_attributes||{},provenance:item.provenance||{},sourceIdentity,nameGroupKey:item.name_group_key||null,sourceStatus:"source-reported centerline; not a validated route edge"};
     }
     const p=item.properties||{},sourceId=p.GlobalID||p.GLOBALID||p.globalid||p.FID||p.OBJECTID||p.OBJECTID_1||p.id||item.id||("feature-"+index);
     return {id:"building:"+sourceLabel+":"+String(sourceId),kind:"building",dataset:sourceLabel,name:pickName(p,"Building "+sourceId),geometry:item.geometry,properties:p,rawProperties:p,provenance:{publisher:sourceLabel,source_record_id:String(sourceId)},sourceIdentity:String(sourceId),sourceStatus:"source footprint; not field-verified building truth"};
@@ -294,7 +300,8 @@
             ? { color: "#64c7e8", weight: 2.2, opacity: 0.86 }
             : { color: "#e0b65e", weight: 1.5, fillColor: "#d9b66d", fillOpacity: 0.18 }
         }).addTo(layer);
-        drawn.bindTooltip(record.name, { sticky: true });
+        const aoName = record.kind === "street" && window.AOStreetNames ? window.AOStreetNames.getName(record) : null;
+        drawn.bindTooltip(aoName ? (aoName + " · " + record.name) : record.name, { sticky: true });
         drawn.on("click", (event) => {
           if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
           showRecord(record);
@@ -308,14 +315,18 @@
       status("Registry view error: " + (error && error.message ? error.message : String(error)));
     }
   }
+  window.AOCityRegistryRefresh = refreshVisible;
+  window.addEventListener("ao:street-names-updated", refreshVisible);
   function showRecord(record) {
     selectedRecord = record;
     const panel = $("registryInspector");
     if (!panel) return;
     panel.replaceChildren();
     const heading = document.createElement("strong");
-    heading.textContent = record.name;
+    const aoName = record.kind === "street" && window.AOStreetNames ? window.AOStreetNames.getName(record) : null;
+    heading.textContent = aoName ? (aoName + " · " + record.name) : record.name;
     panel.append(heading);
+    window.dispatchEvent(new CustomEvent("ao:registry-record-selected", { detail: record }));
     const type = document.createElement("div");
     type.className = "hint";
     type.textContent = (record.kind === "street" ? "Street centerline segment" : "Building footprint") +
@@ -366,7 +377,8 @@
         const cursor = request.result;
         if (!cursor || found >= 50) { resolve(); return; }
         const record = cursor.value;
-        if (record.name.toLocaleLowerCase().includes(query)) {
+        const aoName = record.kind === "street" && window.AOStreetNames ? window.AOStreetNames.getName(record) : null;
+        if (record.name.toLocaleLowerCase().includes(query) || (aoName && aoName.toLocaleLowerCase().includes(query))) {
           const button = document.createElement("button");
           button.textContent = (record.kind === "street" ? "Road · " : "Building · ") + record.name;
           button.onclick = () => showRecord(record);
