@@ -15,7 +15,7 @@ function sha256(buffer) {
 }
 
 function parseArgs(argv) {
-  const args = { input: "build/houston-road-grid/roads-local-mm.geojson",
+  const args = { input: "build/houston-road-grid/roads-local-mm.json",
     output: "build/houston-road-grid/road-centerline-cells.json",
     manifest: "build/houston-road-grid/road-centerline-cells-manifest.json",
     maxCellsPerFeature: 100000, maxTotalCells: 10000000 };
