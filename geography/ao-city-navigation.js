@@ -91,7 +91,7 @@
   }
   function buildGraph(records){
     const nodes=new Map(),edges=[],buckets=new Map();
-    const cellMeters=3,joinMeters=2.5;
+    const cellMeters=5,joinMeters=5;
     function getNode(point,layer){
       const lat=Number(point[1]),lng=Number(point[0]),cos=Math.max(.1,Math.cos(lat*RAD));
       const y=Math.floor(lat*111320/cellMeters),x=Math.floor(lng*111320*cos/cellMeters);
@@ -246,11 +246,17 @@
   async function calculatePath(){
     if(!state.destination)throw new Error("Choose a purple destination point first.");
     const entranceMatch=selectEntrance(state.destination);
-    if(!entranceMatch)throw new Error("No recorded entrance pin or AO entrance is within 60 m of that destination. Add a door pin in Admin, then select a destination beside it.");
+    // Prefer an explicitly recorded door. If none is close to the purple map point,
+    // route to the selected point itself and label it honestly rather than refusing movement.
+    const target=entranceMatch?entranceMatch.entrance:{
+      id:"selected-map-point",kind:"destination",name:state.destination.label||"Selected map point",
+      lat:Number(state.destination.lat),lng:Number(state.destination.lng),
+      entranceSource:"Selected destination; no recorded entrance pin matched"
+    };
     $("navStatus").textContent="Loading nearby road network…";
     let records=await loadRoads();
     try{
-      const fetched=await fetchRoadsForRoute(state.position,entranceMatch.entrance);
+      const fetched=await fetchRoadsForRoute(state.position,target);
       const byId=new Map(records.map(r=>[r.id,r]));
       for(const record of fetched)byId.set(record.id,record);
       records=[...byId.values()];
@@ -258,20 +264,21 @@
       if(!records.length)throw new Error("Could not load roads automatically: "+error.message);
     }
     const graph=buildGraph(records);
-    const diagnostics=graphDiagnostics(graph,state.position,entranceMatch.entrance);
+    const diagnostics=graphDiagnostics(graph,state.position,target);
     window.AONavDiagnostics=diagnostics;
-    if(!graph.nodes.size)throw new Error("ROUTE DIAGNOSTIC: OSM returned "+records.length+" ways, but none produced walkable graph segments. Check the imported highway tags and road response.");
-    const start=snapToNetwork(graph,state.position,150,"route-start"),end=snapToNetwork(graph,entranceMatch.entrance,150,"route-end");
-    if(!start||!end)throw new Error("ROUTE DIAGNOSTIC: "+diagnostics.nodes+" graph nodes across "+diagnostics.components+" disconnected components. Envoy nearest road: "+diagnostics.envoyNearestRoadMeters+" m; entrance nearest road: "+diagnostics.entranceNearestRoadMeters+" m. Need both endpoints within 150 m of a walkable mapped way.");
+    if(!graph.nodes.size)throw new Error("ROUTE DIAGNOSTIC: OSM returned "+records.length+" ways, but none produced walkable graph segments. The map tiles show streets, but the road graph has no walkable geometry.");
+    const start=snapToNetwork(graph,state.position,150,"route-start"),end=snapToNetwork(graph,target,80,"route-end");
+    if(!start||!end)throw new Error("ROUTE DIAGNOSTIC: "+diagnostics.nodes+" road nodes in "+diagnostics.components+" components. Blue dot is "+diagnostics.envoyNearestRoadMeters+" m from a road; destination is "+diagnostics.entranceNearestRoadMeters+" m from a road. Need a mapped road within 150 m of the Envoy and 80 m of the destination.");
     const roadPath=shortestPath(graph,start.node.key,end.node.key);
-    if(!roadPath)throw new Error("ROUTE DIAGNOSTIC: both endpoints snapped, but the graph has "+diagnostics.components+" disconnected components (largest "+diagnostics.largestComponent+" nodes). The mapped ways do not share connected junction coordinates between Envoy and entrance.");
-    return {points:[{lat:state.position.lat,lng:state.position.lng},...roadPath.map(n=>({lat:n.lat,lng:n.lng})),{lat:entranceMatch.entrance.lat,lng:entranceMatch.entrance.lng}],entrance:entranceMatch.entrance,roadMeters:roadPath.reduce((sum,n,i)=>i?sum+meters(roadPath[i-1],n):sum,0),diagnostics};
+    if(!roadPath)throw new Error("ROUTE DIAGNOSTIC: both ends reached the road graph, but no connected road path exists. "+diagnostics.components+" components; largest component "+diagnostics.largestComponent+" nodes. OSM junctions in this area need topology repair.");
+    const roadPoints=roadPath.map(n=>({lat:n.lat,lng:n.lng}));
+    return {points:[{lat:state.position.lat,lng:state.position.lng},...roadPoints,{lat:target.lat,lng:target.lng}],entrance:target,hasRecordedEntrance:!!entranceMatch,roadMeters:roadPath.reduce((sum,n,i)=>i?sum+meters(roadPath[i-1],n):0,0)+meters(state.position,roadPath[0])+meters(roadPath[roadPath.length-1],target),diagnostics};
   }
   function drawPath(path){
     routeLayer.clearLayers();
-    window.AONavRouteStatus="Road route ready · "+path.entrance.name;
+    window.AONavRouteStatus=(path.hasRecordedEntrance?"Road route to entrance · ":"Road route to selected point · ")+path.entrance.name;
     L.polyline(path.points,{color:"#c69bff",weight:5,opacity:.95,lineCap:"round",lineJoin:"round"}).addTo(routeLayer);
-    L.circleMarker([path.entrance.lat,path.entrance.lng],{radius:8,color:"#fff",weight:2,fillColor:"#75d3a4",fillOpacity:1}).addTo(routeLayer).bindTooltip("Recorded entrance · "+path.entrance.name);
+    L.circleMarker([path.entrance.lat,path.entrance.lng],{radius:8,color:"#fff",weight:2,fillColor:path.hasRecordedEntrance?"#75d3a4":"#c69bff",fillOpacity:1}).addTo(routeLayer).bindTooltip((path.hasRecordedEntrance?"Recorded entrance · ":"Selected map point · ")+path.entrance.name);
     activePath=path;
     $("navStatus").textContent=window.AONavRouteStatus;
     $("navDistance").textContent=Math.round(path.roadMeters)+" m road network";
@@ -310,7 +317,7 @@
       state.positionSource="At recorded entrance";
       window.AONavRouteStatus="Arrived at recorded entrance · "+path.entrance.name;
       updateEnvoy();
-      chat("AO","Reached "+path.entrance.name+". You are at the recorded doorway; entering still requires the door/access rules to permit it.");
+      chat("AO",path.hasRecordedEntrance?"Reached "+path.entrance.name+". You are at the recorded doorway; entering still requires the door/access rules to permit it.":"Reached "+path.entrance.name+". No recorded entrance pin matched that destination, so this route ends at the selected map point.");
     } finally{
       routeBusy=false;
       $("previewRoute").disabled=false;
