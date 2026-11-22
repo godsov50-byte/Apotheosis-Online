@@ -10,8 +10,6 @@
   const MAX_VIEW_TILES = 240;
   const MAX_RENDER_FEATURES = 2200;
   const ADDRESS_KEY = "ao-city-entrance-addresses-v1";
-  let entrancePins = loadEntrancePins();
-  let entranceLayer = L.layerGroup().addTo(map);
   const $ = (id) => document.getElementById(id);
   const map = window.AOCityConsoleMap;
   if (!map || !window.L) {
@@ -20,6 +18,8 @@
     return;
   }
 
+  let entrancePins = loadEntrancePins();
+  let entranceLayer = L.layerGroup().addTo(map);
   const layer = L.layerGroup().addTo(map);
   let dbPromise;
   let refreshToken = 0;
@@ -215,6 +215,34 @@
     }
     const p=item.properties||{},sourceId=p.GlobalID||p.GLOBALID||p.globalid||p.FID||p.OBJECTID||p.OBJECTID_1||p.id||item.id||("feature-"+index),featureKind=kind==="lot"?"lot":"building";
     return {id:featureKind+":"+sourceLabel+":"+String(sourceId),kind:featureKind,dataset:sourceLabel,name:pickName(p,(kind==="lot"?"Parcel ":"Building ")+sourceId),geometry:item.geometry,properties:p,rawProperties:p,provenance:{publisher:sourceLabel,source_record_id:String(sourceId)},sourceIdentity:String(sourceId),sourceStatus:kind==="lot"?"source parcel boundary; not field-verified property truth":"source footprint; not field-verified building truth"};
+  }
+  async function loadOsmBuildingsInView(){
+    const bounds=map.getBounds(),south=bounds.getSouth(),west=bounds.getWest(),north=bounds.getNorth(),east=bounds.getEast();
+    const span=(north-south)*(east-west);
+    if(span>0.0005){status("Zoom in first: current map view is too large for a safe OSM footprint request.");return;}
+    const query='[out:json][timeout:25];way["building"]('+south+','+west+','+north+','+east+');out geom;';
+    status("Requesting OpenStreetMap building outlines for current view…");
+    try{
+      const response=await fetch("https://overpass-api.de/api/interpreter",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},body:"data="+encodeURIComponent(query)});
+      if(!response.ok)throw new Error("Overpass returned HTTP "+response.status);
+      const data=await response.json(),records=[],batch=[],seen=new Set();
+      for(const way of (data.elements||[])){
+        if(way.type!=="way"||!Array.isArray(way.geometry)||way.geometry.length<4)continue;
+        const coords=way.geometry.map(p=>[p.lon,p.lat]);
+        if(coords[0][0]!==coords[coords.length-1][0]||coords[0][1]!==coords[coords.length-1][1])coords.push([...coords[0]]);
+        const feature={type:"Feature",id:"osm-way-"+way.id,properties:{osm_id:way.id,building:way.tags?.building||"yes",name:way.tags?.name||"",addr_housenumber:way.tags?.["addr:housenumber"]||"",addr_street:way.tags?.["addr:street"]||""},geometry:{type:"Polygon",coordinates:[coords]}};
+        const record=normalizeStreamingItem(feature,"building","openstreetmap-overpass",way.id),bbox=geometryBBox(record.geometry);
+        if(!bbox)continue;
+        record.id="building:osm:way:"+way.id;record.dataset="openstreetmap-overpass";record.sourceIdentity="way/"+way.id;record.provenance={publisher:"OpenStreetMap contributors",source_url:"https://www.openstreetmap.org/way/"+way.id,license:"ODbL 1.0"};record.sourceStatus="community-mapped footprint; not parcel, entrance, address, or field-verified truth";record.bbox=bbox;record.tiles=tilesForBBox(bbox);
+        if(!seen.has(record.id)){seen.add(record.id);records.push(record);}
+      }
+      if(!records.length){status("No building footprints returned for this map view. Try zooming closer or a different area.");return;}
+      const db=await openDB();let accepted=0;
+      for(let i=0;i<records.length;i+=200){const batch=records.slice(i,i+200);await writeBatch(batch);accepted+=batch.length;}
+      const tx=db.transaction("datasets","readwrite");tx.objectStore("datasets").put({id:"building:openstreetmap-overpass",kind:"building",name:"OpenStreetMap Overpass current viewport",importedAt:new Date().toISOString(),sourceLabel:"openstreetmap-overpass",accepted,rejected:0,importMode:"viewport-fetch"});await transactionDone(tx);
+      await updateCounts();await refreshVisible();
+      status("Loaded "+accepted.toLocaleString()+" OpenStreetMap building outlines. Footprints are source evidence; addresses and entrances still require verification.");
+    }catch(error){status("OSM footprint fetch failed: "+(error&&error.message?error.message:String(error)));}
   }
   async function importFile(file,kind){
     if(!file)return;
@@ -415,6 +443,7 @@
 
   $("importStreets").addEventListener("click", () => $("streetRegistryFile").click());
   $("importBuildings").addEventListener("click", () => $("buildingRegistryFile").click());
+  $("loadOsmBuildings").addEventListener("click", () => loadOsmBuildingsInView());
   $("importLots").addEventListener("click", () => $("lotRegistryFile").click());
   $("streetRegistryFile").addEventListener("change", (event) => {
     importFile(event.target.files && event.target.files[0], "street");

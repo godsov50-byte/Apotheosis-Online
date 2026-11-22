@@ -65,6 +65,8 @@
    <label>Building footprint source label</label>
    <select id="buildingSource"><option value="hgac-harris-county-building-footprints-2018">H-GAC / Harris County building footprints · 2018 LiDAR</option><option value="city-of-houston-building-footprints-2022">City of Houston detailed footprints · 2022 snapshot</option><option value="user-imported-building-footprints">Other sourced building GeoJSON</option></select>
    <button id="importBuildings">Import building footprints GeoJSON</button>
+   <button id="loadOsmBuildings" class="primary">Load OSM building outlines in current map view</button>
+   <div class="hint">Fetches building footprints from OpenStreetMap via Overpass. Source data is community-mapped and may be incomplete; it is not parcel ownership or field-verified door data.</div>
    <input id="buildingRegistryFile" type="file" accept=".geojson,.json,application/geo+json,application/json" hidden>
    <button id="importLots">Import lot / parcel boundaries GeoJSON</button>
    <input id="lotRegistryFile" type="file" accept=".geojson,.json,application/geo+json,application/json" hidden>
