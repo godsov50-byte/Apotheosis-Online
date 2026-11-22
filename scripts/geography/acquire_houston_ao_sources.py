@@ -44,6 +44,30 @@ def atomic_write(path: Path, data: bytes) -> None:
 def layer_metadata(layer_url: str, timeout: int) -> dict[str, Any]:
     return get_json(layer_url, {"f": "pjson"}, timeout)
 
+def geometry_extent(features: list[dict[str, Any]]) -> list[float] | None:
+    xs: list[float] = []
+    ys: list[float] = []
+
+    def visit(value: Any) -> None:
+        if isinstance(value, (list, tuple)):
+            if len(value) >= 2 and isinstance(value[0], (int, float)) and isinstance(value[1], (int, float)):
+                xs.append(float(value[0]))
+                ys.append(float(value[1]))
+            else:
+                for child in value:
+                    visit(child)
+
+    for feature in features:
+        geometry = feature.get("geometry") or {}
+        if geometry.get("type") == "GeometryCollection":
+            for child in geometry.get("geometries", []):
+                visit(child.get("coordinates", []))
+        else:
+            visit(geometry.get("coordinates", []))
+    if not xs:
+        return None
+    return [min(xs), min(ys), max(xs), max(ys)]
+
 def acquire_layer(source: dict[str, Any], output_dir: Path, bbox: list[float] | None,
                   batch_size: int, timeout: int, pause: float) -> dict[str, Any]:
     url = source["layer_url"].rstrip("/")
@@ -67,10 +91,14 @@ def acquire_layer(source: dict[str, Any], output_dir: Path, bbox: list[float] | 
     features: list[dict[str, Any]] = []
     seen: set[str] = set()
     null_geometry = 0
+    stable_ids: set[str] = set()
+    requested_fields = source.get("out_fields") or ["*"]
+    if requested_fields != ["*"] and object_id_field.lower() not in {str(x).lower() for x in requested_fields}:
+        requested_fields = [object_id_field, *requested_fields]
     for offset in range(0, len(ids), batch_size):
         batch = ids[offset:offset + batch_size]
         params = {
-            "objectIds": ",".join(map(str, batch)), "outFields": "*",
+            "objectIds": ",".join(map(str, batch)), "outFields": ",".join(requested_fields),
             "returnGeometry": "true", "outSR": "4326", "f": "geojson"
         }
         if bbox:
@@ -94,8 +122,11 @@ def acquire_layer(source: dict[str, Any], output_dir: Path, bbox: list[float] | 
             seen.add(key); got.add(str(oid))
             if feature.get("geometry") is None:
                 null_geometry += 1
-            source_global = props.get("GlobalID") or props.get("globalid")
+            source_global = next((value for key, value in props.items() if key.lower() == "globalid" and value), None)
             stable_source_id = str(source_global or oid)
+            if stable_source_id in stable_ids:
+                raise AcquireError(f"{source['id']}: duplicate stable source identity {stable_source_id}")
+            stable_ids.add(stable_source_id)
             feature["id"] = f"ao:source:{source['id']}:{stable_source_id}"
             feature["properties"] = {
                 **props,
@@ -127,8 +158,13 @@ def acquire_layer(source: dict[str, Any], output_dir: Path, bbox: list[float] | 
     manifest = {
         "dataset_id": source["id"], "title": source["title"],
         "publisher": source["publisher"], "source_url": source["layer_url"],
-        "source_service_item_id": before.get("serviceItemId"),
+        "source_service_item_id": source.get("item_id") or before.get("serviceItemId"),
+        "source_item_url": source.get("item_url"),
         "source_layer_id": source.get("layer_id"),
+        "source_authoritative": source.get("source_authoritative"),
+        "source_access_information": source.get("source_access_information"),
+        "source_license_info": source.get("source_license_info"),
+        "source_modified_at": source.get("source_modified_at"),
         "source_spatial_reference": before.get("extent",{}).get("spatialReference") or before.get("sourceSpatialReference") or before.get("spatialReference"),
         "output_crs": "EPSG:4326", "retrieved_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
         "source_last_edit_date": before.get("lastEditDate"),
@@ -136,7 +172,9 @@ def acquire_layer(source: dict[str, Any], output_dir: Path, bbox: list[float] | 
         "source_feature_id_count": len(ids), "downloaded_feature_count": len(features),
         "unique_source_id_count": len(seen), "null_geometry_count": null_geometry,
         "missing_source_ids": 0, "pagination_complete": True,
-        "query_bbox_wgs84": bbox, "feature_sha256": hashlib.sha256(output_bytes).hexdigest(),
+        "query_bbox_wgs84": bbox, "downloaded_geometry_extent_wgs84": geometry_extent(features),
+        "source_fields_requested": requested_fields,
+        "feature_sha256": hashlib.sha256(output_bytes).hexdigest(),
         "status": "staging_source_evidence_not_world_state",
         "geometry_role": source["geometry_role"],
         "limitations": source.get("limitations", [])

@@ -1,39 +1,73 @@
 # Houston GIS Source Manifest — Working Register
 
-**Status:** candidate inventory; coverage and suitability must be checked per target AO boundary.
-**Rule:** source availability is not the same as verified coverage or accepted world truth.
+**Status:** source inventory for AO staging conversion. This is not an approval of any feature as canonical AO world state.
+**Rule:** source availability is not verified coverage, legal access, physical connectivity, or accepted world truth. Preserve each source's own status and uncertainty.
 
-| Dataset | Candidate source | Geometry / value | Current confidence and caveats |
+## Registered ArcGIS sources
+
+The machine-readable catalog is `houston-source-catalog.json`; the acquisition entry point is `../scripts/geography/acquire_houston_ao_sources.py`. The catalog currently contains 36 feature-layer entries across these groups.
+
+| Group | Source layers | AO staging use | Important limitation |
 |---|---|---|---|
-| City limits | City of Houston public boundary view | Municipal boundary reference | FULL/LIMITED categories exposed; public view omits Pending polygons; not survey-grade |
-| Parcels | Harris Central Appraisal District GIS downloads: https://hcad.org/pdata/pdata-gis-downloads.html | Tax parcel polygons | Current and historical snapshots published; select target extent and snapshot, verify licence and fields |
-| City cadastral parcels | City of Houston Cadastral MapServer layer 0: https://mycity2.houstontx.gov/gisweb02/rest/services/HoustonMap/Cadastral/MapServer/0 | Parcel polygons and parcel attributes | Large broad-area layer; clip/filter to AO boundary and verify count/coverage; earlier bbox count response was ambiguous |
-| Road centerlines | City road centerline FeatureServer layer 0: https://services.arcgis.com/NummVBqZSIJKUeVR/arcgis/rest/services/COH_RoadCenterline/FeatureServer/0 | Lines, names, class, address ranges, one-way and other attributes | Candidate for graph construction, not physical road surfaces; service-wide count does not prove target coverage |
-| H-GAC 2018 footprints | https://services1.arcgis.com/euMKmvUChvyJxWq2/arcgis/rest/services/LiDAR_Building_Footprints_2018_gdb/FeatureServer | LiDAR-derived building footprint polygons | Existing inspected subset: 523 features, 486 distinct parcel references, 0 invalid geometries in inspected subset; subset covers only about 10.9 × 7.6 miles and is not citywide; misclassification/omissions possible |
-| City/Harris 3D footprints | https://services6.arcgis.com/2yF1BNcZtu43QAOt/arcgis/rest/services/BldgDept3D_new_Jul282026/FeatureServer | Footprints with candidate height/address/parcel fields | Small downtown-focused extent; useful for pilot, not citywide coverage |
-| Downtown tunnel system | https://www.arcgis.com/home/item.html?id=bcae89f9f17447a795bbba2f55d3650c | Tunnel businesses, access points, ingress/egress, paths, access restrictions, connected buildings | High-value vertical network source; validate current layer schema and feature coverage before import |
-| H-GAC / official road nodes and links | City GIS Nodes layer 10 and Links layer 12; see City open data portal https://houston-mycity.opendata.arcgis.com/ | Road topology candidates | Use to audit crossings/connectivity; crossing candidates are not automatically at-grade connections |
-| Elevation / terrain | To be selected from authoritative local elevation/LiDAR sources | Raster/point elevation and terrain | Source, vertical datum, resolution and coverage still require verification |
-| Sidewalks / road surfaces | To be selected from authoritative city/county sources | Polygon surfaces | Not yet verified as complete in the current source inventory |
-| Entrances / floors / basements | Building-specific records and tunnel access datasets | Points, levels and connections | Do not infer from footprints; source coverage remains incomplete |
+| Municipal boundary | City of Houston City Limits View (FeatureServer layer 0) | Municipal boundary candidate | Public view omits pending annexation polygons; not a legal survey |
+| Parcels | City of Houston Cadastral Parcels (MapServer layer 0) | Parcel polygons and selected land-use/address attributes | Tax/cadastral evidence only; output whitelist excludes owner and mailing-contact fields |
+| Addresses | Houston Site Addresses (FeatureServer layer 0) | Address point candidates | Includes multiple address statuses and types; not every point is a building entrance |
+| Roads | City of Houston COH Road Centerline (FeatureServer layer 0) | Road centerline candidates | Not road-surface polygons, sidewalks, or approved movement edges |
+| Sidewalks | Houston Public Works Sidewalks HPW KL (FeatureServer layer 0) | Sidewalk centerline candidates | City-maintained roadway inventory, polyline geometry; not complete sidewalk surface coverage or verified passability |
+| Bikeways | City of Houston Bikeways (FeatureServer layer 0) | Bikeway candidates | Existing and proposed facilities are combined; retain status and do not automatically route |
+| Trails | Houston Parks Board shared-use/trails layers 0–4 | Existing, proposed, conceptual, and unofficial trail candidates | Each status is a separate source collection; none is automatically routing-approved |
+| Hydrography | H-GAC Hydrography polygons and Major Rivers lines | Waterbody and watercourse candidates | Not a depth, navigability, flood, bridge, or crossing model |
+| Transit | H-GAC Regional Public Transit Agencies layers: METRO bus stops/routes, rail lines/stations, transit centers, park-and-ride, METRO service area, regional service areas | Transit stops, route geometry, facilities, and service-area candidates | GIS snapshots do not provide live schedules, operating status, or guaranteed current service |
+| Emergency-service geography | City of Houston Fire Districts layer 11; older Fire Stations point layer 7 | Administrative service-area and facility candidates | Does not prove staffing, dispatch rules, station response times, current operational status, or hospital coverage |
+| Flood hazard | FEMA NFHL H-GAC 8-County 2026 layer 0 | Flood-hazard polygon candidates | Not a real-time flood forecast; retain zone codes and effective dates |
+| Transportation safety | City Vision Zero 2022 high-injury, bicycle-dangerous, and pedestrian-dangerous road layers | Safety-risk overlay candidates | 2022 network snapshot; not a current crash feed and does not automatically block movement |
+| Historic geography | City Historic Sites and Landmarks layer 6 | Historic-site point candidates | Point locations are not full property boundaries; preserve designation attributes |
+| Buildings | H-GAC 2018 LiDAR footprints; City/Harris 3D building footprints | Building footprint candidates and selected source height/address metadata | H-GAC footprint acquisition previously inspected only a subset of 523 features across 486 parcel references; that subset is not citywide and may contain classification errors |
+| Downtown tunnels | City of Houston Downtown Tunnel System layers 0–5 | Tunnel businesses, access points, portal candidates, underground paths, restriction-area candidates, and tunnel-associated building footprints | No automatic portal-to-building or portal-to-street connection; preserve underground level as a semantic layer, not surveyed Z |
 
-## Coverage facts already established
+### Source identity and conversion
 
-- An earlier road-centerline extraction contained 83,760 features, 11 with null geometry. An endpoint-derived candidate graph had 84,267 edges, 63,923 nodes and 607 connected components, with a largest component of 58,010 nodes. This is an unvalidated topology result, not a production navigation graph.
-- An earlier road-crossing audit identified 2,672 possible interior crossings using a 2.0 m endpoint exclusion threshold. These are candidates only; grade separation and at-grade connectivity require validation.
-- The H-GAC footprint subset is partial. Its feature count must never be represented as Houston-wide coverage.
-- Parcel references found alongside footprints are not equivalent to acquired parcel polygons.
-- A service's total feature count or advertised bounding box is not a coverage proof. Record actual tile coverage, successful pagination, null/invalid geometry counts and clipping results for every import run.
+- Each feature receives an AO staging ID containing the catalog dataset ID and a stable source GlobalID when available, otherwise the source object ID.
+- Source attributes are preserved by default. Catalog field whitelists are used where fields are unnecessary or inappropriate for AO use, including parcel owner/mailing-contact fields and trail project contact fields.
+- ArcGIS geometry is requested in WGS84 (EPSG:4326). Original source spatial-reference metadata, item attribution/licence fields, source modification date, query extent, downloaded geometry extent, feature counts, null-geometry counts, and output SHA-256 are recorded in manifests.
+- Acquisition uses object-ID enumeration and bounded object-ID batches. A run fails a layer if returned object IDs are missing/duplicated, stable identities collide, or source edit metadata changes during acquisition.
+- All output is marked `source_evidence_only` and `ao_kernel_approved=false`. No Kernel, WorldHeart, Supabase, or live-world writes occur.
 
-## Required fields for every future source registration
+## Sources still requiring a separate adapter or more evidence
 
-- publisher and dataset title;
-- exact service/item/layer URL and layer ID;
-- retrieval timestamp and source snapshot/version;
-- source CRS and vertical datum (if applicable);
-- licence/terms and attribution requirement;
-- target AO boundary and actual extracted coverage polygon;
-- feature count, null/invalid/duplicate counts and pagination status;
-- raw snapshot checksum;
-- transformation pipeline/version;
-- confidence/status and known omissions.
+| Dataset | Current finding | Next step |
+|---|---|---|
+| HCAD tax parcel shapefile | Official quarterly GIS ZIP at https://download.hcad.org/data/GIS/Parcels.zip; HCAD GIS download page last updated 2026-10-05 | Add a dedicated ZIP/shapefile ingestion adapter after capturing snapshot date, CRS, schema, licence and checksum |
+| H-GAC 2024 LiDAR/DEM | Official 2024 LiDAR is available through H-GAC's purchase portal; listed price is $100 per tile for 1–50 tiles | Confirm purchase/licence and tile index before acquisition; verify horizontal CRS, vertical datum, units, resolution and deliverables |
+| Road nodes and links | Prior working notes refer to City GIS Nodes layer 10 and Links layer 12, but the exact service and schemas have not yet been confirmed | Locate and inspect the actual layer endpoints; do not create links from nearest-point heuristics |
+| Road-surface polygons | No verified complete surface layer registered | Search City/Harris sources; do not substitute road centerlines |
+| Drainage assets, stormwater network, culverts and bridges | Appropriate City Public Works / Harris County Flood Control source layers not yet verified | Locate the relevant asset layers and preserve their different physical meanings |
+| Building entrances, floors and basements | No complete authoritative source | Keep address points and tunnel portals as candidates; add verified building-specific records separately |
+
+## Important source caveats
+
+- City limits public view excludes pending annexation polygons. Keep boundary feature categories, effective dates and legal-document references intact; do not silently fill gaps.
+- City cadastral parcels expose tax and assessment fields. The AO conversion whitelist deliberately excludes owner names and mailing contact fields.
+- City site-address records contain statuses such as permanent, preliminary, abandoned, reverse-geocoded and utility addresses. Keep those statuses; do not treat all address points as entrances.
+- The City sidewalk inventory is a polyline asset inventory. It does not establish full sidewalk width/surface geometry, crossings, curb ramps, legal access, or current passability.
+- The Houston Parks Board trail source separates existing, proposed, conceptual, and unofficial layers. These must remain distinct in AO.
+- The H-GAC hydrography layer includes polygon waterbodies and major-river centerlines. Neither proves depth, bank geometry, seasonal flow, or traversability.
+- Transit source geometry is not a live GTFS feed. Service, schedules and stops may change independently.
+- Tunnel ingress/egress sample records previously inspected had null building and address fields. Keep them as unlinked portal candidates.
+- H-GAC 2018 building footprint data previously inspected covered only a partial area; do not label it a citywide building inventory.
+
+## Retracted topology figures
+
+Earlier draft notes contained road extraction and graph counts (including 83,760 road features, 84,267 edges, 63,923 nodes, 607 components, and 2,672 crossing candidates). Those figures were explicitly retracted and are not accepted measurements. Do not use them in AO design, import manifests, or claims. Recompute from a fresh, checksummed source snapshot before reporting any road-graph metrics.
+
+## Required fields for every source registration
+
+- publisher, dataset title, ArcGIS item/service/layer URL and layer ID;
+- source item ID, licence/terms and attribution requirements;
+- retrieval timestamp, source item modification date, and service edit metadata;
+- source CRS and vertical datum when applicable;
+- AO target boundary and query bbox;
+- source feature count, downloaded feature count, null-geometry count, duplicate/missing-ID checks and pagination status;
+- actual downloaded geometry extent and raw output checksum;
+- output field whitelist (when used), geometry role, vertical layer, confidence and known omissions;
+- transformation pipeline/version and approval state.

@@ -69,6 +69,26 @@ class HoustonMovementPreviewTests(unittest.TestCase):
         self.assertNotIn("connectorState", preview)
         self.assertIn("pedestrian links remain unconnected without an approved graph edge", preview)
 
+    def test_ao_source_layer_preview_loads_converted_featurecollections_read_only(self):
+        self.assertIn('id="aoSourceFiles"', self.html)
+        self.assertIn('multiple', self.html[self.html.index('id="aoSourceFiles"')-80:self.html.index('id="aoSourceFiles"')+160])
+        self.assertIn('id="clearAOSources"', self.html)
+        self.assertIn('id="aoSourceStats"', self.html)
+        self.assertIn("function renderAOSourceOverlay()", self.script)
+        self.assertIn("L.geoJSON({type:'FeatureCollection',features:collection.features}", self.script)
+        self.assertIn("ao_feature_class", self.script)
+        self.assertIn("read-only GIS evidence", self.html)
+
+    def test_source_overlay_does_not_promote_features_into_movement_or_world_state(self):
+        start = self.script.index("const sourcePalette=")
+        end = self.script.index("function renderAddressBoxPreview()", start)
+        overlay = self.script[start:end]
+        self.assertNotIn("fetch(", overlay)
+        self.assertNotIn("roadBuild(", overlay)
+        self.assertNotIn("routingApproved:true", overlay)
+        self.assertNotIn("supabase", overlay.lower())
+        self.assertIn("aoSourceLayer.clearLayers()", overlay)
+
     def test_selection_changes_clear_stale_route_preview(self):
         self.assertIn("function selectBuilding(bid){clearMovementPreview();", self.script)
         self.assertIn("function clearMovementPreview", self.script)

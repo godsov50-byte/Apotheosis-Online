@@ -1,0 +1,92 @@
+name: Houston AO source snapshot
+
+on:
+  workflow_dispatch:
+    inputs:
+      bbox_wgs84:
+        description: "WGS84 extent: west,south,east,north. Default is a bounded downtown Houston pilot."
+        required: true
+        type: string
+        default: "-95.40,29.73,-95.33,29.80"
+      source_ids:
+        description: "Optional comma-separated catalog IDs. Leave blank to acquire all registered layers."
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  acquire-houston-sources:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Acquire registered GIS sources into AO staging GeoJSON
+        id: acquire
+        continue-on-error: true
+        env:
+          BBOX_WGS84: ${{ inputs.bbox_wgs84 }}
+          SOURCE_IDS: ${{ inputs.source_ids }}
+        run: |
+          args=()
+          if [[ -n "$SOURCE_IDS" ]]; then
+            IFS=',' read -r -a ids <<< "$SOURCE_IDS"
+            for raw_id in "${ids[@]}"; do
+              source_id="$(printf '%s' "$raw_id" | xargs)"
+              if [[ -n "$source_id" ]]; then
+                args+=(--source "$source_id")
+              fi
+            done
+          fi
+          python scripts/geography/acquire_houston_ao_sources.py \
+            --bbox "$BBOX_WGS84" \
+            --output-dir build/houston-ao-source-data \
+            "${args[@]}"
+
+      - name: Summarize source acquisition
+        if: always()
+        run: |
+          if [[ -f build/houston-ao-source-data/run-manifest.json ]]; then
+            python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path("build/houston-ao-source-data/run-manifest.json")
+          data = json.loads(p.read_text())
+          done = data.get("completed", [])
+          failed = data.get("failures", [])
+          summary = [
+              "## Houston AO GIS source acquisition",
+              f"- Bounding box: `{data.get('bbox_wgs84')}`",
+              f"- Completed layers: **{len(done)}**",
+              f"- Failed layers: **{len(failed)}**",
+              "",
+          ]
+          summary += [f"- ✓ {item.get('dataset_id')}: {item.get('downloaded_feature_count')} features" for item in done]
+          summary += [f"- ✗ {item.get('dataset_id')}: {item.get('error')}" for item in failed]
+          Path(__import__("os").environ["GITHUB_STEP_SUMMARY"]).write_text("\n".join(summary) + "\n")
+          PY
+          else
+            echo "No run manifest was produced. Check the acquisition step logs." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload AO staging source bundle
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: houston-ao-source-data
+          path: build/houston-ao-source-data/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Report partial acquisition failure
+        if: steps.acquire.outcome == 'failure'
+        run: exit 1
