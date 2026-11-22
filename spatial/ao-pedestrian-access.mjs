@@ -10,7 +10,7 @@ function validRecord(record, type) {
   if (!record.id || !record.from || !record.to) throw new TypeError(`Missing ${type} identity or endpoints`);
   if (!Array.isArray(record.geometry) || record.geometry.length < 2) throw new TypeError(`Invalid ${type} geometry`);
   if (record.geometry.some(p => !p || !Number.isFinite(p.x) || !Number.isFinite(p.y) || !Number.isFinite(p.z ?? 0))) {
-    throw new TypeTypeError(`Non-finite ${type} geometry`);
+    throw new TypeError(`Non-finite ${type} geometry`);
   }
 }
 function edgeEligible(record) {
