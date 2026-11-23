@@ -10,7 +10,7 @@
   const elementalBonus=elementalActive?AXIS_BONUSES.elemental:0;
   const weaponBonus=weaponActive?AXIS_BONUSES.weaponType:0;
   const qualityBonus=quality>0?(quality-1)*AXIS_BONUSES.qualityPerLevel:0;
-  const totalBonus=elementalBonus+weaponBonus+qualityBonus;
+  const totalBonus=Math.round((elementalBonus+weaponBonus+qualityBonus)*10000)/10000;
   const bonusDamage=Math.floor(base*totalBonus);
   return {baseDamage:base,elementalAxis:{active:elementalActive,bonus:elementalBonus},weaponTypeAxis:{active:weaponActive,bonus:weaponBonus},qualityAxis:{quality,bonus:qualityBonus},totalBonus,bonusDamage,finalDamage:base+bonusDamage};
  }
