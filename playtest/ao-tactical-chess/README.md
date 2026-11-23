@@ -50,3 +50,8 @@ All changes are isolated on the feature branch until reviewed and merged.
 ## Elemental affinity / Break prototype
 
 The test resolver is `engine/elemental-break.js`. Elemental techniques are selected from the board control and resistance-adjusted damage applies to targets with profiles. Racial affinity matches can damage that element's integrity (capped by remaining integrity), which contributes to Break buildup. Break threshold is a configurable placeholder. The White King test profile demonstrates Fire/Earth affinity and Fire resistance only; it is **test-only, not a race assignment or canon**. Run tests with `node tests/elemental-break.test.js` from this directory. 
+
+
+### Racial elemental synergy prototype
+
+The separate module `engine/racial-elemental-synergy.js` models racial alignment as an advantage rather than a restriction: aligned elemental techniques gain 50% more technique XP (10 base + 5 aligned bonus) and +10% damage in this playtest, rounded down. Non-aligned elements remain usable and earn baseline XP. Elemental technique XP is tracked per element; mastery is derived from accumulated XP using a placeholder quadratic threshold. The White King test profile demonstrates Fire alignment only and is **test-only, not a canon race**. Values are provisional and should be balanced before canon approval. Run the tests with `node engine/racial-elemental-synergy.test.js`.
