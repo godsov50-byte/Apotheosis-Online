@@ -7,6 +7,7 @@ const clone = value => structuredClone(value);
 const num = (v, d = 0) => Number.isFinite(v) ? v : d;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 import { resolveEffectBatch } from "./effect-pipeline.mjs";
+import { skillProgress } from "./skill-pipeline.mjs";
 const ITEM_CATEGORIES = Object.freeze(["Regular Item", "Heirloom", "Conceptual Heirloom", "Cursed Conceptual Heirloom"]);
 const key = p => `${p.x},${p.y},${p.z || 0}`;
 const fail = (reason, extra = {}) => ({ ok: false, reason, ...extra });
@@ -138,7 +139,8 @@ function validateRecipe(field, intent, registry) {
   if (recipe.raceRequirements.length && !recipe.raceRequirements.includes(actor.race)) return fail("race_requirement");
   if (recipe.tierRequirement != null && num(actor.tier, Infinity) > recipe.tierRequirement) return fail("tier_requirement");
   if (recipe.skill) {
-    const level = num(actor.skills?.[recipe.skill.id]?.effectiveLevel,
+    const progress = skillProgress(actor, recipe.skill.id);
+    const level = progress.ok ? progress.effectiveLevel : num(actor.skills?.[recipe.skill.id]?.effectiveLevel,
       num(actor.skills?.[recipe.skill.id]?.learnedLevel, num(actor.skills?.[recipe.skill.id]?.level)));
     if (level < num(recipe.skill.level)) return fail("crafting_skill_requirement", { required: recipe.skill.level, actual: level });
   }
