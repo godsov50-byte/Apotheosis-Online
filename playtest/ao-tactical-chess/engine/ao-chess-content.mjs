@@ -26,7 +26,8 @@ export const AO_PROVISIONAL_EQUIPMENT = Object.freeze({
  ],
  recipes:[
   {id:"forge-field-sabre",name:"Forge Field-Iron Sabre",ingredients:[{materialId:"field-iron",quantity:2}],output:{itemId:"field-iron-sabre"},knownByDefault:true,skill:{id:"SK20",level:1}},
-  {id:"stitch-traveler-coat",name:"Stitch Traveler Coat",ingredients:[{materialId:"beast-hide",quantity:2}],output:{itemId:"hide-traveler-coat"},knownByDefault:true,skill:{id:"SK20",level:1}},\n  {id:"forge-field-buckler",name:"Forge Field-Iron Buckler",ingredients:[{materialId:"field-iron",quantity:1}],output:{itemId:"field-iron-buckler"},knownByDefault:true,skill:{id:"SK20",level:1}}
+  {id:"stitch-traveler-coat",name:"Stitch Traveler Coat",ingredients:[{materialId:"beast-hide",quantity:2}],output:{itemId:"hide-traveler-coat"},knownByDefault:true,skill:{id:"SK20",level:1}},
+  {id:"forge-field-buckler",name:"Forge Field-Iron Buckler",ingredients:[{materialId:"field-iron",quantity:1}],output:{itemId:"field-iron-buckler"},knownByDefault:true,skill:{id:"SK20",level:1}}
  ]
 });
 export const AO_PROVISIONAL_EFFECTS = Object.freeze([
