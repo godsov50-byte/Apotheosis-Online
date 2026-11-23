@@ -7,15 +7,15 @@ const registry = {
   materials: { hide: { id: "hide" } },
   items: {},
   techniqueFragments: {
-    ember: { id: "ember", name: "Ember Essence-Knowledge", traits: ["fire", "beast", "combustion"] },
-    scale: { id: "scale", name: "Drake Scale Memory", traits: ["dragon", "defense"] }
+    ember: { id: "ember", name: "Ember Essence-Knowledge", traits: ["fire", "beast", "combustion"], essence: { traits: ["fire", "beast"], potency: 72 }, knowledge: { traits: ["combustion", "heat-shaping"], potency: 68 } },
+    scale: { id: "scale", name: "Drake Scale Memory", traits: ["dragon", "defense"], essence: { traits: ["dragon"], potency: 90 }, knowledge: { traits: ["defense"], potency: 35 } }
   }
 };
 const techniques = {
   flame: {
     id: "flame", name: "Flame Art", tier: 9,
     progression: {
-      learningCosts: [{ fragmentId: "ember", quantity: 3, minimumQuality: 40, requiredTraits: ["fire"] }],
+      learningCosts: [{ fragmentId: "ember", quantity: 3, minimumQuality: 40, requiredTraits: ["fire"], requiredEssenceTraits: ["fire"], requiredKnowledgeTraits: ["combustion"], minimumEssencePotency: 60, minimumKnowledgePotency: 60 }],
       advancementCostsByCurrentTier: {
         "9": [{ fragmentId: "ember", quantity: 2 }],
         "8": [{ fragmentId: "ember", quantity: 3, minimumQuality: 50 }]
@@ -50,6 +50,8 @@ test("technique fragments collect as a distinct inventory type with provenance",
   assert.equal(stack.kind, "technique_fragment");
   assert.equal(stack.fragmentId, "ember");
   assert.equal(stack.quantity, 2);
+  assert.deepEqual(stack.essence.traits, ["fire", "beast"]);
+  assert.deepEqual(stack.knowledge.traits, ["combustion", "heat-shaping"]);
   assert.equal(stack.provenance.sourceId, "creature");
 });
 
@@ -106,4 +108,21 @@ test("balance simulation reports expected technique fragment yields and rates", 
   assert.equal(result.expectedTechniqueFragmentUnitsPerTrial, 2);
   assert.equal(result.techniqueFragmentDropRate, 1);
   assert.equal(result.fragmentsById.ember, 40);
+});
+
+test("fragment essence and knowledge must both match the technique", () => {
+  const wrongKnowledge = {
+    ...registry.techniqueFragments.ember,
+    knowledge: { traits: ["armor"], potency: 95 }
+  };
+  const field = { entities: { e: { id: "e", alive: true, techniques: [], inventory: [
+    { kind: "technique_fragment", fragmentId: "ember", quantity: 3, quality: { score: 90 } }
+  ] } } };
+  const result = Progression.learnTechniqueFromFragments(field, { actorId: "e", techniqueId: "flame" }, {
+    techniques, fragmentDefinitions: { ...registry.techniqueFragments, ember: wrongKnowledge }
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.reason, "fragment_knowledge_requirement");
+  assert.deepEqual(field.entities.e.techniques, []);
+  assert.equal(field.entities.e.inventory[0].quantity, 3);
 });
