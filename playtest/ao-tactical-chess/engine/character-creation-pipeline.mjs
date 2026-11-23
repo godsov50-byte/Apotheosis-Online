@@ -114,6 +114,17 @@ export function createRacialProfile(definition) {
     ancestries,rarityProfiles
   };
 }
+export function resolveStartingAttributePackage(entryPackage) {
+  if(!entryPackage?.id||!entryPackage.baseAttributes)return fail("starting_attribute_package_required");
+  const baseAttributes={};
+  for(const key of CORE_ATTRIBUTES){
+    const value=entryPackage.baseAttributes[key];
+    if(!Number.isInteger(value)||value<1)return fail("starting_attribute_package_invalid");
+    baseAttributes[key]=value;
+  }
+  return {ok:true,id:entryPackage.id,name:entryPackage.name||entryPackage.id,
+    baseAttributes,sourceRef:entryPackage.sourceRef||null,ruleVersion:entryPackage.ruleVersion||"starting-attributes-v1"};
+}
 export function createRacialRegistry(definitions = []) {
   const races = {};
   for (const definition of definitions) {
@@ -159,12 +170,12 @@ export function createEnvoyFromCreation(input, registry) {
   }
   const access=validateRacialStartingAccess(race,input.accessDecision,{ancestryId:ancestry?.id||null,subAncestryId:subAncestry?.id||null});
   if(!access.ok)return access;
-  const base = {};
-  for (const key of CORE_ATTRIBUTES) {
-    const value = input.baseAttributes?.[key];
-    if (!Number.isInteger(value) || value < 1) return fail("complete_base_attributes_required");
-    base[key] = value;
-  }
+  const startingPackage=resolveStartingAttributePackage(input.startingAttributePackage||{
+    id:input.baseAttributeSource||"explicit-entry-package",baseAttributes:input.baseAttributes,
+    sourceRef:input.baseAttributeSource||null
+  });
+  if(!startingPackage.ok)return startingPackage;
+  const base=clone(startingPackage.baseAttributes);
   if (!input.vitality || !Number.isFinite(input.vitality.base) || input.vitality.base<0 ||
       !Number.isFinite(input.vitality.perConstitution) || input.vitality.perConstitution<0 ||
       !Number.isFinite(input.vitality.racialHpFlat ?? 0)) return fail("explicit_vitality_rule_required");
@@ -211,7 +222,9 @@ export function createEnvoyFromCreation(input, registry) {
     inventory: clone(input.inventory || []), equipment: clone(input.equipment || {}),
     statuses: [], injuries: [], alive: true,
     creation: { ruleVersion: input.ruleVersion || "ao-racial-creation-v2", vitality: clone(input.vitality),
-      baseAttributeSource:input.baseAttributeSource||"approved-entry-package",
+      baseAttributeSource:startingPackage.sourceRef||input.baseAttributeSource||"explicit-entry-package",
+      startingAttributePackageId:startingPackage.id,
+      startingAttributeRuleVersion:startingPackage.ruleVersion,
       accessDecision:clone(input.accessDecision||null),
       racialLayerIds:{raceId:race.id,ancestryId:ancestry?.id||null,subAncestryId:subAncestry?.id||null,rarityId:input.rarityId}}
   };
