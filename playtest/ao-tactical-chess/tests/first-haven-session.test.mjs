@@ -104,9 +104,9 @@ test("crafting requires proximity to the forge and consumes gathered materials a
   assert.equal(crafted.ok,true);
   assert.ok(crafted.state.field.entities[state.envoyId].inventory.some(item=>item.kind==="equipment"&&item.id==="field-iron-sabre"));
   const instance=crafted.state.field.entities[state.envoyId].inventory.find(item=>item.kind==="equipment");
-  const equipped=equipFirstHavenItem(crafted.state,instance.instanceId,"offhand");
+  const equipped=equipFirstHavenItem(crafted.state,instance.instanceId,"weapon");
   assert.equal(equipped.ok,true);
-  assert.equal(equipped.state.field.entities[state.envoyId].equipment.offhand.id,"field-iron-sabre");
+  assert.equal(equipped.state.field.entities[state.envoyId].equipment.weapon.id,"field-iron-sabre");
 });
 
 test("local save and load preserve encounter state",()=>{
