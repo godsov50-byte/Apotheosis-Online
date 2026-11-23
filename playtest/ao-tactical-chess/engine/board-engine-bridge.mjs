@@ -32,7 +32,9 @@ function assertBoardUnit(unit, width, height) {
   if (!Number.isInteger(unit.x) || !Number.isInteger(unit.y) || unit.x < 0 || unit.y < 0 || unit.x >= width || unit.y >= height) {
     throw new Error("board unit position is outside the battlefield");
   }
-  if (!Number.isFinite(unit.hp) || !Number.isFinite(unit.maxHp) || unit.maxHp <= 0) throw new Error("board unit HP is invalid");
+  const hpCurrent=Number.isFinite(unit.hp)?unit.hp:unit.hp?.current;
+  const hpMaximum=Number.isFinite(unit.maxHp)?unit.maxHp:unit.hp?.max;
+  if (!Number.isFinite(hpCurrent) || !Number.isFinite(hpMaximum) || hpMaximum <= 0) throw new Error("board unit HP is invalid");
 }
 
 export function createBoardField(units, { width = 8, height = 8, turn = "white", round = 1 } = {}) {
@@ -46,7 +48,8 @@ export function createBoardField(units, { width = 8, height = 8, turn = "white",
     if (ids.has(unit.id)) throw new Error("duplicate board unit id: " + unit.id);
     ids.add(unit.id);
     const affinity = unit.naturalAffinity || unit.affinity;
-    const affinities = affinity && !/unassigned|none assigned/i.test(affinity) ? [affinity] : [];
+    const affinities = [...new Set([...(unit.ea?.affinities || unit.affinities || (affinity ? [affinity] : []))])]
+      .filter(value=>typeof value==="string"&&!/unassigned|none assigned/i.test(value));
     const techniqueId = unit.techniqueId || (unit.technique ? techniqueIdFor(unit.technique) : null);
     const baseAttributes = clone(unit.baseAttributes || unit.stats || { ATT: 0 });
     const equipment = clone(unit.equipment || {});
@@ -56,17 +59,17 @@ export function createBoardField(units, { width = 8, height = 8, turn = "white",
       id: unit.id,
       name: unit.name,
       side: unit.side,
-      class: unit.cls,
-      tier: unit.tier,
+      class: unit.cls || unit.class,
+      tier: unit.characterTier ?? unit.tier,
       archetype: unit.archetype,
       position: { x: unit.x, y: unit.y, z: 0 },
       facing: unit.facing,
-      hp: unit.hp,
-      maxHp: unit.maxHp,
-      ap: finite(unit.ap, 8),
-      maxAp: finite(unit.apMax, 8),
-      ea: finite(unit.ea, 8),
-      maxEa: finite(unit.eaMax, 8),
+      hp: Number.isFinite(unit.hp)?unit.hp:unit.hp.current,
+      maxHp: Number.isFinite(unit.maxHp)?unit.maxHp:unit.hp.max,
+      ap: finite(unit.ap?.current ?? unit.ap, 8),
+      maxAp: finite(unit.apMax ?? unit.ap?.max, 8),
+      ea: finite(unit.ea?.current ?? unit.ea, 8),
+      maxEa: finite(unit.eaMax ?? unit.ea?.max, 8),
       affinities,
       techniques: [...new Set([...(unit.techniques || []), ...(techniqueId ? [techniqueId] : [])])],
       stats: baseAttributes,
@@ -74,21 +77,29 @@ export function createBoardField(units, { width = 8, height = 8, turn = "white",
       inventory: clone(unit.inventory || []),
       accuracy: finite(unit.atk),
       defense: {
-        AC: finite(unit.ac, 10),
-        DR: finite(unit.dr),
-        resistance: clone(unit.resistance || {}),
-        penetration: clone(unit.penetration || {})
+        AC: finite(unit.ac ?? unit.defense?.AC, 10),
+        DR: finite(unit.dr ?? unit.defense?.DR),
+        armor: finite(unit.defense?.armor),
+        resistance: clone(unit.resistance || unit.defense?.resistance || {}),
+        penetration: clone(unit.penetration || unit.defense?.penetration || {})
       },
       sourceRef: unit.sourceRef || null
     });
     entity.boardMotion = unit.pattern;
     entity.baseAttributes = baseAttributes;
-    entity.raceId = unit.raceId || null;
+    entity.raceId = unit.raceId || unit.race || null;
+    entity.raceName = unit.raceName || null;
+    entity.ancestryId = unit.ancestryId || null;
+    entity.subAncestryId = unit.subAncestryId || null;
     entity.racialRarityId = unit.racialRarityId || null;
     entity.racialAttributeModifiers = clone(unit.racialAttributeModifiers || {});
     entity.rarityAttributeModifiers = clone(unit.rarityAttributeModifiers || {});
     entity.racialModifiers = clone(unit.racialModifiers || {});
+    entity.raceModifiers = clone(unit.raceModifiers || {});
+    entity.ancestryModifiers = clone(unit.ancestryModifiers || {});
+    entity.subAncestryModifiers = clone(unit.subAncestryModifiers || {});
     entity.rarityModifiers = clone(unit.rarityModifiers || {});
+    entity.racialEffects = clone(unit.racialEffects || []);
     entity.naturalAffinity = unit.naturalAffinity || unit.affinity || null;
     entity.traits = clone(unit.traits || []);
     entity.racialTechniques = clone(unit.racialTechniques || []);
@@ -108,6 +119,13 @@ export function createBoardField(units, { width = 8, height = 8, turn = "white",
       [techniqueId]: { used: Math.max(0, maxTechniqueUses - currentTechniqueUses), cooldownRemaining: 0 }
     } : {};
     next = placeEntity(next, entity);
+    if(entity.racialEffects.length){
+      const initialized=resolveEffectBatch(next,{sourceId:entity.id,targetId:entity.id,
+        effects:entity.racialEffects,eventId:`racial-initialization:${entity.id}`,
+        context:{raceId:entity.raceId,ancestryId:entity.ancestryId,subAncestryId:entity.subAncestryId,rarityId:entity.racialRarityId}});
+      if(!initialized.ok)throw new Error("racial effect initialization failed: "+initialized.reason);
+      next=initialized.field;
+    }
   }
   return next;
 }
@@ -376,6 +394,7 @@ export function projectBoardUnits(boardUnits, field, { includeDefeated = false }
       y: entity.position.y,
       facing: entity.facing,
       hp: entity.hp.current,
+      maxHp: entity.hp.max,
       ap: entity.ap.current,
       ea: entity.ea.current,
       stats: resolveEffectiveAttributes(entity),
@@ -383,7 +402,12 @@ export function projectBoardUnits(boardUnits, field, { includeDefeated = false }
       skills: clone(entity.skills),
       equipment: clone(entity.equipment),
       raceId: entity.raceId,
+      raceName: entity.raceName,
+      ancestryId:entity.ancestryId,
+      subAncestryId:entity.subAncestryId,
       racialRarityId: entity.racialRarityId,
+      traits:clone(entity.traits||[]),
+      racialTechniques:clone(entity.racialTechniques||[]),
       racialModifiers: clone(entity.racialModifiers || {}),
       rarityModifiers: clone(entity.rarityModifiers || {}),
       traits: clone(entity.traits || []),
