@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AO Chess · Piece Arena</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1118;--panel:#131e29;--line:#304354;--gold:#d6b46c;--muted:#9aaaba;--ink:#edf2f7;--blue:#314d68;--red:#75413e}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#1b2c3a,var(--bg) 55%);color:var(--ink);font:14px system-ui,sans-serif}
+header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px}
+header b{letter-spacing:.13em;color:var(--gold)}header small{display:block;color:var(--muted);font-size:10px;letter-spacing:.12em;margin-top:4px}
+main{max-width:1240px;margin:auto;padding:16px;display:grid;grid-template-columns:minmax(320px,1.15fr) minmax(300px,.85fr);gap:14px}
+.panel{background:#111b25eF;border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:0 12px 35px #0004}
+.panelhead{padding:12px 15px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:center}
+h2{font-size:12px;letter-spacing:.13em;text-transform:uppercase;margin:0;color:var(--gold)}
+.boardwrap{padding:12px}.board{display:grid;grid-template-columns:repeat(8,1fr);width:100%;aspect-ratio:1;border:1px solid #667b8d;border-radius:6px;overflow:hidden}
+.cell{position:relative;display:grid;place-items:center;border:0;border-radius:0;padding:0;min-width:0;aspect-ratio:1;cursor:pointer;color:#fff}
+.cell.light{background:#b6b29f}.cell.dark{background:#536a78}.cell.selected{box-shadow:inset 0 0 0 3px #f3c969;z-index:1}
+.cell.move:after{content:"";position:absolute;width:22%;aspect-ratio:1;border-radius:50%;background:#173c2dba}
+.cell.target:after{content:"";position:absolute;inset:3px;border:3px solid #df7067;border-radius:4px}
+.token{width:78%;height:78%;border-radius:50%;display:grid;place-items:center;font-size:clamp(10px,2vw,19px);font-weight:700;border:2px solid #e4d2a8;background:radial-gradient(circle at 35% 25%,#5b7389,#152330 72%);box-shadow:0 2px 5px #0008;position:relative;z-index:1}
+.token.creature{border-color:#d28b80;background:radial-gradient(circle at 35% 25%,#8d574e,#26191c 72%)}
+.token span{font-size:8px;position:absolute;bottom:-10px;white-space:nowrap;text-shadow:0 1px 3px #000;color:white}
+.coord{position:absolute;top:1px;left:3px;font-size:8px;color:#1b2933a0;pointer-events:none}
+.controls{display:flex;gap:7px;flex-wrap:wrap;padding:0 12px 12px}
+button,select{background:#24384b;color:var(--ink);border:1px solid #486079;border-radius:7px;padding:8px 10px;font:inherit;font-size:11px;cursor:pointer}
+button:hover{border-color:var(--gold)}button:disabled{opacity:.35;cursor:not-allowed}
+button.primary{background:#5b4829;border-color:#a08048}button.active{outline:2px solid var(--gold)}
+.side{display:flex;flex-direction:column;gap:12px}.section{padding:12px 14px}.muted{color:var(--muted);font-size:11px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:10px 0}
+.stat{background:#0b141d;border:1px solid #293b4e;border-radius:7px;padding:7px}.stat b{display:block;font-size:15px}.stat span{font-size:9px;color:var(--muted)}
+.item{padding:8px 0;border-bottom:1px solid #263849;display:flex;justify-content:space-between;align-items:center;gap:8px}.item:last-child{border:0}.item small{display:block;color:var(--muted);font-size:10px}
+.log{max-height:180px;overflow:auto}.log p{margin:5px 0;padding:6px 0;border-bottom:1px solid #263849;font-size:11px}
+.status{padding:10px 12px;margin:0 12px 12px;border:1px solid #344b5c;background:#0c1721;border-radius:8px;color:#c7d4df;font-size:11px}
+@media(max-width:850px){main{grid-template-columns:1fr}.side{display:grid;grid-template-columns:1fr 1fr}.side .wide{grid-column:1/-1}}
+@media(max-width:560px){main{padding:8px;gap:8px}.side{display:flex}.boardwrap{padding:7px}.controls{padding:0 7px 8px}header{padding:12px}}
+</style>
+</head>
+<body>
+<header><div><b>APOTHEOSIS ONLINE</b><small>AO CHESS · PIECE ARENA</small></div><div class="muted">8 × 8 tactical board · playtest fixture</div></header>
+<main>
+<section class="panel">
+ <div class="panelhead"><h2>Combat Board</h2><span id="turn" class="muted">White turn</span></div>
+ <div class="boardwrap"><div id="board" class="board" role="grid" aria-label="AO Chess tactical board"></div></div>
+ <div class="controls">
+  <button id="moveMode" class="active">Move</button>
+  <button id="attackMode">Basic attack</button>
+  <button id="techMode">Use technique</button>
+  <button id="endTurn" class="primary">End turn · creature response</button>
+  <button id="reset">Reset match</button>
+ </div>
+ <p id="status" class="status">Select one of your pieces. Green squares are legal moves; red outlines are attack targets.</p>
+</section>
+<aside class="side">
+ <section class="panel wide"><div class="panelhead"><h2>Selected Piece</h2><span id="position" class="muted">—</span></div><div id="dossier" class="section muted">Select a piece to inspect it.</div></section>
+ <section class="panel"><div class="panelhead"><h2>Class Techniques</h2></div><div id="techniques" class="section muted">Select a class piece.</div></section>
+ <section class="panel"><div class="panelhead"><h2>Equipment</h2></div><div id="equipment" class="section muted">Select a piece.</div></section>
+ <section class="panel wide"><div class="panelhead"><h2>Combat Chronicle</h2></div><div id="log" class="section log"></div></section>
+</aside>
+</main>
+<script type="module">
+import {
+ AO_CHESS_CLASSES,createPieceCombatMatch,getPieceLegalMoves,getPieceAttackTargets,
+ movePiece,attackPiece,usePieceTechnique,equipPieceItem,unequipPieceItem,
+ resolveCreatureAction,endPieceSideTurn
+} from "./engine/piece-combat-controller.mjs";
+
+const $=id=>document.getElementById(id);
+const patterns=["King","Rook","Bishop","Knight","Queen","Knight","Rook","Bishop","King","Queen"];
+const classNames=AO_CHESS_CLASSES;
+const techniqueDefinitions=classNames.map(cls=>({
+ id:cls.toLowerCase()+"-practice-technique",
+ name:cls+" Practice Technique",
+ class:cls,
+ target:{type:"enemy"},
+ geometry:{kind:"range",minRange:1,range:3},
+ cost:{ap:1,ea:1},uses:6,cooldown:0,
+ effects:[{type:"damage",damageType:"physical",amount:6}]
+}));
+function makePiece(cls,index){
+ const x=index%5,y=index<5?7:6;
+ const id="envoy-"+cls.toLowerCase();
+ const item={kind:"equipment",id:"training-"+cls.toLowerCase()+"-weapon",
+  instanceId:"weapon-"+cls.toLowerCase(),name:"Training "+cls+" Weapon",
+  equipmentSlot:"weapon",state:"intact",compatibleClasses:[cls],
+  modifiers:{attackBonus:1,damageBonus:1},effects:[]};
+ return {id,name:cls+" Envoy",side:"white",x,y,cls,pattern:patterns[index],
+  stats:{STR:10,DEX:10,CON:10,INT:10,WIS:10,CHA:10,ATT:10},
+  hp:{current:30,max:30},ap:{current:6,max:6},ea:{current:6,max:6},
+  atk:2,techniques:[cls.toLowerCase()+"-practice-technique"],
+  techniqueSlots:[cls.toLowerCase()+"-practice-technique"],
+  inventory:[item],kind:"envoy"};
+}
+function makeCreature(index){
+ const x=index%5,y=index<5?0:1;
+ const id="creature-"+(index+1);
+ return {id,name:"Training Creature "+(index+1),side:"black",x,y,
+  pattern:["King","Knight","Rook","Bishop","Queen"][index%5],
+  kind:"creature",creatureType:"training-creature",
+  stats:{STR:8,DEX:8,CON:8,INT:8,WIS:8,CHA:8,ATT:8},
+  hp:{current:24,max:24},ap:{current:4,max:4},ea:{current:4,max:4},atk:1};
+}
+function newMatch(){
+ return createPieceCombatMatch({
+  pieces:[...classNames.map(makePiece),...Array.from({length:10},(_,i)=>makeCreature(i))],
+  width:8,height:8,activeSide:"white",techniqueDefinitions
+ });
+}
+let match=newMatch(),selectedId=null,mode="move";
+const setStatus=text=>{$("status").textContent=text;};
+const coord=p=>"abcdefgh"[p.x]+(8-p.y);
+const entities=()=>match.field.entities;
+function equippedBonus(piece,key){return Object.values(piece.equipment||{}).reduce((sum,item)=>sum+Number(item?.modifiers?.[key]||0),0);}
+function renderBoard(){
+ const board=$("board");board.replaceChildren();
+ const selected=entities()[selectedId];
+ const moves=selected?getPieceLegalMoves(match,selectedId):[];
+ const moveSet=new Set(moves.map(p=>p.x+","+p.y));
+ const targets=selected?getPieceAttackTargets(match,selectedId):[];
+ const targetSet=new Set(targets.map(id=>coord(entities()[id].position)));
+ for(let y=0;y<8;y++)for(let x=0;x<8;x++){
+  const cell=document.createElement("button");
+  cell.className="cell "+((x+y)%2?"dark":"light");
+  const square="abcdefgh"[x]+(8-y);cell.setAttribute("aria-label",square);
+  const occupant=Object.values(entities()).find(e=>e.alive&&e.position.x===x&&e.position.y===y);
+  if(selected?.position.x===x&&selected?.position.y===y)cell.classList.add("selected");
+  if(moveSet.has(x+","+y))cell.classList.add("move");
+  if(targetSet.has(square))cell.classList.add("target");
+  if(occupant){
+   const token=document.createElement("div");token.className="token"+(occupant.kind==="creature"?" creature":"");
+   token.textContent=occupant.kind==="creature"?"◈":occupant.class.slice(0,1);
+   const name=document.createElement("span");name.textContent=occupant.name;
+   token.append(name);cell.append(token);
+  }
+  if(x===0){const label=document.createElement("span");label.className="coord";label.textContent=8-y;cell.append(label);}
+  cell.addEventListener("click",()=>clickSquare(x,y));board.append(cell);
+ }
+ $("turn").textContent=match.field.activeSide==="white"?"Envoy side":"Creature side";
+}
+function renderDossier(){
+ const box=$("dossier"),piece=entities()[selectedId];box.replaceChildren();
+ if(!piece){box.textContent="Select one of your pieces or a creature.";return;}
+ $("position").textContent=coord(piece.position);
+ const identity=document.createElement("b");identity.textContent=piece.name;
+ const meta=document.createElement("p");meta.className="muted";
+ meta.textContent=(piece.class||"Creature")+" · "+piece.kind+" · "+piece.boardMotion+" movement · "+coord(piece.position);
+ box.append(identity,meta);
+ const stats=document.createElement("div");stats.className="stats";
+ [["HP",piece.hp.current+"/"+piece.hp.max],["AP",piece.ap.current],["EA",piece.ea.current],["Tier",piece.characterTier??"—"]].forEach(([label,value])=>{
+  const cell=document.createElement("div");cell.className="stat";
+  const b=document.createElement("b");b.textContent=value;
+  const s=document.createElement("span");s.textContent=label;cell.append(b,s);stats.append(cell);
+ });
+ box.append(stats);
+ const note=document.createElement("p");note.className="muted";
+ note.textContent="Class and movement pattern are separate. Position, equipment, and learned techniques belong to this individual piece.";
+ box.append(note);
+}
+function renderTechniques(){
+ const box=$("techniques");box.replaceChildren();const piece=entities()[selectedId];
+ if(!piece||piece.kind==="creature"){box.textContent="Select a class piece to see its learned techniques.";return;}
+ const ids=match.techniqueClasses[piece.class]||[];
+ const learned=ids.filter(id=>(piece.techniques||[]).includes(id));
+ if(!learned.length){box.textContent="No class technique is currently learned.";return;}
+ learned.forEach(id=>{
+  const definition=match.techniques[id],row=document.createElement("div");row.className="item";
+  const label=document.createElement("div"),name=document.createElement("b"),detail=document.createElement("small");
+  name.textContent=definition.name;detail.textContent="AP "+definition.cost.ap+" · EA "+definition.cost.ea+" · Range "+definition.geometry.range;
+  label.append(name,detail);const btn=document.createElement("button");btn.textContent="Select";
+  btn.disabled=piece.side!==match.field.activeSide;
+  btn.addEventListener("click",()=>{mode="technique";selectedTechnique=id;syncModes();setStatus("Technique selected. Click a legal enemy target.");});
+  row.append(label,btn);box.append(row);
+ });
+}
+function renderEquipment(){
+ const box=$("equipment");box.replaceChildren();const piece=entities()[selectedId];
+ if(!piece){box.textContent="Select a piece.";return;}
+ const inventory=(piece.inventory||[]).filter(item=>item.kind==="equipment");
+ inventory.forEach(item=>{
+  const row=document.createElement("div");row.className="item";
+  const label=document.createElement("div"),name=document.createElement("b"),detail=document.createElement("small");
+  name.textContent=item.name;detail.textContent=item.equipmentSlot+" · "+item.state;
+  label.append(name,detail);const btn=document.createElement("button");btn.textContent="Equip";
+  btn.disabled=piece.side!==match.field.activeSide;
+  btn.addEventListener("click",()=>apply(equipPieceItem(match,{pieceId:piece.id,instanceId:item.instanceId,slot:item.equipmentSlot}),"Equipment equipped."));
+  row.append(label,btn);box.append(row);
+ });
+ Object.entries(piece.equipment||{}).forEach(([slot,item])=>{
+  const row=document.createElement("div");row.className="item";
+  const label=document.createElement("span");label.textContent=slot+": "+item.name;
+  const btn=document.createElement("button");btn.textContent="Unequip";
+  btn.disabled=piece.side!==match.field.activeSide;
+  btn.addEventListener("click",()=>apply(unequipPieceItem(match,{pieceId:piece.id,slot}),"Equipment unequipped."));
+  row.append(label,btn);box.append(row);
+ });
+ if(!inventory.length&&!Object.keys(piece.equipment||{}).length)box.textContent="No equipment.";
+}
+function renderLog(){
+ const box=$("log");box.replaceChildren();
+ match.log.slice(-14).reverse().forEach(entry=>{
+  const p=document.createElement("p");
+  if(entry.type==="piece_moved")p.textContent=entry.pieceId+" moved to "+coord(entry.to);
+  else if(entry.type==="piece_attack")p.textContent=entry.attackerId+" attacked "+entry.targetId+" · "+(entry.hit?entry.damage+" damage":"miss");
+  else if(entry.type==="piece_technique")p.textContent=entry.actorId+" used "+entry.techniqueId;
+  else if(entry.type==="equipment_equipped")p.textContent=entry.pieceId+" equipped "+entry.instanceId;
+  else if(entry.type==="equipment_unequipped")p.textContent=entry.pieceId+" unequipped "+entry.slot;
+  else p.textContent=entry.type.replaceAll("_"," ");
+  box.append(p);
+ });
+}
+function render(){renderBoard();renderDossier();renderTechniques();renderEquipment();renderLog();}
+function syncModes(){
+ $("moveMode").classList.toggle("active",mode==="move");
+ $("attackMode").classList.toggle("active",mode==="attack");
+ $("techMode").classList.toggle("active",mode==="technique");
+}
+function apply(result,message){
+ if(!result.ok){setStatus("Action unavailable: "+String(result.reason).replaceAll("_"," "));return false;}
+ match=result.match;setStatus(message);render();return true;
+}
+let selectedTechnique=null;
+function clickSquare(x,y){
+ const occupant=Object.values(entities()).find(e=>e.alive&&e.position.x===x&&e.position.y===y);
+ if(occupant&&occupant.side===match.field.activeSide){
+  selectedId=occupant.id;mode="move";selectedTechnique=null;syncModes();render();return;
+ }
+ if(!selectedId){setStatus("Select one of your active-side pieces first.");return;}
+ const piece=entities()[selectedId];
+ if(!piece?.alive||piece.side!==match.field.activeSide){setStatus("That piece cannot act now.");return;}
+ if(occupant&&occupant.side!==piece.side){
+  if(mode==="technique"){
+   if(!selectedTechnique){setStatus("Select a learned class technique first.");return;}
+   const result=usePieceTechnique(match,{actorId:piece.id,techniqueId:selectedTechnique,targetId:occupant.id});
+   if(apply(result,"Technique resolved.")){mode="move";selectedTechnique=null;syncModes();}
+   return;
+  }
+  if(mode==="attack"||getPieceAttackTargets(match,piece.id).includes(occupant.id)){
+   const weaponBonus=equippedBonus(piece,"attackBonus");
+   const damageBonus=equippedBonus(piece,"damageBonus");
+   apply(attackPiece(match,{
+    attackerId:piece.id,targetId:occupant.id,roll:Math.floor(Math.random()*20)+1,
+    damagePackets:[{type:"physical",amount:Math.max(1,Math.floor(Math.random()*6)+1+damageBonus)}],
+    attackBonus:weaponBonus
+   }),"Attack resolved.");
+   return;
+  }
+ }
+ if(mode==="technique"){setStatus("Choose an enemy target in the technique's range.");return;}
+ const moved=movePiece(match,{pieceId:selectedId,to:{x,y}});
+ apply(moved,"Piece moved to "+coord({x,y})+".");
+}
+function creatureResponse(){
+ match=endPieceSideTurn(match,"black");
+ const ids=match.pieceIds.filter(id=>entities()[id]?.kind==="creature"&&entities()[id].alive);
+ for(const id of ids){
+  const result=resolveCreatureAction(match,{creatureId:id,roll:Math.floor(Math.random()*20)+1,
+   damagePackets:[{type:"physical",amount:Math.floor(Math.random()*4)+1}]});
+  if(result.ok)match=result.match;
+ }
+ match=endPieceSideTurn(match,"white");selectedId=null;selectedTechnique=null;mode="move";syncModes();
+ setStatus("Creature response complete. Envoy side to move.");render();
+}
+$("moveMode").addEventListener("click",()=>{mode="move";selectedTechnique=null;syncModes();setStatus("Move mode: select a highlighted legal square.");});
+$("attackMode").addEventListener("click",()=>{mode="attack";selectedTechnique=null;syncModes();setStatus("Attack mode: click an enemy in this piece's attack geometry.");});
+$("techMode").addEventListener("click",()=>{mode="technique";syncModes();setStatus("Select a learned class technique, then click an enemy in range.");});
+$("endTurn").addEventListener("click",()=>{if(match.field.activeSide!=="white")return;creatureResponse();});
+$("reset").addEventListener("click",()=>{match=newMatch();selectedId=null;selectedTechnique=null;mode="move";syncModes();setStatus("New AO Chess training match.");render();});
+render();
+</script>
+</body>
+</html>
