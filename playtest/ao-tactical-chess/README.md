@@ -64,7 +64,7 @@ Unit records accept an optional `portraitUrl` for a character-specific portrait.
 
 ## First Haven playable loop
 
-Open `first-haven.html` in a modern browser. This is the new 16×16 First Haven encounter page; it is separate from the older 8×8 two-side prototype.
+Open `first-haven.html` in a modern browser, or use the published route `/first-haven/` after the Pages deployment runs. This is the new 16×16 First Haven encounter page; it is separate from the older 8×8 two-side prototype.
 
 The page generates one Tier 9 Envoy and one Tier 9 creature, then connects:
 - tactical movement, basic attacks, Guard Break, and a creature response turn through the board engine bridge;
