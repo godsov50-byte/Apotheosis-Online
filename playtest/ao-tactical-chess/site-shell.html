@@ -45,7 +45,7 @@ footer{margin-top:24px;color:#718397;font-size:10px}
   <div class="navlabel">Tactical workspace</div>
   <nav class="nav" id="navigation">
    <button type="button" data-view="battlefield" aria-current="page"><span class="navicon">▦</span>Battlefield</button>
-   <button type="button" data-view="envoys"><span class="navicon">♙</span>Envoys</button>
+   <button type="button" data-view="envoys"><span class="navicon">♙</span>Envoys</button>\n   <button type="button" data-view="classes"><span class="navicon">✦</span>Classes</button>
    <button type="button" data-view="session"><span class="navicon">◷</span>Session</button>
    <button type="button" data-view="chronicle"><span class="navicon">▤</span>Chronicle</button>
    <button type="button" data-view="inventory"><span class="navicon">◇</span>Inventory</button>
@@ -65,7 +65,28 @@ footer{margin-top:24px;color:#718397;font-size:10px}
    <div class="panel empty-state"><div class="emblem">♙</div><h2>No connected Envoy registry</h2><p>The current board contains playtest tokens and temporary profiles. A canonical Envoy roster, race/ancestry records, and approved Tier 9 baseline profiles have not yet been connected to this workspace.</p></div>
    <div class="cards"><article class="panel info"><div class="symbol">01</div><h3>Identity</h3><p>Name, title, race, ancestry, sub-ancestry, sex, and age.</p></article><article class="panel info"><div class="symbol">02</div><h3>Classification</h3><p>Tier, class, Archetype, nature/type, subtype, and scale.</p></article><article class="panel info"><div class="symbol">03</div><h3>Capabilities</h3><p>Attributes, skills, techniques, affinities, proficiencies, and reactions.</p></article></div>
   </section>
-  <section class="view" id="view-session">
+  <section class="view" id="view-classes">
+   <div class="pagehead"><div><div class="eyebrow">Fate-style class registry · Basic roster</div><h1>Ten Classes</h1><p>Foundational combat roles. Class defines a combat specialization—not race, Tier, Archetype, or weapon proficiency.</p></div></div>
+   <div class="callout">This is the basic class roster. These role descriptions are orientation text for the UI, not finalized mechanics, stat modifiers, class restrictions, or automatic weaknesses.</div>
+   <div class="cards">
+    <article class="panel info"><div class="symbol">⚔</div><h3>Saber</h3><p>Versatile close-range combatant with balanced offense, defense, and reliable weapon engagement.</p><span class="pill gold">Frontline · Balanced</span></article>
+    <article class="panel info"><div class="symbol">⌖</div><h3>Archer</h3><p>Ranged specialist focused on precision, distance control, sightlines, and punishing exposed targets.</p><span class="pill">Range · Precision</span></article>
+    <article class="panel info"><div class="symbol">♜</div><h3>Lancer</h3><p>Reach fighter that uses linear threat, spacing, and engagement control to keep opponents at bay.</p><span class="pill">Reach · Control</span></article>
+    <article class="panel info"><div class="symbol">♞</div><h3>Rider</h3><p>Mobile combatant built around movement, mounted or vehicle capability, repositioning, and momentum.</p><span class="pill">Mobility · Tempo</span></article>
+    <article class="panel info"><div class="symbol">✧</div><h3>Caster</h3><p>Technique-oriented specialist with an emphasis on thaumaturgy, affinity use, and effects beyond ordinary weapon reach.</p><span class="pill">Thaumaturgy · Utility</span></article>
+    <article class="panel info"><div class="symbol">◈</div><h3>Assassin</h3><p>Stealth and precision specialist who exploits openings, concealment, timing, and vulnerable targets.</p><span class="pill">Stealth · Precision</span></article>
+    <article class="panel info"><div class="symbol">⚑</div><h3>Berserker</h3><p>A high-pressure fighter that commits to forceful engagement, aggression, and overwhelming offense.</p><span class="pill">Pressure · Force</span></article>
+    <article class="panel info"><div class="symbol">▣</div><h3>Shielder</h3><p>Defensive anchor that protects allies, blocks lanes, holds positions, and absorbs or redirects threats.</p><span class="pill">Guard · Protection</span></article>
+    <article class="panel info"><div class="symbol">♢</div><h3>Avenger</h3><p>Retributive combat role that turns hostility, setbacks, or marked opposition into focused retaliation.</p><span class="pill">Retaliation · Vengeance</span></article>
+    <article class="panel info"><div class="symbol">✦</div><h3>Ruler</h3><p>Authority and coordination specialist with a role in command, judgment, stabilization, and decisive support.</p><span class="pill">Command · Authority</span></article>
+   </div>
+   <div class="panel" style="margin-top:15px"><div class="panelhead"><h2>Class framework</h2><span class="pill">Roster foundation</span></div>
+    <div class="listrow"><div><strong>Class is independent</strong><p>Class is not Tier, Archetype, Nature/Type, Subtype, Scale, race, or weapon proficiency.</p></div></div>
+    <div class="listrow"><div><strong>Cross-class learning</strong><p>An Envoy may learn a second class from another Envoy; class fusion can create a new class. A class may merge with up to two others, subject to its rules.</p></div></div>
+    <div class="listrow"><div><strong>Exceptional class</strong><p>One exceptional class cannot fuse and cannot gain techniques through other classes; its identity remains unresolved.</p></div><span class="pill">Unassigned</span></div>
+   </div>
+  </section>
+\n  <section class="view" id="view-session">
    <div class="pagehead"><div><div class="eyebrow">Encounter management</div><h1>Session</h1><p>Participant control, Envoy assignment, turn state, and reaction policy.</p></div></div>
    <div class="grid2"><div class="panel"><div class="panelhead"><h2>Current playtest</h2><span class="pill">Local</span></div><div class="listrow"><div><strong>Session authority</strong><p>Browser-local prototype</p></div><span class="pill">Isolated</span></div><div class="listrow"><div><strong>Participants</strong><p>Same-device local play</p></div><span class="pill">2 sides</span></div><div class="listrow"><div><strong>Persistence</strong><p>Not connected</p></div><span class="pill">Off</span></div></div><div class="panel"><div class="panelhead"><h2>Planned session controls</h2><span class="pill gold">Not connected</span></div><div class="listrow"><div><strong>Participant invitations</strong><p>Identity and access routing</p></div></div><div class="listrow"><div><strong>Envoy assignment</strong><p>Controller permissions and sides</p></div></div><div class="listrow"><div><strong>Reaction policy</strong><p>Async, timed, automatic, or hybrid</p></div></div></div></div>
    <div class="callout">The prototype's End turn control is local. This workspace does not yet create persistent sessions, invite participants, or resume server-side reaction checkpoints.</div>
