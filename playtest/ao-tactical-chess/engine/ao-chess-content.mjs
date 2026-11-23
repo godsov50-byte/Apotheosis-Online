@@ -22,7 +22,7 @@ export const AO_PROVISIONAL_EQUIPMENT = Object.freeze({
  items:[
   {id:"field-iron-sabre",name:"Field-Iron Sabre",category:"Regular Item",itemType:"weapon",equipmentSlot:"weapon",modifiers:{STR:1},tags:["weapon","sabre","metal"]},
   {id:"hide-traveler-coat",name:"Hide Traveler Coat",category:"Regular Item",itemType:"armor",equipmentSlot:"body",modifiers:{CON:1},tags:["armor","leather"]},
-  {id:"field-iron-buckler",name:"Field-Iron Buckler",category:"Regular Item",itemType:"shield",equipmentSlot:"offhand",modifiers:{DR:1},tags:["shield","metal"]}
+  {id:"field-iron-buckler",name:"Field-Iron Buckler",category:"Regular Item",itemType:"shield",equipmentSlot:"offhand",modifiers:{},effects:[{type:"attribute_modifier",stat:"DR",amount:1,statusId:"buckler-guard",stackRule:"replace"}],tags:["shield","metal"]}
  ],
  recipes:[
   {id:"forge-field-sabre",name:"Forge Field-Iron Sabre",ingredients:[{materialId:"field-iron",quantity:2}],output:{itemId:"field-iron-sabre"},knownByDefault:true,skill:{id:"SK20",level:1}},
