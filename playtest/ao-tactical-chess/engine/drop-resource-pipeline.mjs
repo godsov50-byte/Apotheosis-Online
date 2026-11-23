@@ -124,6 +124,8 @@ export function resolveDefeatDrops(field, {
         source: num(source.equipmentQuality), variance: num(selected.qualityVariance, quality.variance ?? 0),
         penalty: num(selected.qualityPenalty), thresholds: quality.thresholds
       });
+      const equipmentCost = Math.max(0, num(selected.budgetCost, 1));
+      if (equipmentCost > rewardBudgetRemaining) break;
       const id = `equipment-drop-${source.id}-${i + 1}`;
       const drop = {
         id, kind: "equipment_drop", itemId: selected.itemId, quantity: 1,
@@ -136,13 +138,42 @@ export function resolveDefeatDrops(field, {
       rewardBudgetRemaining -= equipmentCost; rewardBudgetSpent += equipmentCost;
     }
   }
+  const fragmentsCreated = [];
+  for (const entry of profile.techniqueFragmentDrops || []) {
+    if (!registry.techniqueFragments?.[entry.fragmentId]) return { ...fail("unknown_technique_fragment", { fragmentId: entry.fragmentId }), field };
+    if (random() > clamp(num(entry.chance, 1), 0, 1)) continue;
+    const rolled = intBetween(random, Math.max(1, num(entry.min, 1)), Math.max(1, num(entry.max, 1)));
+    const unitCost = Math.max(0, num(entry.budgetCostPerUnit, 1));
+    const affordable = unitCost > 0 ? Math.floor(rewardBudgetRemaining / unitCost) : rolled;
+    const quantity = Math.min(rolled, affordable);
+    if (quantity <= 0) continue;
+    const q = qualityRecord(random, {
+      base: num(entry.qualityBase, source.fragmentQuality ?? 50),
+      source: num(source.essenceQuality), variance: num(entry.qualityVariance, quality.variance ?? 0),
+      penalty: num(entry.qualityPenalty), thresholds: quality.thresholds
+    });
+    const id = `tech-fragment-drop-${source.id}-${fragmentsCreated.length + 1}`;
+    const drop = {
+      id, kind: "technique_fragment_drop", fragmentId: entry.fragmentId, quantity,
+      quality: q, position: clone(position), sourceId: source.id,
+      requiresManualCollection: entry.requiresManualCollection !== false,
+      containerId: entry.containerId || null, collected: false,
+      provenance: { originType: source.type || "creature_death", profileId: profile.id || null, sourceEventId: source.eventId || null, seed: String(seed ?? ""), essenceSource: source.essenceSource || source.type || "creature" }
+    };
+    next.drops[id] = drop; fragmentsCreated.push(drop);
+    const fragmentCost = quantity * unitCost;
+    rewardBudgetRemaining -= fragmentCost; rewardBudgetSpent += fragmentCost;
+  }
   let committed = addLedger(next, {
     type: "defeat_drops_resolved", sourceId: source.id, sourceType: source.type || "defeat",
     materialDropIds: created.map(x => x.id), equipmentDropIds: equipmentCreated.map(x => x.id),
+    techniqueFragmentDropIds: fragmentsCreated.map(x => x.id),
     materialQuantity: created.reduce((sum, x) => sum + x.quantity, 0),
-    equipmentCount: equipmentCreated.length, rewardBudgetSpent, rewardBudgetRemaining, profileId: profile.id || null
+    equipmentCount: equipmentCreated.length,
+    techniqueFragmentQuantity: fragmentsCreated.reduce((sum, x) => sum + x.quantity, 0),
+    rewardBudgetSpent, rewardBudgetRemaining, profileId: profile.id || null
   });
-  return { ok: true, field: committed, materialDrops: created, equipmentDrops: equipmentCreated, rewardBudgetSpent, rewardBudgetRemaining };
+  return { ok: true, field: committed, materialDrops: created, equipmentDrops: equipmentCreated, techniqueFragmentDrops: fragmentsCreated, rewardBudgetSpent, rewardBudgetRemaining };
 }
 
 /** A resource node is a finite spatial source; it is not itself an inventory stack. */
@@ -245,6 +276,14 @@ export function collectBalancedDrop(field, intent, registry) {
   if (d.kind === "material_drop") {
     if (!registry?.materials?.[d.materialId]) return { ...fail("unknown_material"), field };
     a.inventory = [...(a.inventory || []), { kind: "material", materialId: d.materialId, quantity: d.quantity, quality: clone(d.quality), provenance: { sourceId: d.sourceId, ...clone(d.provenance || {}) } }];
+  } else if (d.kind === "technique_fragment_drop") {
+    const template = registry?.techniqueFragments?.[d.fragmentId];
+    if (!template) return { ...fail("unknown_technique_fragment"), field };
+    a.inventory = [...(a.inventory || []), {
+      kind: "technique_fragment", fragmentId: d.fragmentId, quantity: d.quantity,
+      quality: clone(d.quality), fragmentTraits: clone(template.traits || []),
+      provenance: { sourceId: d.sourceId, ...clone(d.provenance || {}) }
+    }];
   } else if (d.kind === "equipment_drop") {
     const template = registry?.items?.[d.itemId];
     if (!template) return { ...fail("unknown_equipment_item"), field };
