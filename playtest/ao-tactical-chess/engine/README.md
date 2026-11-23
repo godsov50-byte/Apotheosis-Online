@@ -57,6 +57,36 @@ const result = resolveTechniqueIntent(field, {
 
 The pipeline module is currently a tested engine layer, **not yet wired into the existing board's Technique button or dossier controls**. The old UI technique shortcut remains a prototype path until the next integration step.
 
+## Equipment lifecycle pipeline
+
+`equipment-pipeline.mjs` implements data-driven materials, item definitions, recipe registries, material-drop and opened-container collection, craft validation and atomic material consumption, provenance-bearing item instances, refinement, equipment-slot validation, equip/unequip, durability/Break/destruction, repair, and transfers.
+
+The four item categories are Regular Item, Heirloom, Conceptual Heirloom, and Cursed Conceptual Heirloom. Category, rarity, power, and advancement eligibility are separate fields; ordinary crafting/refinement preserves the template's category and advancement flag. The pipeline does not infer that a powerful or rare item is a Conceptual Heirloom or qualifies an Envoy for tier advancement.
+
+Recipe data supplies materials, quantities, output, station/tool tags, crafting-skill requirements, class/race/tier requirements, and duration. A rejected craft does not consume materials. Material drops can require explicit manual collection; container contents require the container to be opened and collected. Every successful lifecycle operation appends a local event with source/recipe/item provenance.
+
+This is a playtest module. It does not yet replace the existing board's inventory/equipment UI, and it is not a production Kernel/WorldHeart persistence integration. Numeric recipes, item stats, rarity, and balance remain supplied data rather than canon.
+
+Example:
+
+```js
+import { createEquipmentRegistry, craftEquipment } from "./equipment-pipeline.mjs";
+
+const registry = createEquipmentRegistry({
+  materials: [{ id: "iron", name: "Iron" }],
+  items: [{ id: "iron-blade", name: "Iron Blade", equipmentSlot: "weapon" }],
+  recipes: [{
+    id: "forge-blade", name: "Forge Blade", knownByDefault: true,
+    ingredients: [{ materialId: "iron", quantity: 3 }],
+    output: { itemId: "iron-blade" }
+  }]
+});
+
+const result = craftEquipment(field, {
+  actorId: "envoy-1", recipeId: "forge-blade"
+}, registry);
+```
+
 ## Other engine modules
 
 `combat-simulation.mjs` adds independent reusable primitives for 3D cell paths and trajectory families, entity volumes, facing/attack sectors, aim and cover, damage packets, status stacking/ticks, reaction priority, formations, zones, body-part injury, equipment durability, melee states, terrain damage, projectile traversal, resource transactions, progression, and a handler-driven combat-event pipeline.
