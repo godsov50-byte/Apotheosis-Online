@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AO Chessboard Racial Element Profile (Prototype)",
+  "type": "object",
+  "required": [
+    "raceId",
+    "affinities",
+    "resistances"
+  ],
+  "properties": {
+    "raceId": {
+      "type": "string"
+    },
+    "label": {
+      "type": "string"
+    },
+    "affinities": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "fire",
+          "wood",
+          "earth",
+          "lightning",
+          "water",
+          "ice",
+          "wind",
+          "metal",
+          "light",
+          "shadow"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "resistances": {
+      "type": "object",
+      "properties": {
+        "fire": {
+          "type": "number",
+          "minimum": -100,
+          "maximum": 100
+        },
+        "wood": {
+          "type": "number",
+          "minimum": -100,
+          "maximum": 100
+        },
+        "earth": {
+          "type": "number",
+          "minimum": -100,
+          "maximum": 100
+        },
+        "lightning": {
+          "type": "number",
+          "minimum": -100,
+          "maximum": 100
+        },
+        "water": {
+          "type": "number",
+          "minimum": -100,
+          "maximum": 100
+        },
+        "ice": {
+          "type": "number",
+          "minimum": -100,
+          "maximum": 100
+        },
+        "wind": {
+          "type": "number",
+          "minimum": -100,
+          "maximum": 100
+        },
+        "metal": {
+          "type": "number",
+          "minimum": -100,
+          "maximum": 100
+        },
+        "light": {
+          "type": "number",
+          "minimum": -100,
+          "maximum": 100
+        },
+        "shadow": {
+          "type": "number",
+          "minimum": -100,
+          "maximum": 100
+        }
+      },
+      "additionalProperties": false
+    },
+    "integrity": {
+      "type": "object",
+      "properties": {
+        "fire": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "wood": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "earth": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "lightning": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "water": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "ice": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "wind": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "metal": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "light": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "shadow": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        }
+      },
+      "additionalProperties": false
+    },
+    "breakThreshold": {
+      "type": "number",
+      "minimum": 1
+    },
+    "breakBuildup": {
+      "type": "number",
+      "minimum": 0
+    },
+    "broken": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": false
+}
