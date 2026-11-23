@@ -103,7 +103,7 @@ const at=(x,y)=>units.find(u=>u.x===x&&u.y===y&&u.hp>0);
 const rand=n=>Math.floor(Math.random()*n)+1;
 function makeUnit(id,side,x,y,pattern,index){
  const classIndex=side==="black"?(index+2)%10:index%10;const cls=classNames[classIndex],b=base[cls];
- return {id,side,x,y,pattern,cls,portraitUrl:"",race:"Unassigned",tier:5,archetype:cls==="Berserker"?"Anti-Unit":cls==="Shielder"?"Anti-Fortress":"Anti-Unit",hp:b[0],maxHp:b[0],ac:b[1],atk:b[2],dmg:b[3],facing:side==="white"?"N":"S",ap:8,apMax:8,ea:8,eaMax:8,affinity:"Unassigned",weapon:pattern==="Archer"?"Recurve bow":pattern==="Lancer"?"War spear":pattern==="Rook"?"War hammer":"Steel weapon",weaponBonus:0,weaponEffect:pattern==="Rook"?"Knockback":pattern==="Knight"?"Pursuit":"None",armor:"Field armor",head:"Travel helm",offhand:pattern==="Rook"?"Tower shield":"Empty",accessory1:"Warding ring",accessory2:"Empty",boots:"Marching boots",artifact:"Empty",uses:3,technique:cls==="Berserker"?"Heavy Breaker":cls==="Archer"?"Piercing Shot":"Class Strike",techniquePattern:pattern,techniqueTier:5,techniqueCost:2,trigger:cls==="Shielder"?"Guard Counter":cls==="Berserker"?"Impact Trigger":"Opportunity Strike",name:side==="black"&&coord(x,y)==="b8"?"Askar Venn":(side==="white"?"Silver":"Host")+" "+cls+" "+String(index+1).padStart(2,"0"),special:side==="black"&&coord(x,y)==="b8"};
+ return {id,side,x,y,pattern,cls,portraitUrl:"",race:"Unassigned",tier:5,archetype:cls==="Berserker"?"Anti-Unit":cls==="Shielder"?"Anti-Fortress":"Anti-Unit",hp:b[0],maxHp:b[0],ac:b[1],atk:b[2],dmg:b[3],facing:side==="white"?"N":"S",ap:8,apMax:8,ea:8,eaMax:8,affinity:"Unassigned",weapon:pattern==="Archer"?"Recurve bow":pattern==="Lancer"?"War spear":pattern==="Rook"?"War hammer":"Steel weapon",weaponBonus:0,weaponEffect:pattern==="Rook"?"Knockback":pattern==="Knight"?"Pursuit":"None",armor:"Field armor",head:"Travel helm",offhand:pattern==="Rook"?"Tower shield":"Empty",accessory1:"Warding ring",accessory2:"Empty",boots:"Marching boots",artifact:"Empty",uses:3,techniqueId:"guard-break",techniqueProfile:{...guardBreakProfile,tier:5},skills:{SK01:{xp:50,learnedLevel:1}},technique:cls==="Berserker"?"Heavy Breaker":cls==="Archer"?"Piercing Shot":"Class Strike",techniquePattern:pattern,techniqueTier:5,techniqueCost:2,trigger:cls==="Shielder"?"Guard Counter":cls==="Berserker"?"Impact Trigger":"Opportunity Strike",name:side==="black"&&coord(x,y)==="b8"?"Askar Venn":(side==="white"?"Silver":"Host")+" "+cls+" "+String(index+1).padStart(2,"0"),special:side==="black"&&coord(x,y)==="b8"};
 }
 function setup(){
  units=[];let w=0,b=0;
@@ -183,13 +183,12 @@ function move(u,x,y){
 }
 function attack(a,d,useTechnique=false){
  if(useTechnique){
-  const techniqueCost=a.techniqueCost||2,eaCost=3;
+  const techniqueCost=a.techniqueProfile?.cost?.ap??a.techniqueCost??2,eaCost=a.techniqueProfile?.cost?.ea??1;
   if(a.techniqueDormant||(a.special&&a.pattern!=="Knight")){$("dice").innerHTML="<b>Technique unavailable:</b> "+a.technique+" requires the Knight movement pattern.";return;}
   if(a.ap<techniqueCost||a.ea<eaCost||a.uses<1){$("dice").innerHTML="<b>Technique unavailable:</b> insufficient AP, EA or daily uses.";return;}
-  const roll=rand(20),damageRoll=rand(a.dmg)+a.weaponBonus+4+(a.archetype==="Anti-Divine"&&d.nature==="Divine Humanoid"?2:0);
+  const roll=rand(20);
   const request=new CustomEvent("ao-board-technique",{detail:{
    actorId:a.id,defenderId:d.id,roll,attackBonus:2,
-   damagePackets:[{type:"physical",amount:damageRoll}],
    knockback:a.weaponEffect==="Knockback",
    units:units.map(unit=>({...unit}))
   }});
@@ -274,6 +273,8 @@ setup();
 <script type="module">
 import * as AO from './engine/ao-chess-engine.mjs';
 import * as BoardBridge from './engine/board-engine-bridge.mjs';
+import { AO_PROVISIONAL_TECHNIQUES } from './engine/ao-chess-content.mjs';
+const guardBreakProfile = AO_PROVISIONAL_TECHNIQUES.find(t => t.id === 'guard-break');
 let boardField=null, boardRoster=[];
 function resetBoardBridge(snapshot){
  if(!snapshot||!Array.isArray(snapshot.units))return;
