@@ -23,7 +23,8 @@ function applyStatus(statuses,status){
  else if(status.stackRule==="refresh")list[i]={...list[i],duration:Math.max(num(list[i].duration),num(status.duration)),remaining:Math.max(num(list[i].remaining,list[i].duration),num(status.duration))};
  else if(status.stackRule==="stack")list[i]={...list[i],stacks:num(list[i].stacks,1)+num(status.stacks,1)};
  else if(status.stackRule==="replace")list[i]=clone(status);
- else if(status.stackRule==="ignore")return list;\n else return null;
+ else if(status.stackRule==="ignore")return list;
+ else return null;
  return list;
 }
 function damage(target,packet){
