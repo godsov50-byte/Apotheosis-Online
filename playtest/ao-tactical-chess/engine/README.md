@@ -98,7 +98,7 @@ const result = craftEquipment(field, {
 
 ## Drop, equipment reward and resource extraction pipeline
 
-`drop-resource-pipeline.mjs` separates defeat-origin material drops, independent equipment drops, finite resource nodes, extraction, and collection. A source-linked reward profile defines material chances and quantity ranges independently from equipment chance and weighted item selection. Optional material budgets cap total material units without suppressing the separate equipment roll. Seeded generation supports deterministic replay and balance previews.
+`drop-resource-pipeline.mjs` separates defeat-origin material drops, independent equipment drops, finite resource nodes, extraction, and collection. A source-linked reward profile defines material chances and quantity ranges independently from equipment chance and weighted item selection. Optional material-unit caps can be combined with a shared reward-point budget: material units and equipment entries spend explicitly configured costs from the same source budget. This makes materials-versus-equipment tradeoffs measurable without imposing a universal value scale. Seeded generation supports deterministic replay and balance previews.
 
 Each drop retains its source, profile/event provenance, position, quality record, and manual-collection state. Equipment drops reference item definitions; their category, rarity, power, and advancement eligibility remain properties of the item definition rather than being inferred from a quality roll.
 
