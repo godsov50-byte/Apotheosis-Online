@@ -81,7 +81,7 @@ test("illegal board movement is rejected without mutating the input field", () =
 
 test("attacks resolve through engine AC and DR without spending prototype basic-attack resources", () => {
   const field = createBoardField([
-    unit("attacker", "white", 0, 0, { atk: 5, ap: 8, ea: 6 }),
+    unit("attacker", "white", 0, 0, { atk: 5, ap: 8, ea: 6, pattern: "King" }),
     unit("defender", "black", 1, 0, { ac: 12, dr: 2, hp: 20 })
   ]);
   const result = resolveBoardAttack(field, {
@@ -98,9 +98,39 @@ test("attacks resolve through engine AC and DR without spending prototype basic-
   assert.equal(result.field.ledger.at(-1).type, "attack_resolved");
 });
 
+test("board attack rejects targets outside the attacker's chess motion", () => {
+  const field = createBoardField([
+    unit("attacker", "white", 0, 0, { pattern: "Knight" }),
+    unit("defender", "black", 1, 0)
+  ]);
+  const result = resolveBoardAttack(field, {
+    attackerId: "attacker", defenderId: "defender", roll: 20,
+    damagePackets: [{ type: "physical", amount: 10 }]
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.reason, "illegal_attack_geometry");
+});
+
+test("successful knockback moves a surviving defender one cell away", () => {
+  const field = createBoardField([
+    unit("attacker", "white", 1, 1, { pattern: "King" }),
+    unit("defender", "black", 2, 1, { ac: 1, hp: 20 })
+  ]);
+  const result = resolveBoardAttack(field, {
+    attackerId: "attacker", defenderId: "defender", roll: 20,
+    damagePackets: [{ type: "physical", amount: 2 }],
+    knockback: true,
+    eventId: "knockback-test"
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.positionEffect, "knockback");
+  assert.deepEqual(result.field.entities.defender.position, { x: 3, y: 1, z: 0 });
+  assert.deepEqual(result.field.cells["3,1,0"].entities, ["defender"]);
+});
+
 test("defeated defenders are removed from cell occupancy and board projection", () => {
   const units = [
-    unit("attacker", "white", 0, 0, { atk: 20 }),
+    unit("attacker", "white", 0, 0, { atk: 20, pattern: "King" }),
     unit("defender", "black", 1, 0, { ac: 1, hp: 4, maxHp: 4 })
   ];
   const field = createBoardField(units);
