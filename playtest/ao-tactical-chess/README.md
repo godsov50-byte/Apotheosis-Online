@@ -43,3 +43,10 @@ After the feature branch is merged, the Pages workflow publishes the board at:
 - Chess-pattern movement is the prototype's tactical movement model, not the full continuous-space AO spatial engine.
 
 All changes are isolated on the feature branch until reviewed and merged.
+
+
+## Encounter Director prototype module
+
+`encounter-director.mjs` contains isolated, dependency-free utilities for the proposed Layer 12 encounter orchestration: encounter records and state transitions, event-ledger idempotency, deployment validation against a supplied grid snapshot, source-triggered reinforcement schedules with travel ticks, objective state updates, and outcome recording. It is not yet wired into `index.html` or `site-shell.html`; the module does not simulate combat, spawn entities, assign rewards, or persist to the AO world.
+
+
