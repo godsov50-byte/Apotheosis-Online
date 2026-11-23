@@ -124,23 +124,34 @@ function occupiedByOther(field, actorId, p) {
 export function getPieceLegalMoves(match,pieceId) {
   const field=match.field, actor=field.entities[pieceId];
   if(!actor?.alive || (field.activeSide && actor.side!==field.activeSide)) return [];
+  if(actor.boardMotion==="Pawn"){
+    const direction=actor.side==="white"?-1:1;
+    const startRow=actor.side==="white"?field.height-2:1;
+    const moves=[];
+    const one={x:actor.position.x,y:actor.position.y+direction,z:0};
+    if(one.y>=0&&one.y<field.height&&!occupiedByOther(field,pieceId,one)&&!field.cells?.[positionKey(one)]?.blocked){
+      moves.push({x:one.x,y:one.y});
+      const two={x:actor.position.x,y:actor.position.y+2*direction,z:0};
+      if(actor.position.y===startRow&&two.y>=0&&two.y<field.height&&
+        !occupiedByOther(field,pieceId,two)&&!field.cells?.[positionKey(two)]?.blocked) moves.push({x:two.x,y:two.y});
+    }
+    return moves;
+  }
   const cells=chessMotionCells(actor.position,actor.boardMotion,Math.max(field.width,field.height),{
-    side:actor.side,
-    occupied:p=>occupiedByOther(field,pieceId,p),
-    includeOccupied:true
+    side:actor.side,occupied:p=>occupiedByOther(field,pieceId,p),includeOccupied:true
   });
   return cells.filter(p=>p.x>=0&&p.y>=0&&p.x<field.width&&p.y<field.height&&
-    !occupiedByOther(field,pieceId,p) &&
-    !field.cells?.[positionKey(p)]?.blocked
+    !occupiedByOther(field,pieceId,p) && !field.cells?.[positionKey(p)]?.blocked
   ).map(({x,y})=>({x,y}));
 }
 
 export function movePiece(match,{pieceId,to,eventId}={}) {
   const legal=getPieceLegalMoves(match,pieceId);
   if(!legal.some(p=>p.x===to?.x&&p.y===to?.y)) return {...fail("illegal_piece_move"),match};
+  const from=clone(match.field.entities[pieceId].position);
   const result=resolveBoardMove(match.field,{actorId:pieceId,to,legalCells:legal,eventId});
   if(!result.ok)return {...result,match};
-  return {ok:true,match:{...match,field:result.field,log:[...match.log,{type:"piece_moved",pieceId,from:result.event?.from||null,to:clone(to)}]},result};
+  return {ok:true,match:{...match,field:result.field,log:[...match.log,{type:"piece_moved",pieceId,from,to:clone(to)}]},result};
 }
 
 export function attackPiece(match,{
@@ -169,6 +180,11 @@ export function getPieceAttackTargets(match,pieceId) {
     .map(target=>target.id);
 }
 function getPieceLegalAttackCell(match,actor,target) {
+  if(actor.boardMotion==="Pawn"){
+    const direction=actor.side==="white"?-1:1;
+    return Math.abs(target.position.x-actor.position.x)===1 &&
+      target.position.y-actor.position.y===direction;
+  }
   const cells=chessMotionCells(actor.position,actor.boardMotion,Math.max(match.width,match.height),{
     side:actor.side,occupied:p=>occupiedByOther(match.field,actor.id,p),includeOccupied:true
   });
@@ -231,10 +247,14 @@ export function resolveCreatureAction(match,{
 export function endPieceSideTurn(match,nextSide) {
   if(!["white","black"].includes(nextSide)||nextSide===match.field.activeSide)throw new Error("next side must be the opposing side");
   const entities={...match.field.entities};
+  const acted={...(match.field.acted||{})};
   for(const [id,entity] of Object.entries(entities)){
-    if(entity.side===nextSide&&entity.alive)entities[id]=resetTechniqueTurn(entity);
+    if(entity.side===nextSide&&entity.alive){
+      entities[id]=resetTechniqueTurn(entity);
+      delete acted[id];
+    }
   }
-  return {...match,field:{...match.field,entities,activeSide:nextSide,round:nextSide==="white"?match.round+1:match.round},
+  return {...match,field:{...match.field,entities,acted,activeSide:nextSide,round:nextSide==="white"?match.round+1:match.round},
     round:nextSide==="white"?match.round+1:match.round,
     log:[...match.log,{type:"side_turn_started",side:nextSide}]};
 }
