@@ -146,7 +146,7 @@ test("equipment transfers preserve instance identity and provenance",()=>{
 test("ordinary crafting cannot manufacture Conceptual Heirlooms or Cursed Conceptual Heirlooms",()=>{
   const {field,registry}=fixture();
   registry.items.derived=E.createItemDefinition({id:"derived",name:"Derived Relic",category:"Conceptual Heirloom"});
-  registry.recipes.ordinary-relic=E.createCraftingRecipe({id:"ordinary-relic",name:"Ordinary Relic Recipe",knownByDefault:true,ingredients:[{materialId:"iron",quantity:1}],output:{itemId:"derived"}});
+  registry.recipes["ordinary-relic"]=E.createCraftingRecipe({id:"ordinary-relic",name:"Ordinary Relic Recipe",knownByDefault:true,ingredients:[{materialId:"iron",quantity:1}],output:{itemId:"derived"}});
   const result=E.craftEquipment(field,{actorId:"smith",recipeId:"ordinary-relic"},registry);
   assert.equal(result.ok,false);
   assert.equal(result.reason,"conceptual_heirloom_requires_agent_origin");
