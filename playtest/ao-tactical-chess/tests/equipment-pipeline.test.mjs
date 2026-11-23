@@ -60,7 +60,7 @@ test("manual material drops and opened containers are collected with provenance"
   assert.equal(picked.field.entities.smith.inventory.filter(x=>x.materialId==="iron").reduce((n,x)=>n+x.quantity,0),5);
   const chest=E.collectContainerMaterials(picked.field,{actorId:"smith",containerId:"chest"},registry);
   assert.equal(chest.ok,true);
-  assert.equal(chest.field.entities.smith.inventory.find(x=>x.materialId==="wood").quantity,3);
+  assert.equal(chest.field.entities.smith.inventory.filter(x=>x.materialId==="wood").reduce((n,x)=>n+x.quantity,0),3);
   assert.equal(chest.field.ledger.at(-1).type,"container_materials_collected");
 });
 test("craft validates materials, station, tool and skill before atomic consumption",()=>{
