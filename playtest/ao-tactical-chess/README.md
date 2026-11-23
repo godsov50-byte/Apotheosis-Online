@@ -75,3 +75,24 @@ The page generates one Tier 9 Envoy and one Tier 9 creature, then connects:
 - local browser save/load of the complete encounter state and local event ledger.
 
 The generated Envoy uses a generic unclassified playtest shell, not an approved race or ancestry. The creature is an unclassified playtest creature. Starting attributes, vitality coefficients, creature statistics, reward profile, recipe access, and all numeric values are scenario fixtures only; they are not AO canon. The playtest does not write to WorldHeart, Supabase, or production Kernel history. 
+
+
+## Reusable piece-level combat controller
+
+`engine/piece-combat-controller.mjs` now provides a shared match API for individual Envoys, class pieces, summoned entities, and creatures:
+- Every entity owns an independent board position, chess movement pattern, HP/AP/EA pools, inventory, equipment, learned techniques, and technique slots.
+- All ten basic classes are represented. Technique definitions are encounter data and must declare exactly one owning class; the controller enforces class ownership and learned-technique checks without inventing class techniques or balance values.
+- Legal movement and attacks are validated against the piece's own movement pattern and current board occupancy. Pawn forward movement and diagonal attacks are distinct.
+- Equipment equip/unequip calls the existing equipment lifecycle pipeline.
+- Technique use calls the existing technique resolver, so class requirements, target geometry, AP/EA costs, uses, cooldowns, and effects are resolved by the same engine.
+- Creature actions can select a reachable enemy to attack or advance toward the nearest enemy using the creature's own movement pattern.
+- Side handoff resets the incoming side's technique action state but deliberately does not assume unapproved AP/EA recovery rules.
+
+The controller is a reusable engine layer, not yet the final multi-piece browser interface. The existing First Haven page remains its separate single-Envoy scenario while the controller receives regression coverage. Technique names, numerical costs, effect values, class balance, and creature data must come from approved encounter definitions; no new canon is seeded here.
+
+
+## Multi-piece AO Chess training arena
+
+Open `piece-arena.html` in a modern browser to play the multi-piece training scenario. It places all ten basic classes on one side against ten training creatures, with independent positions and chess-motion patterns. Select a piece, move to legal cells, attack reachable creatures, choose its class-owned practice technique, and equip/unequip its training weapon. End turn runs one creature action for each living creature before returning control to the Envoy side.
+
+The arena's class practice techniques, damage, costs, usage limits, weapon bonuses, creature stats, and movement assignments are temporary training fixtures only. They demonstrate the class-specific technique and equipment pipelines; they are not AO canon. The board is local/browser-only and does not connect to WorldHeart, Supabase, or production Kernel history.
