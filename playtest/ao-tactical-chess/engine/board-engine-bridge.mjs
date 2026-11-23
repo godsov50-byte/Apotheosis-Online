@@ -19,6 +19,7 @@ import {
   createTechniqueRegistry,
   resolveTechniqueIntent
 } from "./technique-pipeline.mjs";
+import { resolveEffectiveAttributes, resolveEffectBatch } from "./effect-pipeline.mjs";
 
 const clone = value => structuredClone(value);
 const finite = (value, fallback = 0) => Number.isFinite(value) ? value : fallback;
@@ -45,7 +46,9 @@ export function createBoardField(units, { width = 8, height = 8, turn = "white",
     if (ids.has(unit.id)) throw new Error("duplicate board unit id: " + unit.id);
     ids.add(unit.id);
     const affinities = unit.affinity && !/unassigned|none assigned/i.test(unit.affinity) ? [unit.affinity] : [];
-    const techniqueId = unit.technique ? techniqueIdFor(unit.technique) : null;
+    const techniqueId = unit.techniqueId || (unit.technique ? techniqueIdFor(unit.technique) : null);
+    const baseAttributes = clone(unit.baseAttributes || unit.stats || { ATT: 0 });
+    const equipment = clone(unit.equipment || {});
     const maxTechniqueUses = finite(unit.maxTechniqueUses, 3);
     const currentTechniqueUses = finite(unit.uses, maxTechniqueUses);
     const entity = createEntity({
@@ -64,8 +67,10 @@ export function createBoardField(units, { width = 8, height = 8, turn = "white",
       ea: finite(unit.ea, 8),
       maxEa: finite(unit.eaMax, 8),
       affinities,
-      techniques: techniqueId ? [techniqueId] : [],
-      stats: { ATT: 0 },
+      techniques: [...new Set([...(unit.techniques || []), ...(techniqueId ? [techniqueId] : [])])],
+      stats: baseAttributes,
+      skills: clone(unit.skills || {}),
+      inventory: clone(unit.inventory || []),
       accuracy: finite(unit.atk),
       defense: {
         AC: finite(unit.ac, 10),
@@ -76,13 +81,23 @@ export function createBoardField(units, { width = 8, height = 8, turn = "white",
       sourceRef: unit.sourceRef || null
     });
     entity.boardMotion = unit.pattern;
+    entity.baseAttributes = baseAttributes;
+    entity.raceId = unit.raceId || null;
+    entity.racialRarityId = unit.racialRarityId || null;
+    entity.racialAttributeModifiers = clone(unit.racialAttributeModifiers || {});
+    entity.rarityAttributeModifiers = clone(unit.rarityAttributeModifiers || {});
+    entity.naturalAffinity = unit.naturalAffinity || unit.affinity || null;
+    entity.equipment = equipment;
     entity.nature = unit.nature || null;
     entity.boardTechniqueId = techniqueId;
-    entity.boardTechniqueName = unit.technique || null;
-    entity.boardTechniqueTier = unit.techniqueTier ?? null;
-    entity.boardTechniqueCost = finite(unit.techniqueCost, 2);
-    entity.boardTechniqueEaCost = finite(unit.techniqueEaCost, 3);
-    entity.boardTechniqueUsesMax = maxTechniqueUses;
+    entity.boardTechniqueName = unit.technique || unit.techniqueProfile?.name || null;
+    entity.boardTechniqueTier = unit.techniqueTier ?? unit.techniqueProfile?.tier ?? null;
+    entity.boardTechniqueProfile = clone(unit.techniqueProfile || null);
+    entity.boardTechniqueCost = finite(unit.techniqueCost ?? unit.techniqueProfile?.cost?.ap, 2);
+    entity.boardTechniqueEaCost = finite(unit.techniqueEaCost ?? unit.techniqueProfile?.cost?.ea, 3);
+    entity.boardTechniqueUsesMax = finite(unit.maxTechniqueUses ?? unit.techniqueProfile?.uses, maxTechniqueUses);
+    if (unit.baseAttributes || unit.stats) entity.stats = resolveEffectiveAttributes(entity);
+    entity.defense = { ...entity.defense, DR: finite(unit.dr) + Object.values(equipment).reduce((sum,item)=>sum+finite(item?.modifiers?.DR),0) };
     entity.techniqueState = techniqueId ? {
       [techniqueId]: { used: Math.max(0, maxTechniqueUses - currentTechniqueUses), cooldownRemaining: 0 }
     } : {};
@@ -284,36 +299,51 @@ export function resolveBoardTechnique(field, {
   if (!defender?.alive || defender.side === actor.side) return { ok: false, reason: "invalid_target" };
   if (!isBoardMotionLegal(ready.field, actor, defender.position)) return { ok: false, reason: "illegal_attack_geometry" };
   const techniqueId = actor.boardTechniqueId;
+  const profile = actor.boardTechniqueProfile || {};
   const registry = createTechniqueRegistry([{
+    ...profile,
     id: techniqueId,
     name: actor.boardTechniqueName,
     tier: actor.boardTechniqueTier,
-    classRequirements: actor.class ? [actor.class] : [],
-    target: { type: "enemy" },
-    geometry: { kind: "range", minRange: 1, range: 1 },
-    chessMotion: actor.boardMotion,
-    cost: { ap: actor.boardTechniqueCost, ea: actor.boardTechniqueEaCost },
-    uses: actor.boardTechniqueUsesMax,
-    cooldown: 0,
+    classRequirements: profile.classRequirements || (actor.class ? [actor.class] : []),
+    target: profile.target || { type: "enemy" },
+    geometry: profile.geometry || { kind: "range", minRange: 1, range: 1 },
+    chessMotion: profile.chessMotion || actor.boardMotion,
+    cost: profile.cost || { ap: actor.boardTechniqueCost, ea: actor.boardTechniqueEaCost },
+    uses: profile.uses ?? actor.boardTechniqueUsesMax,
+    cooldown: profile.cooldown ?? 0,
     effects: []
   }]);
   const learning = resolveTechniqueIntent(ready.field, {
     actorId, techniqueId, target: { entityId: defenderId }
   }, registry);
   if (!learning.ok) return learning;
+  const configuredDamage = damagePackets || (profile.effects || []).filter(effect=>effect.type==="damage").flatMap(effect=>effect.packets || [{type:effect.damageType||"physical",amount:effect.amount,penetration:effect.penetration,trueDamage:effect.trueDamage}]);
   const attack = resolveBoardAttack(learning.field, {
     attackerId: actorId,
     defenderId,
     roll,
-    damagePackets,
+    damagePackets: configuredDamage,
     eventId: eventId ? eventId + ":attack" : undefined,
     chart,
     knockback,
     attackBonus
   });
   if (!attack.ok) return { ...attack, field };
+  const secondaryEffects = (profile.effects || []).filter(effect=>effect.type!=="damage");
+  let resolvedAttack = attack;
+  if (attack.hit && secondaryEffects.length) {
+    const applied = resolveEffectBatch(attack.field, {
+      sourceId: actorId, targetId: defenderId,
+      effects: secondaryEffects,
+      eventId: (eventId || ("board-technique-" + techniqueId + "-" + field.version)) + ":effects",
+      context: { techniqueId }
+    });
+    if (!applied.ok) return { ...applied, field };
+    resolvedAttack = { ...attack, field: applied.field, effectOutcomes: applied.outcomes };
+  }
   return {
-    ...attack,
+    ...resolvedAttack,
     techniqueId,
     techniqueName: actor.boardTechniqueName,
     techniqueCosts: { ap: actor.boardTechniqueCost, ea: actor.boardTechniqueEaCost },
@@ -339,6 +369,11 @@ export function projectBoardUnits(boardUnits, field, { includeDefeated = false }
       hp: entity.hp.current,
       ap: entity.ap.current,
       ea: entity.ea.current,
+      stats: clone(entity.stats),
+      skills: clone(entity.skills),
+      equipment: clone(entity.equipment),
+      raceId: entity.raceId,
+      racialRarityId: entity.racialRarityId,
       uses: entity.boardTechniqueId
         ? Math.max(0, entity.boardTechniqueUsesMax - finite(entity.techniqueState?.[entity.boardTechniqueId]?.used))
         : unit.uses
