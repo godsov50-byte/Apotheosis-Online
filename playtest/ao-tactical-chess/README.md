@@ -16,6 +16,7 @@ After the feature branch is merged, the Pages workflow publishes the board at:
 - Two sides with 16 character units each; all ten basic classes represented.
 - Askar Venn on b8 as a Berserker, Anti-Divine, Tier 5, with Knight movement and Divine Pursuit.
 - Select/move controls using King, Queen, Rook, Bishop, Knight, and Pawn movement patterns.
+- Board movement and basic attacks routed through the Layer 1–5 engine bridge, with engine-owned chess-motion validation, AC/damage resolution, displacement, and local event-ledger records.
 - Switchable movement pattern and manual facing rotation.
 - Class baseline HP, AC, attack bonus, and weapon damage die (provisional playtest values).
 - Character dossier with Race, Class, Tier, Archetype, Chess Motion, Natural Affinity, combat statistics, equipment slots, techniques and triggers.
@@ -38,6 +39,7 @@ After the feature branch is merged, the Pages workflow publishes the board at:
 - The match is local and two-player on one device; there is no network multiplayer, account system, cloud persistence, or AI opponent. Local save/load is browser-only and device-specific.
 - Capture/defeat only removes a token from this match. It does not mean the character dies in the AO world. Attackers only move into a defeated target's square; they hold their current position if the target survives.
 - The elemental-affinity roster and weakness/resistance chart remain unassigned; technique records display affinity without inventing the canonical chart.
+- Movement and basic attacks use the engine bridge. Technique attacks/costs/uses, conditional triggers, creature drops, inventory, crafting, and fragment progression still use legacy/local paths or isolated engine modules; they are not yet one integrated encounter transaction.
 - The current trigger handling is intentionally small and illustrative. It is not a complete reaction-priority or chain-resolution engine.
 - T1 text is generated from the prototype's local resolved action. It is not a call to Azimah and does not write authoritative world history.
 - Chess-pattern movement is the prototype's tactical movement model, not the full continuous-space AO spatial engine.
