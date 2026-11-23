@@ -18,7 +18,7 @@ A dependency-free browser/Node ESM reference engine. It is a prototype and is **
 
 The board now uses `board-engine-bridge.mjs` for movement transactions. It converts the existing portrait-token records into engine entities, recomputes King, Queen, Rook, Bishop, Knight, and Pawn movement legality inside the bridge (the UI's highlighted cells are only a candidate hint), validates occupancy and active side, and appends local engine ledger events. The bridge deliberately preserves the current playtest rule that basic movement costs no AP and a unit may act more than once in a turn. The UI still owns the provisional movement-pattern display and supplies its candidate legal cells; the bridge is not yet a production Kernel authority.
 
-The Engine Console remains a separate isolated sandbox. Board combat, technique execution, drops, inventory, crafting, and progression have not yet been wired to the board match loop.
+Basic board attacks now also pass through the bridge: chess-motion attack geometry, d20 vs. AC, damage packets, DR/resistance/penetration, defeat cleanup, capture advance, and optional weapon knockback resolve through the shared engine. The current prototype's basic attacks remain free of AP/EA cost. Technique attacks and their costs/uses, conditional triggers, creature drops, inventory, crafting, and fragment progression are still not wired into the board match loop. The Engine Console remains a separate isolated sandbox.
 
 Run tests locally with Node: `node --test tests/*.test.mjs`.
 
