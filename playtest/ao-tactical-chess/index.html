@@ -169,7 +169,7 @@ function clickSquare(x,y){
 }
 function narrate(tag,story){history.unshift({tag,story});renderChronicle();}
  function renderChronicle(){const box=$("chronicle");box.innerHTML="";for(const item of history){const el=document.createElement("div");el.className="entry";const label=document.createElement("div");label.className="tag";label.textContent=item.tag;const p=document.createElement("p");p.textContent=item.story;el.append(label,p);box.appendChild(el);}}
- function saveMatch(){try{const payload={version:1,units,turn,round,lastMove,history,techniqueMode};localStorage.setItem("ao-chess-local-match-v1",JSON.stringify(payload));$("dice").innerHTML="<b>Match saved locally.</b>";}catch(e){$("dice").innerHTML="<b>Save failed:</b> browser storage unavailable.";}}
+ function saveMatch(){try{const payload={version:1,units,turn,round,lastMove,history,techniqueMode};payload.engineState=window.aoBoardEngineSaveState||null;localStorage.setItem("ao-chess-local-match-v1",JSON.stringify(payload));$("dice").innerHTML="<b>Match saved locally.</b>";}catch(e){$("dice").innerHTML="<b>Save failed:</b> browser storage unavailable.";}}
  function loadMatch(){try{const raw=localStorage.getItem("ao-chess-local-match-v1");if(!raw){$("dice").innerHTML="<b>No local save found.</b>";return;}const data=JSON.parse(raw);if(data.version!==1||!Array.isArray(data.units)||!data.units.every(u=>u&&typeof u.id==="string"&&["white","black"].includes(u.side)&&Number.isInteger(u.x)&&Number.isInteger(u.y)&&u.x>=0&&u.x<8&&u.y>=0&&u.y<8&&Number.isFinite(u.hp)&&Number.isFinite(u.maxHp))||!["white","black"].includes(data.turn)||!Number.isInteger(data.round)||data.round<1||!Array.isArray(data.history))throw new Error("invalid save data");units=data.units;turn=data.turn;round=data.round;lastMove=data.lastMove||null;history=data.history.filter(h=>h&&typeof h.tag==="string"&&typeof h.story==="string");techniqueMode=!!data.techniqueMode;selected=null;legal=[];resetBoardEngineBridge();$("techMode").textContent=techniqueMode?"Technique: ON":"Technique: Off";renderChronicle();render();renderProfile();$("dice").innerHTML="<b>Match loaded.</b>";}catch(e){$("dice").innerHTML="<b>Load failed:</b> save file invalid or unreadable.";}}
 function faceToward(u,x,y){let dx=x-u.x,dy=y-u.y;if(Math.abs(dx)>Math.abs(dy))u.facing=dx>0?"E":"W";else if(dy!==0)u.facing=dy>0?"S":"N";}
 function move(u,x,y){
@@ -262,7 +262,7 @@ function renderProfile(){
  '<h3 style="margin-top:14px">Technique & triggers</h3><div class="tech"><b>'+u.technique+'</b><small>Class: '+u.cls+' · Archetype: '+u.archetype+' · Technique Tier: '+u.techniqueTier+' · Pattern: '+u.techniquePattern+'</small><p>AP '+u.techniqueCost+' · EA 3 · Uses/day '+u.uses+' · Affinity: '+u.affinity+(u.techniqueDormant?'<br><b>DORMANT</b> — requires Knight movement.':'')+(u.special?'<br>Divine Pursuit is available only while Askar uses the Knight movement pattern.':'')+'</p></div><div class="tech"><b>Trigger: '+u.trigger+'</b><p>Conditional combat response. Trigger resolution is currently a lightweight prototype rule.</p></div>';
 }
 function slot(a,b){return '<div class="slot"><span>'+a+'</span><b>'+b+'</b></div>'}
-function resetBoardEngineBridge(){window.aoBoardSnapshot={units:units.map(u=>({...u})),turn,round};window.dispatchEvent(new CustomEvent("ao-board-reset",{detail:window.aoBoardSnapshot}));}
+function resetBoardEngineBridge(engineState=null){window.aoBoardSnapshot={units:units.map(u=>({...u})),turn,round,engineState};window.dispatchEvent(new CustomEvent("ao-board-reset",{detail:window.aoBoardSnapshot}));}
 window.aoApplyBoardUnits=next=>{units=next;selected=selected?units.find(u=>u.id===selected.id)||null:null;render();renderProfile();};
 window.aoSelectedUnitId=null;
 $("rotate").addEventListener("click",()=>{if(!selected)return;selected.facing=dirs[(dirs.indexOf(selected.facing)+1)%4];narrate("Facing · "+selected.name,selected.name+" pivots to face "+selected.facing+". Their position and movement pattern remain unchanged.");render();renderProfile();});
@@ -308,12 +308,17 @@ function renderFieldDrops(){
  }
 }
 
+function publishBoardEngineState(){
+ if(!boardField)return;
+ window.aoBoardEngineSaveState={drops:structuredClone(boardField.drops||{}),containers:structuredClone(boardField.containers||{}),ledger:structuredClone(boardField.ledger||[]),version:boardField.version,registry:boardDropRegistry};
+}
 function resetBoardBridge(snapshot){
  if(!snapshot||!Array.isArray(snapshot.units))return;
  boardRoster=snapshot.units.map(u=>({...u}));
- boardDropRegistry=boardRoster.find(u=>u.dropContext?.registry)?.dropContext.registry||null;
+ boardDropRegistry=snapshot.engineState?.registry||boardRoster.find(u=>u.dropContext?.registry)?.dropContext.registry||null;
  boardField=BoardBridge.createBoardField(boardRoster,{turn:snapshot.turn,round:snapshot.round});
- renderFieldDrops();
+ if(snapshot.engineState){boardField={...boardField,drops:snapshot.engineState.drops||{},containers:snapshot.engineState.containers||{},ledger:Array.isArray(snapshot.engineState.ledger)?snapshot.engineState.ledger:boardField.ledger,version:Number.isInteger(snapshot.engineState.version)?snapshot.engineState.version:boardField.version};}
+ renderFieldDrops();publishBoardEngineState();
  const status=document.getElementById('aoBoardBridgeStatus');
  if(status)status.textContent='Board engine bridge: active · '+Object.keys(boardField.entities).length+' entities · '+boardField.ledger.length+' setup events · movement commits enabled.';
 }
@@ -322,10 +327,10 @@ window.addEventListener('ao-board-move',event=>{
  try{
   if(!boardField)throw new Error('board engine is not initialized');
   if(Array.isArray(event.detail.units)){
-   const priorLedger=boardField.ledger,priorVersion=boardField.version,activeSide=boardField.activeSide,round=boardField.round;
+   const priorLedger=boardField.ledger,priorVersion=boardField.version,priorDrops=boardField.drops||{},priorContainers=boardField.containers||{},activeSide=boardField.activeSide,round=boardField.round;
    boardRoster=event.detail.units.map(u=>({...u}));
    boardField=BoardBridge.createBoardField(boardRoster,{turn:activeSide,round});
-   boardField={...boardField,ledger:priorLedger,version:priorVersion};
+   boardField={...boardField,drops:priorDrops,containers:priorContainers,ledger:priorLedger,version:priorVersion};
   }
   const result=BoardBridge.resolveBoardMove(boardField,event.detail);
   event.detail.result={ok:result.ok,reason:result.reason};
@@ -336,28 +341,28 @@ window.addEventListener('ao-board-attack',event=>{
  try{
   if(!boardField)throw new Error('board engine is not initialized');
   if(Array.isArray(event.detail.units)){
-   const priorLedger=boardField.ledger,priorVersion=boardField.version,activeSide=boardField.activeSide,round=boardField.round;
+   const priorLedger=boardField.ledger,priorVersion=boardField.version,priorDrops=boardField.drops||{},priorContainers=boardField.containers||{},activeSide=boardField.activeSide,round=boardField.round;
    boardRoster=event.detail.units.map(u=>({...u}));
    boardField=BoardBridge.createBoardField(boardRoster,{turn:activeSide,round});
-   boardField={...boardField,ledger:priorLedger,version:priorVersion};
+   boardField={...boardField,drops:priorDrops,containers:priorContainers,ledger:priorLedger,version:priorVersion};
   }
   const result=BoardBridge.resolveBoardAttack(boardField,event.detail);
   event.detail.result={ok:result.ok,reason:result.reason,hit:result.hit,roll:result.roll,total:result.total,damage:result.damage,defeated:result.defeated,positionEffect:result.positionEffect};
-  if(result.ok){if(event.detail.dropContext?.registry)boardDropRegistry=event.detail.dropContext.registry;boardField=result.field;boardRoster=BoardBridge.projectBoardUnits(boardRoster,boardField);event.detail.units=boardRoster.map(u=>({...u}));renderFieldDrops();}
+  if(result.ok){if(event.detail.dropContext?.registry)boardDropRegistry=event.detail.dropContext.registry;boardField=result.field;boardRoster=BoardBridge.projectBoardUnits(boardRoster,boardField);event.detail.units=boardRoster.map(u=>({...u}));renderFieldDrops();publishBoardEngineState();}
  }catch(error){event.detail.result={ok:false,reason:error.message};}
 });
 window.addEventListener('ao-board-technique',event=>{
  try{
   if(!boardField)throw new Error('board engine is not initialized');
   if(Array.isArray(event.detail.units)){
-   const priorLedger=boardField.ledger,priorVersion=boardField.version,activeSide=boardField.activeSide,round=boardField.round;
+   const priorLedger=boardField.ledger,priorVersion=boardField.version,priorDrops=boardField.drops||{},priorContainers=boardField.containers||{},activeSide=boardField.activeSide,round=boardField.round;
    boardRoster=event.detail.units.map(u=>({...u}));
    boardField=BoardBridge.createBoardField(boardRoster,{turn:activeSide,round});
-   boardField={...boardField,ledger:priorLedger,version:priorVersion};
+   boardField={...boardField,drops:priorDrops,containers:priorContainers,ledger:priorLedger,version:priorVersion};
   }
   const result=BoardBridge.resolveBoardTechnique(boardField,event.detail);
   event.detail.result={ok:result.ok,reason:result.reason,hit:result.hit,roll:result.roll,total:result.total,damage:result.damage,defeated:result.defeated,positionEffect:result.positionEffect,techniqueCosts:result.techniqueCosts};
-  if(result.ok){if(event.detail.dropContext?.registry)boardDropRegistry=event.detail.dropContext.registry;boardField=result.field;boardRoster=BoardBridge.projectBoardUnits(boardRoster,boardField);event.detail.units=boardRoster.map(u=>({...u}));renderFieldDrops();}
+  if(result.ok){if(event.detail.dropContext?.registry)boardDropRegistry=event.detail.dropContext.registry;boardField=result.field;boardRoster=BoardBridge.projectBoardUnits(boardRoster,boardField);event.detail.units=boardRoster.map(u=>({...u}));renderFieldDrops();publishBoardEngineState();}
  }catch(error){event.detail.result={ok:false,reason:error.message};}
 });
 window.addEventListener('ao-board-collect-drop',event=>{
@@ -365,10 +370,10 @@ window.addEventListener('ao-board-collect-drop',event=>{
   if(!boardField||!boardDropRegistry)throw new Error('drop registry is not configured');
   const result=BoardBridge.collectBoardDrop(boardField,event.detail);
   event.detail.result={ok:result.ok,reason:result.reason};
-  if(result.ok){boardField=result.field;boardRoster=BoardBridge.projectBoardUnits(boardRoster,boardField);if(window.aoApplyBoardUnits)window.aoApplyBoardUnits(boardRoster.map(u=>({...u})));renderFieldDrops();}
+  if(result.ok){boardField=result.field;boardRoster=BoardBridge.projectBoardUnits(boardRoster,boardField);if(window.aoApplyBoardUnits)window.aoApplyBoardUnits(boardRoster.map(u=>({...u})));renderFieldDrops();publishBoardEngineState();}
  }catch(error){event.detail.result={ok:false,reason:error.message};}
 });
-window.addEventListener('ao-board-turn',event=>{if(boardField)boardField=BoardBridge.endBoardTurn(boardField,event.detail.nextSide);});
+window.addEventListener('ao-board-turn',event=>{if(boardField){boardField=BoardBridge.endBoardTurn(boardField,event.detail.nextSide);publishBoardEngineState();}});
 if(window.aoBoardSnapshot)resetBoardBridge(window.aoBoardSnapshot);
 let sandbox=null, activeProjectile='demo-arrow', logLines=[];
 const byId=id=>document.getElementById(id);
