@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AO · First Haven Playable</title>
+<style>
+:root{color-scheme:dark;--bg:#091018;--panel:#121d29;--panel2:#182737;--line:#304358;--ink:#edf3f8;--muted:#9aabba;--gold:#d9b46a;--green:#80c59b;--red:#d87979;--blue:#82b6df}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#24384a 0,var(--bg) 58%);color:var(--ink);font:14px/1.45 system-ui,sans-serif}
+header{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;align-items:center;background:#0b141eea;position:sticky;top:0;z-index:5}
+.brand{display:flex;align-items:center;gap:12px}.sigil{width:38px;height:38px;border:1px solid var(--gold);border-radius:10px;display:grid;place-items:center;color:var(--gold);font-size:21px}.brand b{letter-spacing:.15em;font-size:13px}.brand small{display:block;color:var(--muted);font-size:9px;letter-spacing:.18em}.meta{color:var(--muted);font-size:11px;text-align:right}
+main{max-width:1600px;margin:auto;padding:16px;display:grid;grid-template-columns:minmax(560px,1fr) minmax(310px,390px);gap:16px}
+.panel{background:linear-gradient(160deg,#172433,#101923);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 12px 36px #0005}.head{padding:12px 15px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px}.head h2{font-size:11px;letter-spacing:.15em;text-transform:uppercase;margin:0}.muted{color:var(--muted);font-size:11px}
+.arena{padding:12px}.board-scroll{overflow:auto;padding-bottom:4px}.board{display:grid;grid-template-columns:repeat(16,minmax(30px,1fr));width:100%;min-width:510px;aspect-ratio:1;border:1px solid #708092;border-radius:7px;overflow:hidden}
+.cell{position:relative;min-width:0;aspect-ratio:1;border:0;border-radius:0;padding:0;display:grid;place-items:center;cursor:pointer;color:#fff}
+.cell.light{background:#b6b29f}.cell.dark{background:#536a78}.cell.legal:after{content:"";position:absolute;width:24%;aspect-ratio:1;border-radius:50%;background:#172b3c99}.cell.attack:after{content:"";position:absolute;inset:2px;border:2px solid #e06b62;border-radius:4px}.cell.selected{box-shadow:inset 0 0 0 3px var(--gold);z-index:1}
+.unit{width:90%;height:90%;border-radius:50%;display:grid;place-items:center;border:2px solid #e4d2a8;background:radial-gradient(circle at 35% 25%,#5b7389,#152330 72%);font-size:clamp(11px,1.5vw,19px);box-shadow:0 2px 5px #0008;position:relative;z-index:2}.unit.creature{border-color:#c78b83;background:radial-gradient(circle at 35% 25%,#8d574e,#26191c 72%)}.unitname{position:absolute;bottom:1px;left:0;right:0;font-size:7px;color:#fff;text-shadow:0 1px 3px #000;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.marker{font-size:14px;text-shadow:0 1px 3px #000}.coord{position:absolute;top:1px;left:2px;font-size:7px;color:#15202a99;pointer-events:none}
+.controls{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+button{background:#24384b;color:var(--ink);border:1px solid #486079;border-radius:8px;padding:8px 10px;font:inherit;font-size:11px;cursor:pointer}button:hover{border-color:var(--gold);background:#2c4359}button:disabled{opacity:.35;cursor:not-allowed}.primary{background:#5b4829;border-color:#a08048}.danger{background:#472a2a;border-color:#805050}
+.columns{display:flex;flex-direction:column;gap:12px}.section{padding:13px 15px}.section h3{margin:0 0 10px;color:var(--gold);font-size:10px;letter-spacing:.14em;text-transform:uppercase}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.stat{background:#0d1721;border:1px solid #293b4e;border-radius:7px;padding:7px}.stat b{display:block;font-size:16px}.stat span{font-size:9px;color:var(--muted)}
+.bar{height:7px;background:#08111a;border-radius:8px;overflow:hidden;margin:8px 0}.bar i{display:block;height:100%;background:var(--green)}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}.kv div{background:#0d1721;border-radius:7px;padding:7px}.kv span{display:block;color:var(--muted);font-size:9px}.kv b{font-size:11px}
+.item{padding:9px 0;border-bottom:1px solid #263849;display:flex;justify-content:space-between;gap:8px;align-items:center}.item:last-child{border:0}.item b{font-size:11px}.item small{display:block;color:var(--muted);font-size:9px}.item button{flex-shrink:0}
+.log{max-height:220px;overflow:auto}.logrow{padding:8px 0;border-bottom:1px solid #263849}.logrow b{display:block;color:var(--gold);font-size:9px;letter-spacing:.1em;text-transform:uppercase}.logrow p{margin:3px 0 0;font:12px Georgia,serif;color:#d5dfeb}
+.notice{padding:9px 11px;background:#0d1721;border:1px solid #293b4e;border-radius:8px;color:var(--muted);font-size:11px;margin-top:10px}
+@media(max-width:1050px){main{grid-template-columns:1fr}.columns{display:grid;grid-template-columns:1fr 1fr}.columns .wide{grid-column:1/-1}}
+@media(max-width:650px){header{padding:10px}.meta{display:none}main{padding:8px;gap:10px}.columns{display:flex}.arena{padding:8px}}
+</style>
+</head>
+<body>
+<header><div class="brand"><div class="sigil">✦</div><div><b>APOTHEOSIS ONLINE</b><small>FIRST HAVEN · PLAYABLE COMBAT LOOP</small></div></div><div class="meta">16 × 16 spatial board<br><b style="color:var(--gold)">Tier 9 playtest scenario</b></div></header>
+<main>
+<section class="panel">
+ <div class="head"><h2>First Haven · Clearing</h2><span class="muted" id="turnLabel">Envoy turn</span></div>
+ <div class="arena">
+  <div class="board-scroll"><div class="board" id="board" role="grid" aria-label="First Haven 16 by 16 tactical board"></div></div>
+  <div class="controls">
+   <button id="basic" class="primary">Basic attack mode</button>
+   <button id="tech">Guard Break · Technique Tier 9</button>
+   <button id="endTurn">End turn / creature response</button>
+   <button id="save">Save</button><button id="load">Load</button><button id="reset" class="danger">Reset encounter</button>
+  </div>
+  <div class="notice" id="status">Select a highlighted square to move. Move adjacent to the creature to attack. Click a resource cell, cache, or forge location to approach it.</div>
+ </div>
+</section>
+<aside class="columns">
+ <section class="panel wide"><div class="head"><h2>Envoy dossier</h2><span class="muted">Selected entity</span></div><div class="section" id="dossier"></div></section>
+ <section class="panel"><div class="head"><h2>Field drops & containers</h2></div><div class="section" id="drops"></div></section>
+ <section class="panel"><div class="head"><h2>Resources & extraction</h2></div><div class="section" id="resources"></div></section>
+ <section class="panel"><div class="head"><h2>Inventory & equipment</h2></div><div class="section" id="inventory"></div></section>
+ <section class="panel"><div class="head"><h2>Crafting & progression</h2></div><div class="section" id="crafting"></div></section>
+ <section class="panel wide"><div class="head"><h2>First Haven Chronicle</h2><span class="muted">Local encounter ledger</span></div><div class="section log" id="log"></div></section>
+</aside>
+</main>
+<script type="module">
+import {
+ createFirstHavenSession,getFirstHavenLegalMoves,moveFirstHavenEnvoy,attackFirstHavenCreature,
+ openFirstHavenContainer,collectFirstHavenDrop,harvestFirstHavenNode,craftFirstHavenEquipment,
+ equipFirstHavenItem,advanceFirstHavenTechnique,endFirstHavenTurn,saveFirstHavenSession,
+ loadFirstHavenSession,getFirstHavenSummary
+} from "./engine/first-haven-session.mjs";
+
+const $=id=>document.getElementById(id);
+let state=createFirstHavenSession(),mode="move";
+const labels="abcdefghijklmnop";
+const coord=(x,y)=>labels[x]+(16-y);
+const message=text=>{$("status").textContent=text;};
+function act(result,successText){
+ if(!result.ok){message("Action unavailable: "+result.reason.replaceAll("_"," "));return false;}
+ state=result.state||result;
+ if(successText)message(successText);
+ render();return true;
+}
+function renderBoard(){
+ const board=$("board");board.innerHTML="";
+ const envoy=state.field.entities[state.envoyId];
+ const legal=getFirstHavenLegalMoves(state);
+ const legalKeys=new Set(legal.map(p=>p.x+","+p.y));
+ const drops=Object.values(state.field.drops||{}).filter(d=>!d.collected);
+ const nodes=Object.values(state.field.resourceNodes||{}).filter(n=>n.quantity>0);
+ const containers=Object.values(state.field.containers||{}).filter(c=>!c.collected);
+ const forge=state.field.stations["haven-forge"];
+ for(let y=0;y<16;y++)for(let x=0;x<16;x++){
+  const cell=document.createElement("button");
+  cell.className="cell "+((x+y)%2?"dark":"light");
+  cell.setAttribute("aria-label",coord(x,y));
+  if(envoy?.position.x===x&&envoy?.position.y===y)cell.classList.add("selected");
+  if(legalKeys.has(x+","+y)){
+   const target=Object.values(state.field.entities).find(e=>e.alive&&e.side==="black"&&e.position.x===x&&e.position.y===y);
+   cell.classList.add(target?"attack":"legal");
+  }
+  const creature=state.field.entities[state.creatureId];
+  if(envoy?.alive&&envoy.position.x===x&&envoy.position.y===y){
+   const token=document.createElement("div");token.className="unit";token.textContent="✦";cell.append(token);
+   const name=document.createElement("span");name.className="unitname";name.textContent="Envoy";cell.append(name);
+  }else if(creature?.alive&&creature.position.x===x&&creature.position.y===y){
+   const token=document.createElement("div");token.className="unit creature";token.textContent="◈";cell.append(token);
+   const name=document.createElement("span");name.className="unitname";name.textContent="Creature";cell.append(name);
+  }else{
+   const node=nodes.find(n=>n.position.x===x&&n.position.y===y);
+   const drop=drops.find(d=>d.position.x===x&&d.position.y===y);
+   const chest=containers.find(c=>c.position.x===x&&c.position.y===y);
+   if(node){const m=document.createElement("span");m.className="marker";m.textContent="✧";cell.append(m);}
+   else if(chest){const m=document.createElement("span");m.className="marker";m.textContent=chest.opened?"▣":"▤";cell.append(m);}
+   else if(drop){const m=document.createElement("span");m.className="marker";m.textContent="•";cell.append(m);}
+   else if(forge.position.x===x&&forge.position.y===y){const m=document.createElement("span");m.className="marker";m.textContent="⚒";cell.append(m);}
+  }
+  if(x===0){const c=document.createElement("span");c.className="coord";c.textContent=16-y;cell.append(c);}
+  cell.addEventListener("click",()=>clickCell(x,y));board.append(cell);
+ }
+ $("turnLabel").textContent=state.field.activeSide==="white"?"Envoy turn":"Creature turn";
+}
+function clickCell(x,y){
+ const envoy=state.field.entities[state.envoyId],creature=state.field.entities[state.creatureId];
+ if(!envoy?.alive)return;
+ if(creature?.alive&&creature.position.x===x&&creature.position.y===y){
+  const roll=Math.floor(Math.random()*20)+1;
+  const damage=mode==="technique"?6:Math.floor(Math.random()*6)+1;
+  const result=attackFirstHavenCreature(state,{technique:mode==="technique",roll,damage});
+  if(act(result,mode==="technique"?"Guard Break resolved.":"Attack resolved."))mode="move";
+  return;
+ }
+ const legal=getFirstHavenLegalMoves(state).find(p=>p.x===x&&p.y===y);
+ if(!legal){message("That square is not a legal move. Select a highlighted square.");return;}
+ act(moveFirstHavenEnvoy(state,{x,y}),"The Envoy moves to "+coord(x,y)+".");
+}
+function renderDossier(){
+ const e=state.field.entities[state.envoyId],creature=state.field.entities[state.creatureId];
+ const summary=getFirstHavenSummary(state);
+ if(!e){$("dossier").textContent="No Envoy.";return;}
+ const stats=e.stats||{};
+ $("dossier").innerHTML=
+  '<div style="display:flex;justify-content:space-between;gap:8px"><div><b>'+e.name+'</b><div class="muted">Tier '+e.characterTier+' · '+e.class+' · '+e.archetype+'</div></div><b style="color:var(--gold)">First Haven</b></div>'+
+  '<div class="stats" style="margin-top:10px"><div class="stat"><b>'+summary.hp+'/'+summary.maxHp+'</b><span>HP</span></div><div class="stat"><b>'+summary.ap+'</b><span>AP</span></div><div class="stat"><b>'+summary.ea+'</b><span>EA</span></div><div class="stat"><b>'+summary.techniqueTier+'</b><span>TECH TIER</span></div></div>'+
+  '<div class="bar"><i style="width:'+(summary.hp/Math.max(1,summary.maxHp)*100)+'%"></i></div>'+
+  '<div class="kv">'+["STR","DEX","CON","INT","WIS","CHA","ATT"].map(k=>'<div><span>'+k+'</span><b>'+Number(stats[k]||0)+'</b></div>').join("")+
+  '<div><span>Natural affinity</span><b>Unassigned</b></div><div><span>Race</span><b>Unclassified</b></div><div><span>Chess motion</span><b>King</b></div><div><span>Creature</span><b>'+(creature?.alive?"Alive · Tier 9":"Defeated")+'</b></div></div>'+
+  '<p class="muted" style="margin-bottom:0">Generated Tier 9 playtest shell. Race, ancestry, rarity, and creature taxonomy remain unassigned; numeric fixture values are not canon.</p>';
+}
+function renderDrops(){
+ const box=$("drops");box.innerHTML="";
+ const drops=Object.values(state.field.drops||{}).filter(d=>!d.collected);
+ const containers=Object.values(state.field.containers||{}).filter(c=>!c.collected);
+ if(!drops.length&&!containers.length){box.textContent="No field drops yet. Defeat the creature to generate physical rewards.";return;}
+ containers.forEach(c=>{
+  const row=document.createElement("div");row.className="item";
+  const label=document.createElement("div");label.innerHTML='<b>'+c.name+'</b><small>'+(c.opened?"Opened · contents await collection":"Closed · must be opened first")+'</small>';
+  const btn=document.createElement("button");btn.textContent=c.opened?"Opened":"Open";btn.disabled=c.opened;btn.addEventListener("click",()=>act(openFirstHavenContainer(state,c.id),"Container opened. Collect its contents manually."));
+  row.append(label,btn);box.append(row);
+ });
+ drops.forEach(d=>{
+  const row=document.createElement("div");row.className="item";
+  const name=d.kind==="technique_fragment_drop"?"Technique fragment":d.kind==="equipment_drop"?"Equipment drop":(d.materialId||"Material drop");
+  const label=document.createElement("div");label.innerHTML='<b>'+name+'</b><small>Qty '+d.quantity+' · '+d.quality.grade+' · '+(d.containerId?"Inside container":"On the ground")+'</small>';
+  const btn=document.createElement("button");btn.textContent="Collect";btn.disabled=!!(d.containerId&&!state.field.containers[d.containerId]?.opened);
+  btn.addEventListener("click",()=>act(collectFirstHavenDrop(state,d.id),"Drop collected into the Envoy's inventory."));
+  row.append(label,btn);box.append(row);
+ });
+}
+function renderResources(){
+ const box=$("resources");box.innerHTML="";
+ const nodes=Object.values(state.field.resourceNodes||{});
+ nodes.forEach(n=>{
+  const row=document.createElement("div");row.className="item";
+  const label=document.createElement("div");label.innerHTML='<b>'+n.resourceId+'</b><small>'+n.quantity+'/'+n.maxQuantity+' remaining · '+n.state+'</small>';
+  const btn=document.createElement("button");btn.textContent="Extract";btn.disabled=n.quantity<=0;
+  btn.addEventListener("click",()=>act(harvestFirstHavenNode(state,n.id),"Resource extracted. Its drop must be collected separately."));
+  row.append(label,btn);box.append(row);
+ });
+ if(!nodes.length)box.textContent="No resource cells are available.";
+ const fieldDrops=Object.values(state.field.drops||{}).filter(d=>!d.collected&&d.kind==="material_drop"&&!d.containerId);
+ fieldDrops.forEach(d=>{
+  const row=document.createElement("div");row.className="item";
+  const label=document.createElement("div");label.innerHTML='<b>Extracted '+d.materialId+'</b><small>Field drop · quantity '+d.quantity+'</small>';
+  const btn=document.createElement("button");btn.textContent="Collect";btn.addEventListener("click",()=>act(collectFirstHavenDrop(state,d.id),"Extracted resource collected."));
+  row.append(label,btn);box.append(row);
+ });
+}
+function renderInventory(){
+ const box=$("inventory");box.innerHTML="";
+ const e=state.field.entities[state.envoyId],items=e.inventory||[];
+ if(!items.length){box.textContent="Inventory is empty. Collect drops and extracted resources.";return;}
+ items.forEach(item=>{
+  const row=document.createElement("div");row.className="item";
+  const label=document.createElement("div");
+  const name=item.kind==="material"?item.materialId:item.kind==="technique_fragment"?(item.fragmentId+" fragment"):item.name;
+  label.innerHTML='<b>'+name+'</b><small>'+item.kind+' · qty '+(item.quantity||1)+(item.quality?" · "+item.quality.grade:"")+'</small>';
+  if(item.kind==="equipment"){
+   const btn=document.createElement("button");btn.textContent="Equip";
+   btn.addEventListener("click",()=>act(equipFirstHavenItem(state,item.instanceId,item.equipmentSlot||"offhand"),"Equipment equipped."));
+   row.append(label,btn);
+  }else row.append(label);
+  box.append(row);
+ });
+ Object.entries(e.equipment||{}).forEach(([slot,item])=>{
+  const row=document.createElement("div");row.className="item";
+  const label=document.createElement("div");label.innerHTML='<b>'+slot+': '+item.name+'</b><small>Equipped · '+item.state+'</small>';
+  row.append(label);box.append(row);
+ });
+}
+function renderCrafting(){
+ const box=$("crafting");box.innerHTML="";
+ const e=state.field.entities[state.envoyId],forge=state.field.stations["haven-forge"];
+ const close=Math.max(Math.abs(e.position.x-forge.position.x),Math.abs(e.position.y-forge.position.y))<=1;
+ const info=document.createElement("div");info.className="muted";info.textContent=close?"At the forge.":"Forge at cell "+coord(forge.position.x,forge.position.y)+". Move adjacent to craft.";box.append(info);
+ [["forge-field-sabre","Forge field-iron sabre"],["stitch-traveler-coat","Stitch traveler coat"]].forEach(([id,label])=>{
+  const btn=document.createElement("button");btn.textContent=label;btn.disabled=!close;
+  btn.style.margin="6px 6px 0 0";btn.addEventListener("click",()=>act(craftFirstHavenEquipment(state,id),"Crafting completed."));
+  box.append(btn);
+ });
+ const progress=document.createElement("button");progress.textContent="Advance Guard Break to Tier 8";progress.style.marginTop="8px";
+ progress.addEventListener("click",()=>act(advanceFirstHavenTechnique(state),"Guard Break advanced to Technique Tier 8."));
+ box.append(progress);
+}
+function renderLog(){
+ const box=$("log");box.innerHTML="";
+ state.log.slice(0,20).forEach(entry=>{
+  const row=document.createElement("div");row.className="logrow";
+  const title=document.createElement("b");title.textContent=entry.tag;
+  const p=document.createElement("p");p.textContent=entry.text;
+  row.append(title,p);box.append(row);
+ });
+}
+function render(){renderBoard();renderDossier();renderDrops();renderResources();renderInventory();renderCrafting();renderLog();}
+$("basic").addEventListener("click",()=>{mode="basic";message("Basic attack selected. Move adjacent to the creature and click it.");});
+$("tech").addEventListener("click",()=>{mode="technique";message("Guard Break selected. Click the creature when it is within reach.");});
+$("endTurn").addEventListener("click",()=>{state=endFirstHavenTurn(state);mode="move";message("Creature response resolved. Your turn begins.");render();});
+$("save").addEventListener("click",()=>{try{localStorage.setItem("ao-first-haven-v1",saveFirstHavenSession(state));message("First Haven session saved in this browser.");}catch(e){message("Save failed: local browser storage unavailable.");}});
+$("load").addEventListener("click",()=>{try{const saved=localStorage.getItem("ao-first-haven-v1");if(!saved)throw new Error("No save found");state=loadFirstHavenSession(saved);render();message("First Haven session restored.");}catch(e){message("Load failed: "+e.message);}});
+$("reset").addEventListener("click",()=>{state=createFirstHavenSession();mode="move";message("New Tier 9 First Haven encounter generated.");render();});
+render();
+</script>
+</body>
+</html>

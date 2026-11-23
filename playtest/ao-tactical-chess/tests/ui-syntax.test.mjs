@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import { spawnSync } from 'node:child_process';
 
 test('regular AO Chess board script parses', () => {
   const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
@@ -22,4 +23,14 @@ test('board tokens use portrait/name surfaces and three identity color channels'
   assert.doesNotMatch(html, /classmark|hpmini/);
   assert.match(html, /Natural Affinity/);
   assert.match(html, /Chess Motion/);
+});
+
+test('First Haven module script parses as browser JavaScript', () => {
+  const html = fs.readFileSync(new URL('../first-haven.html', import.meta.url), 'utf8');
+  const match = html.match(/<script type="module">([\s\S]*?)<\/script>/);
+  assert.ok(match, 'First Haven module script exists');
+  const checked = spawnSync(process.execPath, ['--check', '--input-type=module'], {
+    input: match[1], encoding: 'utf8'
+  });
+  assert.equal(checked.status, 0, checked.stderr || 'First Haven module script syntax failed');
 });

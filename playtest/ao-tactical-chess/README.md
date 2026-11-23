@@ -60,3 +60,18 @@ The page includes an Engine Console sandbox for the new reference engine. It can
 The board surface renders each unit as a portrait above its name. It does not put class letters, HP strips, facing arrows, or numeric combat statistics on the token surface. The portrait frame has three independent visual channels: outer frame for Class, inner trim for Archetype, and accent ring for Natural Affinity. Selecting a unit still opens the full dossier with statistics, Race, Chess Motion, facing, and combat configuration.
 
 Unit records accept an optional `portraitUrl` for a character-specific portrait. Until portrait artwork is supplied, the playtest uses a generated neutral portrait silhouette as a fallback. The current class/archetype/affinity color values are provisional UI palette values, not canon. Unassigned natural affinities use a neutral accent rather than an invented elemental assignment.
+
+
+## First Haven playable loop
+
+Open `first-haven.html` in a modern browser, or use the published route `/first-haven/` after the Pages deployment runs. This is the new 16×16 First Haven encounter page; it is separate from the older 8×8 two-side prototype.
+
+The page generates one Tier 9 Envoy and one Tier 9 creature, then connects:
+- tactical movement, basic attacks, Guard Break, and a creature response turn through the board engine bridge;
+- creature defeat to physical material, equipment, and technique-fragment drops;
+- manual field-drop collection and a closed cache that must be opened before its contents can be collected;
+- finite resource-node extraction, with extracted resources remaining as separate field drops;
+- forge-gated crafting, equipment collection/equipping, and fragment-based Guard Break advancement from Technique Tier 9 to Tier 8;
+- local browser save/load of the complete encounter state and local event ledger.
+
+The generated Envoy uses a generic unclassified playtest shell, not an approved race or ancestry. The creature is an unclassified playtest creature. Starting attributes, vitality coefficients, creature statistics, reward profile, recipe access, and all numeric values are scenario fixtures only; they are not AO canon. The playtest does not write to WorldHeart, Supabase, or production Kernel history. 
