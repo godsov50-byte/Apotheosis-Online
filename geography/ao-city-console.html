@@ -18,7 +18,8 @@
 <section class="panel mapwrap">
  <div class="maphead"><div><strong id="maptitle">Geographic view</strong><div class="hint" id="mapsubtitle">Houston map context · select a point to inspect or author a place</div></div><div class="actions"><button id="gpsButton">Use device GPS</button><button id="followButton">Follow Envoy: ON</button><button id="centerButton">Center on Envoy</button></div></div>
  <div id="map" aria-label="Geographic map"></div>
- <div id="aoEntranceCard" class="ao-entrance-card" hidden role="dialog" aria-modal="false"><button id="aoEntranceClose" class="ao-card-close" aria-label="Close location card">×</button><div id="aoEntranceCardBody"></div></div>
+ <div id="aoEntranceCard" class="ao-entrance-card" hidden role="dialog" aria-modal="false" aria-label="Location actions"><button id="aoEntranceClose" class="ao-card-close" aria-label="Close location card">×</button><div id="aoEntranceCardBody" style="max-height:40vh;overflow:auto"></div></div>
+ <div class="actions" style="padding:8px 12px"><a href="./first-haven/" target="_blank" rel="noopener" style="color:var(--accent)">First Haven encounter</a><a href="./first-haven/piece-arena.html" target="_blank" rel="noopener" style="color:var(--accent)">AO Chess training arena</a></div>
  <div class="mapfoot"><div class="legend"><span><i class="dot" style="background:#55b7f0"></i>Envoy</span><span><i class="dot" style="background:#e1bd68"></i>Admin-authored building</span><span><i class="dot" style="background:#75d3a4"></i>Entrance</span><span><i class="dot" style="background:#c69bff"></i>Destination preview</span></div><div id="mapstatus">Map tiles are a visual basemap; they are not AO-authoritative geometry.</div></div>
 </section>
 <aside class="stack">
