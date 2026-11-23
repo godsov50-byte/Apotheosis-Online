@@ -39,6 +39,7 @@ This module is a rules utility expansion. It is not yet wired as the authoritati
 - **Localized body effects:** injuries are attached to a body part; severing/crushing requires an explicit permission flag, preventing accidental severe outcomes.
 - **Formation support:** nearby living allies are counted for a simple supported/isolated state.
 - **Grapples:** initiate, pin, break, and release update both involved units together.
+- **Basic projectiles:** straight board-cell travel, range validation, terrain blocking, unit collision, and a ready unit's one-cell interception reaction.
 
 These helpers are currently standalone utilities, not connected to the match UI or its turn/action controls. Their behavior is a minimal prototype and does not imply canonized numerical rules.
 

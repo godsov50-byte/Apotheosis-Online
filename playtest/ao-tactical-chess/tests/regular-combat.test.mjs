@@ -51,3 +51,19 @@ test('grapple initiation, pin, and break update both sides consistently', () => 
   assert.equal(state.a.grapple, null);
   assert.equal(state.b.grapple, null);
 });
+
+test('simple projectile travels cell-by-cell, collides, or is intercepted', () => {
+  const shot = Combat.launchSimpleProjectile({ id: 'arrow-1', sourceId: 'archer', targetId: 'target', from: { x: 0, y: 0 }, to: { x: 3, y: 0 }, range: 4, damage: 5 });
+  const interceptUnits = [{ id: 'guard', alive: true, interceptionReady: true, position: { x: 1, y: 0 } }];
+  const intercepted = Combat.advanceSimpleProjectile(shot, { units: interceptUnits, interceptorId: 'guard' });
+  assert.equal(intercepted.projectile.state, 'intercepted');
+  assert.equal(intercepted.updatedInterceptor.interceptionReady, false);
+  const units = [{ id: 'target', alive: true, position: { x: 1, y: 0 } }];
+  const hit = Combat.advanceSimpleProjectile(shot, { units });
+  assert.equal(hit.event.type, 'hit');
+  assert.equal(hit.event.targetId, 'target');
+  assert.equal(hit.event.damage, 5);
+  const blocked = Combat.advanceSimpleProjectile(shot, { blockers: [{ x: 1, y: 0 }] });
+  assert.equal(blocked.event.type, 'blocked');
+  assert.throws(() => Combat.launchSimpleProjectile({ id: 'long', sourceId: 'a', from: { x: 0, y: 0 }, to: { x: 5, y: 0 }, range: 2 }), /range exceeded/);
+});

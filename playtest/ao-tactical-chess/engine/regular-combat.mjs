@@ -87,3 +87,45 @@ export function grappleAction(state, actorId, targetId, action) {
   } else throw new Error("unsupported grapple action");
   return next;
 }
+
+/** Grid ray for the regular match: straight cell-to-cell travel only. */
+export function projectilePath(from, to) {
+  let x = from.x, y = from.y;
+  const dx = Math.abs(to.x - x), sx = x < to.x ? 1 : -1;
+  const dy = -Math.abs(to.y - y), sy = y < to.y ? 1 : -1;
+  let err = dx + dy, path = [];
+  while (x !== to.x || y !== to.y) {
+    const e2 = 2 * err;
+    if (e2 >= dy) { err += dy; x += sx; }
+    if (e2 <= dx) { err += dx; y += sy; }
+    path.push({ x, y, z: to.z || 0 });
+  }
+  return path;
+}
+
+export function launchSimpleProjectile({ id, sourceId, targetId = null, from, to, range, damage = 0, damageType = "physical" }) {
+  if (!id || !sourceId || !from || !to) throw new Error("projectile id, source and coordinates required");
+  const path = projectilePath(from, to);
+  if (range != null && path.length > range) throw new Error("projectile range exceeded");
+  return { id, sourceId, targetId, position: clone(from), destination: clone(to), path, nextIndex: 0, state: "traveling", damage, damageType };
+}
+
+/** Advance one board cell: terrain block, ready interceptor, then unit collision. */
+export function advanceSimpleProjectile(projectile, { blockers = [], units = [], interceptorId = null } = {}) {
+  if (projectile.state !== "traveling") return { projectile: clone(projectile), event: { type: "inactive" } };
+  const nextCell = projectile.path[projectile.nextIndex];
+  if (!nextCell) return { projectile: { ...clone(projectile), state: "missed" }, event: { type: "miss" } };
+  const sameCell = (a, b) => a.x === b.x && a.y === b.y && (a.z || 0) === (b.z || 0);
+  if (blockers.some(c => sameCell(c, nextCell))) {
+    return { projectile: { ...clone(projectile), position: clone(nextCell), nextIndex: projectile.nextIndex + 1, state: "blocked" }, event: { type: "blocked", cell: clone(nextCell) } };
+  }
+  const interceptor = units.find(u => u.id === interceptorId && u.alive !== false && u.interceptionReady && sameCell(u.position, nextCell));
+  if (interceptor) {
+    return { projectile: { ...clone(projectile), position: clone(nextCell), nextIndex: projectile.nextIndex + 1, state: "intercepted" }, event: { type: "intercepted", interceptorId: interceptor.id, damage: 0 }, updatedInterceptor: { ...clone(interceptor), interceptionReady: false } };
+  }
+  const collision = units.find(u => u.alive !== false && u.id !== projectile.sourceId && sameCell(u.position, nextCell));
+  if (collision) return { projectile: { ...clone(projectile), position: clone(nextCell), nextIndex: projectile.nextIndex + 1, state: "hit" }, event: { type: "hit", targetId: collision.id, damage: projectile.damage, damageType: projectile.damageType } };
+  const advanced = { ...clone(projectile), position: clone(nextCell), nextIndex: projectile.nextIndex + 1 };
+  if (advanced.nextIndex >= advanced.path.length) advanced.state = "missed";
+  return { projectile: advanced, event: { type: advanced.state === "missed" ? "miss" : "advanced", cell: clone(nextCell) } };
+}
