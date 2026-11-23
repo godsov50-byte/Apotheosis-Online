@@ -307,7 +307,7 @@ export function collectBalancedDrop(field, intent, registry) {
 
 /** Deterministic preview helper; useful for encounter authoring and automated balance tests. */
 export function simulateDropProfile({ source, profile, registry, trials = 1000, seed = "balance-preview", position = { x: 0, y: 0 }, quality = {} }) {
-  const totals = { trials, materialUnits: 0, materialDrops: 0, equipmentDrops: 0, equipmentByItem: {}, qualityScores: [] };
+  const totals = { trials, materialUnits: 0, materialDrops: 0, equipmentDrops: 0, techniqueFragmentUnits: 0, techniqueFragmentDrops: 0, equipmentByItem: {}, fragmentsById: {}, qualityScores: [] };
   for (let i = 0; i < trials; i++) {
     const field = { drops: {}, ledger: [], version: 0 };
     const result = resolveDefeatDrops(field, { source, profile, registry, position, seed: `${seed}:${i}`, quality });
@@ -315,13 +315,18 @@ export function simulateDropProfile({ source, profile, registry, trials = 1000, 
     totals.materialUnits += result.materialDrops.reduce((sum, drop) => sum + drop.quantity, 0);
     totals.materialDrops += result.materialDrops.length;
     totals.equipmentDrops += result.equipmentDrops.length;
+    totals.techniqueFragmentDrops += result.techniqueFragmentDrops.length;
+    totals.techniqueFragmentUnits += result.techniqueFragmentDrops.reduce((sum, drop) => sum + drop.quantity, 0);
     for (const drop of result.equipmentDrops) totals.equipmentByItem[drop.itemId] = (totals.equipmentByItem[drop.itemId] || 0) + 1;
-    totals.qualityScores.push(...result.materialDrops.map(x => x.quality.score), ...result.equipmentDrops.map(x => x.quality.score));
+    for (const drop of result.techniqueFragmentDrops) totals.fragmentsById[drop.fragmentId] = (totals.fragmentsById[drop.fragmentId] || 0) + drop.quantity;
+    totals.qualityScores.push(...result.materialDrops.map(x => x.quality.score), ...result.equipmentDrops.map(x => x.quality.score), ...result.techniqueFragmentDrops.map(x => x.quality.score));
   }
   const qualityCount = totals.qualityScores.length;
   totals.averageQuality = qualityCount ? totals.qualityScores.reduce((sum, score) => sum + score, 0) / qualityCount : null;
   delete totals.qualityScores;
   totals.expectedMaterialUnitsPerTrial = totals.materialUnits / trials;
   totals.equipmentDropRate = totals.equipmentDrops / trials;
+  totals.techniqueFragmentDropRate = totals.techniqueFragmentDrops / trials;
+  totals.expectedTechniqueFragmentUnitsPerTrial = totals.techniqueFragmentUnits / trials;
   return { ok: true, ...totals };
 }
