@@ -86,3 +86,13 @@ test("shared reward budget balances material units against equipment value", () 
   assert.equal(result.rewardBudgetSpent, 3);
   assert.equal(result.rewardBudgetRemaining, 0);
 });
+
+test("containerized drops require opening the container before collection", () => {
+  const drop = D.createBalancedMaterialDrop({ id: "sealed-ore", materialId: "ore", quantity: 2, position: { x: 9, y: 9 }, sourceId: "cache", containerId: "cache-1" });
+  const field = { entities: { m: { id: "m", alive: true, position: { x: 0, y: 0 }, inventory: [] } }, drops: { "sealed-ore": drop }, containers: { "cache-1": { id: "cache-1", position: { x: 0, y: 1 }, opened: false, collected: false } } };
+  assert.equal(D.collectBalancedDrop(field, { actorId: "m", dropId: "sealed-ore", confirm: true }, registry).reason, "container_not_open");
+  const opened = structuredClone(field); opened.containers["cache-1"].opened = true;
+  const collected = D.collectBalancedDrop(opened, { actorId: "m", dropId: "sealed-ore", confirm: true }, registry);
+  assert.equal(collected.ok, true);
+  assert.equal(collected.field.containers["cache-1"].collected, true);
+});
