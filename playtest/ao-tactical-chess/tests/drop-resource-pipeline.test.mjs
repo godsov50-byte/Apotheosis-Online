@@ -44,7 +44,7 @@ test("depleted resource nodes cannot be extracted twice", () => {
 });
 test("failed extraction leaves source and inventory untouched", () => {
   const node = D.createResourceNode({ id: "vein", resourceId: "ore", quantity: 4, position: { x: 0, y: 0 } });
-  const field = { entities: { m: { id: "m", alive: true, position: { x: 0, y: 0 }, inventory: [], skills: { mining: { level: 0 } } }, resourceNodes: { vein: node }, drops: {} };
+  const field = { entities: { m: { id: "m", alive: true, position: { x: 0, y: 0 }, inventory: [], skills: { mining: { level: 0 } } } }, resourceNodes: { vein: node }, drops: {} };
   const result = D.extractResource(field, { actorId: "m", nodeId: "vein", methodId: "pick" }, { resources: { ore: { materialId: "ore" } }, methods: { pick: { id: "pick", skill: { id: "mining", level: 2 }, baseYield: 2 } } });
   assert.equal(result.reason, "extraction_skill_requirement"); assert.equal(field.resourceNodes.vein.quantity, 4); assert.equal(field.entities.m.inventory.length, 0);
 });
