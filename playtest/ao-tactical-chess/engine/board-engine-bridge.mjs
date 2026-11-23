@@ -19,6 +19,10 @@ import {
   createTechniqueRegistry,
   resolveTechniqueIntent
 } from "./technique-pipeline.mjs";
+import {
+  resolveDefeatDrops,
+  collectBalancedDrop
+} from "./drop-resource-pipeline.mjs";
 
 const clone = value => structuredClone(value);
 const finite = (value, fallback = 0) => Number.isFinite(value) ? value : fallback;
@@ -198,7 +202,7 @@ export function resolveBoardMove(field, { actorId, to, legalCells, eventId } = {
 }
 
 export function resolveBoardAttack(field, {
-  attackerId, defenderId, roll, damagePackets, eventId, chart = {}, knockback = false, attackBonus = 0
+  attackerId, defenderId, roll, damagePackets, eventId, chart = {}, knockback = false, attackBonus = 0, dropContext = null
 } = {}) {
   const ready = beginBoardAction(field, attackerId);
   if (!ready.ok) return ready;
@@ -264,18 +268,38 @@ export function resolveBoardAttack(field, {
     });
   }
   next = finishBoardAction(next, attackerId);
+  let drops = [], dropError = null;
+  if (!next.entities[defenderId]?.alive && dropContext) {
+    const dropResult = resolveDefeatDrops(next, {
+      source: { ...(dropContext.source || {}), id: defenderId, eventId: id, type: dropContext.source?.type || "creature" },
+      profile: dropContext.profile,
+      registry: dropContext.registry,
+      position: targetPosition,
+      seed: dropContext.seed,
+      quality: dropContext.quality,
+      materialBudget: dropContext.materialBudget,
+      rewardBudget: dropContext.rewardBudget,
+      equipmentDropCap: dropContext.equipmentDropCap
+    });
+    if (dropResult.ok) {
+      next = dropResult.field;
+      drops = [...dropResult.materialDrops, ...dropResult.equipmentDrops, ...dropResult.techniqueFragmentDrops];
+    } else dropError = dropResult.reason;
+  }
   return {
     ...resolved,
     field: next,
     entity: clone(next.entities[attackerId]),
     defeated: !next.entities[defenderId]?.alive,
-    positionEffect
+    positionEffect,
+    drops,
+    dropError
   };
 }
 
 export function resolveBoardTechnique(field, {
   actorId, defenderId, roll, damagePackets, eventId, chart = {},
-  knockback = false, attackBonus = 2
+  knockback = false, attackBonus = 2, dropContext = null
 } = {}) {
   const ready = beginBoardAction(field, actorId);
   if (!ready.ok) return ready;
@@ -309,7 +333,8 @@ export function resolveBoardTechnique(field, {
     eventId: eventId ? eventId + ":attack" : undefined,
     chart,
     knockback,
-    attackBonus
+    attackBonus,
+    dropContext
   });
   if (!attack.ok) return { ...attack, field };
   return {
@@ -319,6 +344,14 @@ export function resolveBoardTechnique(field, {
     techniqueCosts: { ap: actor.boardTechniqueCost, ea: actor.boardTechniqueEaCost },
     field: attack.field
   };
+}
+
+export function collectBoardDrop(field, { actorId, dropId, registry, confirm = true, collectionRange = 1 } = {}) {
+  const ready = beginBoardAction(field, actorId);
+  if (!ready.ok) return ready;
+  const result = collectBalancedDrop(ready.field, { actorId, dropId, confirm, collectionRange }, registry);
+  if (!result.ok) return result;
+  return { ...result, field: finishBoardAction(result.field, actorId) };
 }
 
 export function endBoardTurn(field, nextSide) {
@@ -339,6 +372,7 @@ export function projectBoardUnits(boardUnits, field, { includeDefeated = false }
       hp: entity.hp.current,
       ap: entity.ap.current,
       ea: entity.ea.current,
+      inventory: clone(entity.inventory || []),
       uses: entity.boardTechniqueId
         ? Math.max(0, entity.boardTechniqueUsesMax - finite(entity.techniqueState?.[entity.boardTechniqueId]?.used))
         : unit.uses
