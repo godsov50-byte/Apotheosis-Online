@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   createBoardField,
   resolveBoardMove,
-  resolveBoardAttack,
+  resolveBoardAttack,\n  resolveBoardTechnique,
   endBoardTurn,
   projectBoardUnits
 } from "../engine/board-engine-bridge.mjs";
@@ -12,7 +12,7 @@ const unit = (id, side, x, y, overrides = {}) => ({
   id, side, x, y, name: id, cls: "Saber", pattern: "Knight", tier: 9,
   hp: 20, maxHp: 20, ac: 10, atk: 5, dmg: 6,
   ap: 8, apMax: 8, ea: 6, eaMax: 6, facing: side === "white" ? "N" : "S",
-  affinity: "Unassigned", ...overrides
+  affinity: "Unassigned", technique: "Test Technique", techniqueTier: 5, techniqueCost: 2, uses: 3, ...overrides
 });
 
 test("board records are projected into engine entities and cells", () => {
@@ -96,6 +96,59 @@ test("attacks resolve through engine AC and DR without spending prototype basic-
   assert.equal(result.field.entities.attacker.ap.current, 8);
   assert.equal(result.field.entities.attacker.ea.current, 6);
   assert.equal(result.field.ledger.at(-1).type, "attack_resolved");
+});
+
+test("technique use spends AP/EA, tracks uses, and resolves through the shared attack engine", () => {
+  const units = [
+    unit("envoy", "white", 0, 0, { pattern: "King", ap: 8, ea: 6, techniqueCost: 2, uses: 3 }),
+    unit("creature", "black", 1, 0, { ac: 12, dr: 2, hp: 20 })
+  ];
+  const field = createBoardField(units);
+  assert.equal(field.entities.envoy.tier, 9);
+  assert.equal(field.entities.envoy.boardTechniqueTier, 5);
+  const result = resolveBoardTechnique(field, {
+    actorId: "envoy", defenderId: "creature", roll: 10,
+    damagePackets: [{ type: "physical", amount: 14 }],
+    eventId: "technique-one"
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.hit, true);
+  assert.equal(result.damage, 12);
+  assert.equal(result.field.entities.envoy.ap.current, 6);
+  assert.equal(result.field.entities.envoy.ea.current, 3);
+  assert.equal(result.field.entities.creature.hp.current, 8);
+  assert.equal(projectBoardUnits(units, result.field)[0].uses, 2);
+  assert.ok(result.field.ledger.some(event => event.type === "technique_resolved"));
+  assert.ok(result.field.ledger.some(event => event.type === "attack_resolved"));
+});
+
+test("technique transaction rejects insufficient resources without spending or changing the field", () => {
+  const units = [
+    unit("envoy", "white", 0, 0, { pattern: "King", ap: 1, ea: 6 }),
+    unit("creature", "black", 1, 0)
+  ];
+  const field = createBoardField(units);
+  const before = structuredClone(field);
+  const result = resolveBoardTechnique(field, {
+    actorId: "envoy", defenderId: "creature", roll: 10,
+    damagePackets: [{ type: "physical", amount: 10 }]
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.reason, "insufficient_AP");
+  assert.deepEqual(field, before);
+});
+
+test("technique use cap is enforced from the board unit's remaining uses", () => {
+  const field = createBoardField([
+    unit("envoy", "white", 0, 0, { pattern: "King", uses: 0 }),
+    unit("creature", "black", 1, 0)
+  ]);
+  const result = resolveBoardTechnique(field, {
+    actorId: "envoy", defenderId: "creature", roll: 10,
+    damagePackets: [{ type: "physical", amount: 10 }]
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.reason, "uses_exhausted");
 });
 
 test("board attack rejects targets outside the attacker's chess motion", () => {
