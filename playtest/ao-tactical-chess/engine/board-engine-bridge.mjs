@@ -15,10 +15,16 @@ import {
   canOccupy,
   resolveAttack
 } from "./ao-chess-engine.mjs";
+import {
+  createTechniqueRegistry,
+  resolveTechniqueIntent
+} from "./technique-pipeline.mjs";
 
 const clone = value => structuredClone(value);
 const finite = (value, fallback = 0) => Number.isFinite(value) ? value : fallback;
 const cellKey = p => `${p.x},${p.y},${p.z || 0}`;
+const techniqueIdFor = name => "board-technique-" + String(name || "")
+  .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 function assertBoardUnit(unit, width, height) {
   if (!unit?.id || !["white", "black"].includes(unit.side)) throw new Error("board unit requires id and valid side");
@@ -39,6 +45,9 @@ export function createBoardField(units, { width = 8, height = 8, turn = "white",
     if (ids.has(unit.id)) throw new Error("duplicate board unit id: " + unit.id);
     ids.add(unit.id);
     const affinities = unit.affinity && !/unassigned|none assigned/i.test(unit.affinity) ? [unit.affinity] : [];
+    const techniqueId = unit.technique ? techniqueIdFor(unit.technique) : null;
+    const maxTechniqueUses = finite(unit.maxTechniqueUses, 3);
+    const currentTechniqueUses = finite(unit.uses, maxTechniqueUses);
     const entity = createEntity({
       id: unit.id,
       name: unit.name,
@@ -55,6 +64,7 @@ export function createBoardField(units, { width = 8, height = 8, turn = "white",
       ea: finite(unit.ea, 8),
       maxEa: finite(unit.eaMax, 8),
       affinities,
+      techniques: techniqueId ? [techniqueId] : [],
       stats: { ATT: 0 },
       accuracy: finite(unit.atk),
       defense: {
@@ -66,6 +76,16 @@ export function createBoardField(units, { width = 8, height = 8, turn = "white",
       sourceRef: unit.sourceRef || null
     });
     entity.boardMotion = unit.pattern;
+    entity.nature = unit.nature || null;
+    entity.boardTechniqueId = techniqueId;
+    entity.boardTechniqueName = unit.technique || null;
+    entity.boardTechniqueTier = unit.techniqueTier ?? null;
+    entity.boardTechniqueCost = finite(unit.techniqueCost, 2);
+    entity.boardTechniqueEaCost = finite(unit.techniqueEaCost, 3);
+    entity.boardTechniqueUsesMax = maxTechniqueUses;
+    entity.techniqueState = techniqueId ? {
+      [techniqueId]: { used: Math.max(0, maxTechniqueUses - currentTechniqueUses), cooldownRemaining: 0 }
+    } : {};
     next = placeEntity(next, entity);
   }
   return next;
@@ -176,7 +196,7 @@ export function resolveBoardMove(field, { actorId, to, legalCells, eventId } = {
 }
 
 export function resolveBoardAttack(field, {
-  attackerId, defenderId, roll, damagePackets, eventId, chart = {}, knockback = false
+  attackerId, defenderId, roll, damagePackets, eventId, chart = {}, knockback = false, attackBonus = 0
 } = {}) {
   const ready = beginBoardAction(field, attackerId);
   if (!ready.ok) return ready;
@@ -189,7 +209,9 @@ export function resolveBoardAttack(field, {
   const id = eventId || `board-attack-${ready.field.version}-${attackerId}-${defenderId}`;
   // Basic attacks preserve the prototype's free AP/EA rule while delegating
   // hit, defense, damage and combat-ledger resolution to the shared engine.
-  const resolved = resolveAttack(ready.field, {
+  const attackActor = attackBonus ? { ...attacker, accuracy: finite(attacker.accuracy) + finite(attackBonus) } : attacker;
+  const attackField = attackBonus ? { ...ready.field, entities: { ...ready.field.entities, [attackerId]: attackActor } } : ready.field;
+  const resolved = resolveAttack(attackField, {
     attackerId, defenderId, roll,
     apCost: 0, eaCost: 0, staminaCost: 0,
     damagePackets,
@@ -198,7 +220,7 @@ export function resolveBoardAttack(field, {
   }, { roll, chart });
   if (resolved.ok === false) return resolved;
   let next = resolved.field;
-  const attackerNow = { ...next.entities[attackerId] };
+  const attackerNow = { ...next.entities[attackerId], accuracy: attacker.accuracy };
   const defenderNow = next.entities[defenderId];
   const targetPosition = { ...defenderBefore.position };
   const dx = targetPosition.x - attacker.position.x, dy = targetPosition.y - attacker.position.y;
@@ -249,6 +271,54 @@ export function resolveBoardAttack(field, {
   };
 }
 
+export function resolveBoardTechnique(field, {
+  actorId, defenderId, roll, damagePackets, eventId, chart = {},
+  knockback = false, attackBonus = 2
+} = {}) {
+  const ready = beginBoardAction(field, actorId);
+  if (!ready.ok) return ready;
+  const actor = ready.field.entities[actorId], defender = ready.field.entities[defenderId];
+  if (!actor?.boardTechniqueId) return { ok: false, reason: "technique_not_configured" };
+  if (!defender?.alive || defender.side === actor.side) return { ok: false, reason: "invalid_target" };
+  if (!isBoardMotionLegal(ready.field, actor, defender.position)) return { ok: false, reason: "illegal_attack_geometry" };
+  const techniqueId = actor.boardTechniqueId;
+  const registry = createTechniqueRegistry([{
+    id: techniqueId,
+    name: actor.boardTechniqueName,
+    tier: actor.boardTechniqueTier,
+    classRequirements: actor.class ? [actor.class] : [],
+    target: { type: "enemy" },
+    geometry: { kind: "range", minRange: 1, range: 1 },
+    chessMotion: actor.boardMotion,
+    cost: { ap: actor.boardTechniqueCost, ea: actor.boardTechniqueEaCost },
+    uses: actor.boardTechniqueUsesMax,
+    cooldown: 0,
+    effects: []
+  }]);
+  const learning = resolveTechniqueIntent(ready.field, {
+    actorId, techniqueId, target: { entityId: defenderId }
+  }, registry);
+  if (!learning.ok) return learning;
+  const attack = resolveBoardAttack(learning.field, {
+    attackerId: actorId,
+    defenderId,
+    roll,
+    damagePackets,
+    eventId: eventId ? eventId + ":attack" : undefined,
+    chart,
+    knockback,
+    attackBonus
+  });
+  if (!attack.ok) return { ...attack, field };
+  return {
+    ...attack,
+    techniqueId,
+    techniqueName: actor.boardTechniqueName,
+    techniqueCosts: { ap: actor.boardTechniqueCost, ea: actor.boardTechniqueEaCost },
+    field: attack.field
+  };
+}
+
 export function endBoardTurn(field, nextSide) {
   if (!["white", "black"].includes(nextSide)) throw new Error("invalid next side");
   const round = field.activeSide === "black" && nextSide === "white" ? field.round + 1 : field.round;
@@ -266,7 +336,10 @@ export function projectBoardUnits(boardUnits, field, { includeDefeated = false }
       facing: entity.facing,
       hp: entity.hp.current,
       ap: entity.ap.current,
-      ea: entity.ea.current
+      ea: entity.ea.current,
+      uses: entity.boardTechniqueId
+        ? Math.max(0, entity.boardTechniqueUsesMax - finite(entity.techniqueState?.[entity.boardTechniqueId]?.used))
+        : unit.uses
     }];
   });
 }
