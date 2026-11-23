@@ -6,7 +6,7 @@ This repository holds **proposed** game mechanics for *Apotheosis Online* (AO), 
 
 | Path | Contents |
 | --- | --- |
-| `mechanics/` | The numbered mechanics documents, including 19th (Azimah cross-system validation), 20th (Chessboard elemental axes proposal), 21st (AO Chess creature class-counter archetypes proposal), and 22nd (AO Chess creature racial types proposal) |
+| `mechanics/` | The numbered mechanics documents, including 19th (Azimah cross-system validation), 20th (Chessboard elemental axes), 21st (creature class-counter archetypes), 22nd (creature racial types), and 23rd (Tier 9 Envoy / counter-creature benchmark framework) |
 | `reference/formula-reference.md` | All 116 formulas, each with definitions, units, bounds, invalid cases and exact worked examples |
 | `site/index.html` | The whole package compiled into one self-contained, searchable page |
 
@@ -31,7 +31,10 @@ This repository holds **proposed** game mechanics for *Apotheosis Online* (AO), 
 17. Unresolved Decisions Register
 18. Final Cross-System Consistency Report
 19. Azimah Cross-System Validation (supporting)
-20. AO Chessboard Elemental Axes — Proposal (eight-element cycle + Light/Shadow special axis)\n21. AO Chess Creature Class-Counter Archetypes — Proposal (ten natural enemy counterparts to Envoy classes)
+20. AO Chessboard Elemental Axes — Proposal (eight-element cycle + Light/Shadow special axis)
+21. AO Chess Creature Class-Counter Archetypes — Proposal (ten natural enemy counterparts to Envoy classes)
+22. AO Chess Creature Racial Types — Proposal (ten broad creature nature categories)
+23. AO Chess Tier 9 Envoy and Counter-Creature Benchmark Framework
 
 ## Core design rule
 
@@ -50,7 +53,7 @@ Passing synthetic tests show the proposals are internally consistent; they do no
 
 ## Status and open decisions
 
-- All 18 documents remain **IN PROGRESS** for canonical acceptance.
+- All 18 core mechanics documents remain **IN PROGRESS** for canonical acceptance.
 - The affinity roster and weakness/resistance relationships are deliberately left **UNKNOWN**, deferred by the creator.
 - The actual Technique catalogue, named Conceptual Agents and Azimah's Tier 1 / Tier 2 body sheets are not yet sourced and stay UNKNOWN.
 - The newer seven working attributes (STR/DEX/CON/INT/WIS/CHA/ATT) and the older six (Force/Precision/Endurance/Cunning/Presence/Insight) are recorded as an unresolved conflict, not merged.
@@ -58,4 +61,6 @@ Passing synthetic tests show the proposals are internally consistent; they do no
 
 See `mechanics/17-unresolved-decisions-register.md` for the full list.
 
-The separate `mechanics/20-chessboard-elemental-axes-proposal.md` captures the newly discussed eight-element counter cycle plus Light and Shadow on a special axis. It is a proposed Chessboard design layer, not canon or a replacement for the creator-deferred affinity/weakness source records.
+The separate `mechanics/20-chessboard-elemental-axes-proposal.md` captures a proposed eight-element counter cycle plus Light and Shadow on a special axis. It is not canon or a replacement for the creator-deferred affinity/weakness source records.
+
+The `mechanics/23-tier-9-envoy-creature-benchmark-framework.md` establishes the benchmark record shapes, class-counter pairings, ten provisional creature design briefs, coverage rules, test protocol, and explicit source blockers. It does not invent missing race, type, affinity, or composite-affinity rosters.
