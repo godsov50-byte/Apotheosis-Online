@@ -229,3 +229,29 @@ test("board technique profile enforces learned skill and applies its data-driven
  assert.equal(result.field.entities.foe.statuses[0].id,"opened-guard");
  assert.equal(projectBoardUnits(units,result.field)[0].uses,2);
 });
+
+test("racially created Envoy can enter AO Chess with derived HP, ancestry, rarity, affinities and passive effects",()=>{
+ const registry=createRacialRegistry([{id:"race-a",name:"Race A",attributeModifiers:{STR:2},modifiers:{defense:{DR:1}},naturalAffinity:"Fire",
+  ancestries:[{id:"ancestry-a",name:"Ancestry A",attributeModifiers:{DEX:1}}],
+  rarityProfiles:[{rarityId:"rarity-a",attributeModifiers:{ATT:2},modifiers:{defense:{DR:2}},traits:["rare-trait"]}]
+ }]);
+ const created=createEnvoyFromCreation({id:"born-envoy",name:"Born Envoy",side:"white",raceId:"race-a",ancestryId:"ancestry-a",rarityId:"rarity-a",characterTier:9,
+  baseAttributes:{STR:10,DEX:10,CON:10,INT:10,WIS:10,CHA:10,ATT:10},
+  vitality:{base:10,perConstitution:2,racialHpFlat:1},ap:{current:5,max:8},ea:{current:3,max:6,affinities:["Water"]},
+  racialEffects:[{type:"status",target:"self",status:{id:"innate-guard",stackRule:"replace",modifiers:{STR:1,DR:1},tags:["racial-passive"]}}]
+ },registry);
+ assert.equal(created.ok,true);
+ const field=createBoardField([{...created.entity,x:1,y:1,cls:"Saber",pattern:"King"}]);
+ const projected=projectBoardUnits([{...created.entity,x:1,y:1,cls:"Saber",pattern:"King"}],field)[0];
+ assert.equal(projected.hp,34);
+ assert.equal(projected.maxHp,34);
+ assert.equal(projected.stats.STR,13);
+ assert.equal(projected.stats.DEX,11);
+ assert.equal(projected.stats.ATT,12);
+ assert.equal(projected.defense.DR,4);
+ assert.equal(projected.raceId,"race-a");
+ assert.equal(projected.ancestryId,"ancestry-a");
+ assert.equal(projected.racialRarityId,"rarity-a");
+ assert.deepEqual(field.entities["born-envoy"].ea.affinities,["Water","Fire"]);
+ assert.ok(field.entities["born-envoy"].statuses.some(status=>status.id==="innate-guard"));
+});
