@@ -70,7 +70,8 @@ export function transitionEncounter(encounter, nextState, event) {
   if (!allowed.includes(nextState)) {
     throw new Error(`Invalid encounter transition: ${encounter.state} -> ${nextState}`);
   }
-  const transitionEvent = event ?? { id: `transition:${encounter.history?.stateVersion ?? 0}`, type: "state_transition", timestamp: new Date().toISOString(), payload: { from: encounter.state, to: nextState } };
+  if (!event) throw new TypeError("transition event must include a deterministic id, type, and timestamp");
+  const transitionEvent = event;
   if ((encounter.history?.eventLedger ?? []).some((existing) => existing.id === transitionEvent.id)) return encounter;
   return appendEncounterEvent({
     ...encounter,
@@ -202,7 +203,8 @@ export function updateObjectiveState(encounter, objectiveId, nextState, progress
 export function resolveEncounter(encounter, outcome, conditions = {}) {
   if (!RESOLUTION_OUTCOMES.includes(outcome)) throw new TypeError("Invalid encounter outcome");
   if (!["active", "escalating", "paused", "suspended"].includes(encounter.state)) throw new Error("Encounter cannot resolve from current state");
-  const resolvedAt = conditions.resolvedAt ?? new Date().toISOString();
+  assertNonEmptyString(conditions.resolvedAt, "resolution timestamp");
+  const resolvedAt = conditions.resolvedAt;
   const result = {
     ...encounter,
     state: outcome === "victory" || outcome === "partial_victory" || outcome === "draw" || outcome === "retreat" || outcome === "escape" || outcome === "surrender" || outcome === "capture" || outcome === "stalemate" || outcome === "interrupted" ? "resolved" : "failed",
