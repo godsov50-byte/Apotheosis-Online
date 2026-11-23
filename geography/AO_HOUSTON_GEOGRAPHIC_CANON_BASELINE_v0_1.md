@@ -117,6 +117,47 @@ The City describes this as street-intersection points across Houston, with addre
 
 **Locked handling:** use as an independent intersection-reference/cross-check layer only after snapshot acquisition. Never use OBJECTID, PlusCode, names or coordinates as a permanent cross-version identity. Derive an AO-stable identity only from a documented versioned matching process and retain the source locator separately. The point layer does not establish grade separation, legal crossing, pedestrian accessibility or current signal state.
 
+
+### 2.9 Address-point entrance anchors and road-side relationships
+
+**AO placement convention (design rule):** each eligible address point supplies the default entrance-anchor coordinate. The default anchor is placed at the exact coordinate of the address point—the point itself is the anchor. It is not offset to a building footprint, parcel centroid, road centerline or guessed doorway.
+
+This is an AO spatial-placement convention, not a claim that the source address point is a surveyed physical doorway. Preserve the source address point and its status/type. Only address records eligible under the source's status/type rules may be used as active default anchors; preliminary, reverse-geocoded, abandoned, utility, out-of-range and other special records remain separately classified until explicitly accepted.
+
+**Both sides of a road:** address points and their associated parcel/address records may lie on either side of a road. AO must preserve the actual source coordinates and represent each address independently. Do not assume addresses occur on only one side, synthesize a matching address on the opposite side, force equal spacing, infer a side from odd/even numbering without source support, or move an address point merely to make a map look regular. A road-side relationship is derived spatial context, not a replacement for the address coordinate.
+
+**Road connection:** the default entrance anchor may be associated with a nearby road segment through a separately stored candidate connector. A connector does not prove a legal, pedestrian-accessible or physically traversable entrance. Route use requires the connector/access state to be validated or explicitly admin-confirmed under AO's access policy. If no defensible connection exists, retain the anchor and mark its road connection UNKNOWN rather than inventing one.
+
+**Relationship model (many-to-many where evidence requires):**
+- Road ↔ parcel: frontage, adjacency, crossing or proximity relationships; never infer ownership or strict parentage from proximity alone.
+- Parcel ↔ address point: zero or more source-backed address associations; preserve match method, confidence and source version.
+- Parcel ↔ structure footprint: zero or more structures; a parcel may be vacant, one parcel may contain multiple structures, and a structure may span multiple parcels.
+- Address point ↔ default entrance anchor: one-to-one placement by coordinate under this AO convention, with provenance to the exact address record/version.
+- Address point ↔ physical entrance / structure: only when independently supported or admin-confirmed. Do not equate an address point with a building, doorway, occupied unit or structure.
+- Entrance anchor ↔ road segment: candidate or confirmed connector with its own evidence/access state; never silently treat geometric nearness as walkable access.
+
+**Layer priority for the Houston geographic foundation:**
+1. **Road network and parcel polygons** are the primary geographic framework: roads describe movement/connectivity references; parcels describe land divisions.
+2. **Address points** are the location-identification and default entrance-anchor layer, retained on whichever side of the road the source places them.
+3. **Building footprints and interiors** are supplementary physical layers. They can refine structure/entrance relationships but are not prerequisites for an address anchor and must not redefine the parcel or address.
+
+The City site-address and multi-county parcel layers remain candidate sources until complete versioned snapshots pass the acquisition gate in §6. This design rule does not upgrade their unacquired features to source-backed or validated status.
+
+
+### 2.10 Address location-sign coordinate and tile identity
+
+The small location sign / map marker displayed above an address is a **rendered representation of that address's default entrance anchor**, not a separate geographic object and not an independently guessed location.
+
+- **World position:** the marker inherits the exact address-anchor coordinate. Its geographic position must not be shifted to the center of a parcel, structure, road or screen.
+- **Spatial address:** resolve that coordinate through AO's spatial hierarchy and store/reference the resulting World ID, Region ID, Chunk ID, Tile ID, Cell ID and local Position, together with the spatial layer and coordinate reference system. The coordinate remains the source of truth; tile/cell IDs are deterministic spatial indexes derived from it.
+- **Visual offset:** the sign may be drawn slightly above the ground/address point for legibility, but that is a presentation-only screen/world-render offset. It must not change the stored geographic coordinate, tile/cell assignment, collision position, entrance anchor or route origin.
+- **Boundary handling:** if the coordinate lies on a tile/chunk boundary, use one documented deterministic boundary rule so the same coordinate always resolves to the same address. Preserve sufficient coordinate precision to reproduce the assignment.
+- **Layer and elevation:** retain the applicable spatial layer (for example, surface/outdoor) and elevation/vertical datum when known. Do not invent altitude or treat a 2D address point as an interior-floor, underground or aerial position.
+- **Identity and updates:** bind the marker to the stable AO address-anchor record, with the source address ID/version retained as provenance. If a corrected source coordinate moves the anchor into another tile/cell, record a versioned spatial relocation; do not silently mutate history.
+- **Provisional resolution parameters:** the Spatial Addressing prototype's 1,024 m chunk / 64 m tile / 1 m cell values are engineering defaults only, not approved AO canon. The authoritative tile scheme, origin, projection and boundary convention must be selected and validated before production indexing.
+
+The marker may be hidden, clustered or visually displaced for interface clarity at different zoom levels, but its underlying address-anchor coordinate and resolved spatial address remain stable. This rule applies independently to addresses on both sides of a road.
+
 ## 3. Layers not yet established
 
 The following are not locked as complete geographic truth because the current source inventory does not demonstrate adequate acquired and validated coverage:
