@@ -12,13 +12,13 @@ After the feature branch is merged, the Pages workflow publishes the board at:
 
 ## Included
 
-- 8×8 board with character tokens, class marks, HP strips, and facing arrows.
+- 8×8 board with portrait-and-name Envoy tokens. Token frame colors separately encode Class, Archetype, and Natural Affinity; combat statistics remain in the selected-unit dossier.
 - Two sides with 16 character units each; all ten basic classes represented.
 - Askar Venn on b8 as a Berserker, Anti-Divine, Tier 5, with Knight movement and Divine Pursuit.
 - Select/move controls using King, Queen, Rook, Bishop, Knight, and Pawn movement patterns.
 - Switchable movement pattern and manual facing rotation.
 - Class baseline HP, AC, attack bonus, and weapon damage die (provisional playtest values).
-- Character dossier with class, Tier, Archetype, nature, affinity, AP/EA, equipment slots, technique and trigger.
+- Character dossier with Race, Class, Tier, Archetype, Chess Motion, Natural Affinity, combat statistics, equipment slots, techniques and triggers.
 - d20 attack rolls against AC, weapon damage dice, HP, knockback, and a prototype guard-counter reaction.
 - Technique mode with AP, EA, daily-use tracking, and a simple Anti-Divine interaction against a marked Divine Humanoid target.
 - T1 Chronicle entries after movement, facing changes, configuration changes, combat, triggers, and turn changes.
@@ -51,3 +51,10 @@ The page includes an Engine Console sandbox for the new reference engine. It can
 
 
 **Important:** the existing board match still uses its original local rules. The sandbox does not yet replace that match loop or connect to WorldHeart/Supabase. The engine is a working prototype with incomplete advanced physics and rules; see its README for boundaries.
+
+
+## Portrait identity tokens
+
+The board surface renders each unit as a portrait above its name. It does not put class letters, HP strips, facing arrows, or numeric combat statistics on the token surface. The portrait frame has three independent visual channels: outer frame for Class, inner trim for Archetype, and accent ring for Natural Affinity. Selecting a unit still opens the full dossier with statistics, Race, Chess Motion, facing, and combat configuration.
+
+Unit records accept an optional `portraitUrl` for a character-specific portrait. Until portrait artwork is supplied, the playtest uses a generated neutral portrait silhouette as a fallback. The current class/archetype/affinity color values are provisional UI palette values, not canon. Unassigned natural affinities use a neutral accent rather than an invented elemental assignment.
