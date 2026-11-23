@@ -234,10 +234,13 @@ export function collectBalancedDrop(field, intent, registry) {
   const drop = field.drops?.[intent.dropId], actor = field.entities?.[intent.actorId];
   if (!actor || actor.alive === false) return { ...fail("collector_unavailable"), field };
   if (!drop || drop.collected) return { ...fail("drop_unavailable"), field };
-  if (drop.containerId) return { ...fail("drop_inside_container"), field };
+  const container = drop.containerId ? field.containers?.[drop.containerId] : null;
+  if (drop.containerId && (!container || container.opened !== true)) return { ...fail("container_not_open"), field };
+  if (drop.containerId && container.collected) return { ...fail("container_empty"), field };
   if (drop.requiresManualCollection && intent.confirm !== true) return { ...fail("manual_collection_required"), field };
+  const collectionPosition = container?.position || drop.position;
   const reach = num(intent.collectionRange, 1);
-  if (actor.position && drop.position && Math.max(Math.abs(actor.position.x - drop.position.x), Math.abs(actor.position.y - drop.position.y)) > reach) return { ...fail("drop_out_of_reach"), field };
+  if (actor.position && collectionPosition && Math.max(Math.abs(actor.position.x - collectionPosition.x), Math.abs(actor.position.y - collectionPosition.y)) > reach) return { ...fail("drop_out_of_reach"), field };
   const next = clone(field), a = next.entities[actor.id], d = next.drops[drop.id];
   if (d.kind === "material_drop") {
     if (!registry?.materials?.[d.materialId]) return { ...fail("unknown_material"), field };
@@ -256,7 +259,11 @@ export function collectBalancedDrop(field, intent, registry) {
   } else return { ...fail("unsupported_drop_kind"), field };
   d.collected = true;
   next.entities[a.id] = a; next.drops[d.id] = d;
-  return { ok: true, field: addLedger(next, { type: "balanced_drop_collected", actorId: a.id, dropId: d.id, dropKind: d.kind, sourceId: d.sourceId, quality: clone(d.quality) }) };
+  if (container) {
+    const remainingDrops = Object.values(next.drops).some(item => item.containerId === container.id && !item.collected);
+    next.containers[container.id] = { ...container, collected: !remainingDrops };
+  }
+  return { ok: true, field: addLedger(next, { type: "balanced_drop_collected", actorId: a.id, dropId: d.id, dropKind: d.kind, sourceId: d.sourceId, containerId: container?.id || null, quality: clone(d.quality) }) };
 }
 
 /** Deterministic preview helper; useful for encounter authoring and automated balance tests. */
