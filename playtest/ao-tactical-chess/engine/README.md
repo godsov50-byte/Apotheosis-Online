@@ -122,3 +122,6 @@ A fragment represents both condensed creature essence and accumulated technique 
 Technique Tier is separate from Envoy/character Tier. This pipeline uses the existing direction where technique Tier 9 is lowest and Tier 0 is highest; each advancement moves one step (9 to 8, through to 0), never skipping a Tier. Tier 0 cannot advance further. Exact fragment costs and requirements are supplied by technique data; no universal fragment recipe or advancement price is established.
 
 Both transactions consume fragment stacks atomically, update the Envoy's learned-technique or per-technique Tier state, and append a progression ledger event. This is a playtest module, not yet connected to the live Kernel, persistent WorldHeart ledger, or board interaction UI.
+
+
+Each technique fragment definition has two distinct payloads: `essence` (the creature's inherent nature, affinities, lineage, or conceptual qualities) and `knowledge` (the patterns, principles, and technique understanding embodied by that creature). These are preserved separately when collected. A technique's fragment costs can require matching essence traits, knowledge traits, minimum essence potency, and minimum knowledge potency independently. This prevents a powerful creature essence from automatically satisfying an unrelated technique's knowledge requirement, or vice versa.
