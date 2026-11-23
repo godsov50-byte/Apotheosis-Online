@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AO Tactical Chess — Playtest</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1017;--panel:#121b27;--panel2:#182433;--line:#2a3b4f;--ink:#edf2f7;--muted:#9aabbd;--gold:#d9b46a;--blue:#83b8df;--red:#d87979;--green:#7fc59c}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#25374a 0,var(--bg) 55%);color:var(--ink);font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}
+header{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 20px;border-bottom:1px solid var(--line);background:#0c141ee8;position:sticky;top:0;z-index:4}
+.brand{display:flex;gap:12px;align-items:center}.sigil{width:38px;height:38px;border:1px solid var(--gold);border-radius:10px;display:grid;place-items:center;color:var(--gold);font-size:21px}.brand strong{letter-spacing:.12em;font-size:13px}.brand small{display:block;color:var(--muted);letter-spacing:.16em;font-size:9px}
+.topmeta{color:var(--muted);font-size:11px;text-align:right}.topmeta b{color:var(--gold)}
+main{max-width:1500px;margin:auto;padding:18px;display:grid;grid-template-columns:minmax(500px,1fr) minmax(300px,370px);gap:18px}
+.panel{background:linear-gradient(160deg,#172331,#101923);border:1px solid var(--line);border-radius:15px;box-shadow:0 14px 40px #0005;overflow:hidden}.panelhead{padding:13px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}.panelhead h2{font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin:0}.sub{color:var(--muted);font-size:11px}
+.arena{padding:15px}.teams{display:flex;justify-content:space-between;gap:10px;margin-bottom:12px}.team{font-size:11px;color:var(--muted)}.team b{color:var(--ink);display:block;font-size:13px}
+.boardwrap{max-width:780px;margin:auto;border:1px solid #566477;border-radius:8px;overflow:hidden;box-shadow:0 18px 45px #0008}
+.board{display:grid;grid-template-columns:repeat(8,1fr);aspect-ratio:1}
+.square{position:relative;min-width:0;display:grid;place-items:center;border:0;padding:2px;cursor:pointer}
+.square.light{background:#c5c0ad}.square.dark{background:#536675}.square.selected{outline:3px solid var(--gold);outline-offset:-3px;z-index:1}.square.legal:after{content:"";position:absolute;width:23%;aspect-ratio:1;border-radius:50%;background:#162b3b88}.square.attackable:after{content:"";position:absolute;inset:4px;border:3px solid #9e4141;border-radius:50%}.square.last{box-shadow:inset 0 0 0 4px #d9b46a99}
+.coord{position:absolute;font-size:9px;font-weight:700;opacity:.7;pointer-events:none}.coord.file{bottom:2px;right:4px}.coord.rank{top:2px;left:4px}
+.token{width:83%;height:83%;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;border:2px solid #e4d8b9;box-shadow:0 3px 7px #0008,inset 0 0 0 2px #0004;font-weight:800;transition:transform .12s}
+.token.white{background:radial-gradient(circle at 35% 25%,#f5f0df,#aebbc4 70%,#687887);color:#172432;border-color:#f4e9cb}
+.token.black{background:radial-gradient(circle at 35% 25%,#536b82,#182638 72%,#0b111a);color:#f2dfb8;border-color:#d3b777}
+.token .classmark{font-size:clamp(11px,2vw,20px);text-shadow:0 1px 1px #0004}.token .facing{position:absolute;top:-7%;left:50%;transform:translateX(-50%);font-size:clamp(13px,2vw,20px);line-height:1;color:#ffd778;text-shadow:0 1px 4px #000;filter:drop-shadow(0 1px 2px #000)}
+.token .hpmini{position:absolute;bottom:-5px;left:12%;right:12%;height:4px;background:#111b;border-radius:4px;overflow:hidden;border:1px solid #0008}.token .hpmini i{display:block;height:100%;background:var(--green)}
+.token.selectedToken{transform:scale(1.08);box-shadow:0 0 0 3px var(--gold),0 5px 12px #0009}
+.boardcontrols{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+button,select{font:inherit;color:var(--ink);background:#233447;border:1px solid #40566e;border-radius:8px;padding:8px 11px;cursor:pointer}button:hover{border-color:var(--gold);background:#2b4055}button:disabled{opacity:.4;cursor:not-allowed}.goldbtn{background:#5a4728;border-color:#9b7942}.small{font-size:11px;padding:6px 9px}
+.side{display:flex;flex-direction:column;gap:14px}.section{padding:14px 16px}.section h3{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--gold);margin:0 0 11px}
+.empty{color:var(--muted);padding:18px 0;text-align:center}.profiletop{display:flex;align-items:center;gap:12px;margin-bottom:12px}.portrait{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:#24394d;border:2px solid var(--gold);font-size:22px}.profiletop h2{margin:0;font-size:17px}.profiletop p{margin:2px 0 0;color:var(--muted);font-size:11px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:10px 0}.stat{background:#0e1721;border:1px solid #293a4b;border-radius:8px;padding:8px}.stat b{display:block;font-size:17px}.stat span{font-size:9px;color:var(--muted);letter-spacing:.1em}
+.hpbar{height:7px;background:#0a1118;border-radius:8px;overflow:hidden;margin:7px 0}.hpbar i{display:block;height:100%;background:var(--green)}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:7px}.kv div{background:#0e1721;padding:7px 9px;border-radius:7px}.kv span{display:block;color:var(--muted);font-size:10px}.kv b{font-size:12px}
+.slots{display:grid;grid-template-columns:1fr 1fr;gap:6px}.slot{padding:8px;background:#0e1721;border:1px solid #28394a;border-radius:8px}.slot span{display:block;color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.1em}.slot b{font-size:11px}
+.tech{border:1px solid #34485d;border-radius:9px;padding:10px;margin-top:8px;background:#101b27}.tech b{display:block}.tech small{color:var(--muted)}.tech p{margin:5px 0 0;color:#c4d0dc;font-size:11px}
+.log{max-height:300px;overflow:auto;padding:10px 14px}.entry{padding:9px 0;border-bottom:1px solid #263747}.entry:last-child{border:0}.entry .tag{font-size:9px;color:var(--gold);letter-spacing:.13em;text-transform:uppercase}.entry p{margin:4px 0 0;font-family:Georgia,serif;color:#d6dfeb;font-size:13px}
+.dicebox{padding:12px 15px;background:#0e1721;border-top:1px solid var(--line);color:var(--muted);font-size:11px}.dicebox b{color:var(--ink)}
+.turnbar{display:flex;justify-content:space-between;gap:10px;align-items:center}.turnpill{border:1px solid var(--line);padding:5px 9px;border-radius:30px;color:var(--gold);font-size:10px}
+@media(max-width:900px){main{grid-template-columns:1fr;padding:10px}.side{display:grid;grid-template-columns:1fr 1fr}.side .wide{grid-column:1/-1}.boardwrap{max-width:620px}}
+@media(max-width:560px){header{padding:11px}.topmeta{display:none}main{padding:8px;gap:10px}.side{display:flex}.arena{padding:8px}.square{padding:0}.coord{font-size:7px}.token{width:88%;height:88%}.stats{grid-template-columns:repeat(4,1fr)}}
+</style>
+</head>
+<body>
+<header><div class="brand"><div class="sigil">✦</div><div><strong>APOTHEOSIS ONLINE</strong><small>TACTICAL CHESS · COMBAT PLAYTEST</small></div></div><div class="topmeta">PROTOTYPE BUILD <b>01</b><br>Local two-player · No world writes</div></header>
+<main>
+<section class="panel">
+ <div class="panelhead"><h2>Battlefield · 8 × 8</h2><div class="turnbar"><span class="turnpill" id="turn">SILVER TO MOVE</span><span class="sub" id="moveCount">Round 1</span></div></div>
+ <div class="arena">
+  <div class="teams"><div class="team"><b>Silver Hollow Wardens</b>Silver side</div><div class="team" style="text-align:right"><b>Veyr Ka'desh Conversion Host</b>Obsidian side</div></div>
+  <div class="boardwrap"><div class="board" id="board" role="grid" aria-label="Tactical chessboard"></div></div>
+  <div class="boardcontrols"><div><button class="small" id="rotate" title="Rotate selected token clockwise">↻ Face</button> <button class="small" id="pattern" title="Cycle selected character's movement pattern">⇄ Pattern</button></div><div><button class="small" id="reset">Reset match</button> <button class="small goldbtn" id="endTurn">End turn</button></div></div>
+  <p class="sub" style="margin:10px 2px 0">Select a token, then a highlighted square to move. Select an opposing token on a legal attack square to resolve a d20 attack against AC. Facing follows movement; rotate it manually when needed.</p>
+ </div>
+ <div class="dicebox" id="dice"><b>Dice:</b> No roll yet. Attacks use d20 + attack bonus vs. AC; damage uses the weapon's damage die.</div>
+</section>
+<aside class="side">
+ <section class="panel wide"><div class="panelhead"><h2>Character dossier</h2><span class="sub" id="squareLabel">Select a token</span></div><div class="section" id="profile"><div class="empty">Choose any character on the board to inspect their profile, combat statistics, equipment and techniques.</div></div></section>
+ <section class="panel wide"><div class="panelhead"><h2>T1 Chronicle</h2><span class="sub">After each resolved transaction</span></div><div class="log" id="chronicle"><div class="entry"><div class="tag">Opening scene</div><p>The two formations hold their ground. Steel catches the pale light; across the board, the Conversion Host waits.</p></div></div></section>
+</aside>
+</main>
+<script>
+(function(){
+const files="abcdefgh";
+const classNames=["Saber","Archer","Lancer","Rider","Caster","Assassin","Berserker","Shielder","Avenger","Ruler"];
+const marks={Saber:"S",Archer:"A",Lancer:"L",Rider:"R",Caster:"C",Assassin:"X",Berserker:"B",Shielder:"H",Avenger:"V",Ruler:"U"};
+const base={Saber:[30,15,5,3],Archer:[25,13,4,4],Lancer:[32,15,5,3],Rider:[32,14,5,4],Caster:[24,12,4,3],Assassin:[25,16,5,4],Berserker:[38,12,7,2],Shielder:[42,18,4,2],Avenger:[36,14,6,3],Ruler:[34,16,5,3]};
+const patterns=["King","Queen","Rook","Bishop","Knight","Pawn"];
+const glyph={King:"K",Queen:"Q",Rook:"R",Bishop:"B",Knight:"N",Pawn:"P"};
+const dirs=["N","E","S","W"],arrows={N:"↑",E:"→",S:"↓",W:"←"};
+let units=[],selected=null,legal=[],turn="white",round=1,lastMove=null,history=[];
+const $=id=>document.getElementById(id);
+const coord=(x,y)=>files[x]+(8-y);
+const at=(x,y)=>units.find(u=>u.x===x&&u.y===y&&u.hp>0);
+const rand=n=>Math.floor(Math.random()*n)+1;
+function makeUnit(id,side,x,y,pattern,index){
+ const cls=classNames[index%10],b=base[cls];
+ return {id,side,x,y,pattern,cls,tier:5,archetype:cls==="Berserker"?"Anti-Unit":cls==="Shielder"?"Anti-Fortress":"Anti-Unit",hp:b[0],maxHp:b[0],ac:b[1],atk:b[2],dmg:b[3],facing:side==="white"?"N":"S",ap:8,apMax:8,ea:8,eaMax:8,affinity:"Unassigned",weapon:pattern==="Archer"?"Recurve bow":pattern==="Lancer"?"War spear":pattern==="Rook"?"War hammer":"Steel weapon",weaponBonus:0,weaponEffect:pattern==="Rook"?"Knockback":pattern==="Knight"?"Pursuit":"None",armor:"Field armor",head:"Travel helm",offhand:pattern==="Rook"?"Tower shield":"Empty",accessory1:"Warding ring",accessory2:"Empty",boots:"Marching boots",artifact:"Empty",uses:3,technique:cls==="Berserker"?"Heavy Breaker":cls==="Archer"?"Piercing Shot":"Class Strike",techniquePattern:pattern,techniqueTier:5,techniqueCost:2,trigger:cls==="Shielder"?"Guard Counter":cls==="Berserker"?"Impact Trigger":"Opportunity Strike",name:side==="black"&&coord(x,y)==="b8"?"Askar Venn":(side==="white"?"Silver":"Host")+" "+cls+" "+String(index+1).padStart(2,"0"),special:side==="black"&&coord(x,y)==="b8"};
+}
+function setup(){
+ units=[];let w=0,b=0;
+ const back=["Rook","Knight","Bishop","Queen","King","Bishop","Knight","Rook"];
+ for(let x=0;x<8;x++){units.push(makeUnit("w"+w++,"white",x,7,back[x],x));units.push(makeUnit("wP"+x,"white",x,6,"Pawn",(x+4)%10));units.push(makeUnit("bP"+x,"black",x,1,"Pawn",(x+2)%10));}
+ for(let x=0;x<8;x++){
+  let u=makeUnit("b"+b++,"black",x,0,back[x],(x+3)%10);
+  if(x===1){u.name="Askar Venn";u.cls="Berserker";u.archetype="Anti-Divine";u.tier=5;u.pattern="Knight";u.technique="Divine Pursuit";u.techniquePattern="Knight";u.techniqueTier=5;u.techniqueCost=4;u.ap=8;u.ea=8;u.uses=3;u.affinity="None assigned";u.weapon="Greatsword";u.weaponEffect="Knockback";u.trigger="Divine Intercept";u.special=true;}
+  units.push(u);
+ }
+ selected=null;legal=[];turn="white";round=1;lastMove=null;history=[];
+ $("chronicle").innerHTML='<div class="entry"><div class="tag">Opening scene</div><p>The two formations hold their ground. Steel catches the pale light; across the board, the Conversion Host waits. Askar Venn stands at b8, his greatsword angled toward the opposing ranks.</p></div>';
+ $("dice").innerHTML="<b>Dice:</b> No roll yet. d20 + attack bonus vs. AC; weapon damage die on a hit.";
+ render();renderProfile();
+}
+function patternMoves(u){
+ let out=[],x=u.x,y=u.y;
+ function add(a,b){if(a>=0&&a<8&&b>=0&&b<8)out.push([a,b]);}
+ const ray=(dx,dy,limit)=>{for(let i=1;i<=limit;i++){let a=x+dx*i,b=y+dy*i;if(a<0||a>7||b<0||b>7)break;out.push([a,b]);if(at(a,b))break;}};
+ const p=u.pattern;
+ if(p==="King"){for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++)if(dx||dy)add(x+dx,y+dy);}
+ if(p==="Knight"){[[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]].forEach(v=>add(x+v[0],y+v[1]));}
+ if(p==="Rook"||p==="Queen"){ray(1,0,7);ray(-1,0,7);ray(0,1,7);ray(0,-1,7);}
+ if(p==="Bishop"||p==="Queen"){ray(1,1,7);ray(-1,1,7);ray(1,-1,7);ray(-1,-1,7);}
+ if(p==="Pawn"){let d=u.side==="white"?-1:1;add(x,y+d);if((u.side==="white"&&y===6)||(u.side==="black"&&y===1))add(x,y+2*d);add(x-1,y+d);add(x+1,y+d);}
+ return out.filter(([a,b])=>{let target=at(a,b);if(!target)return true;if(target.side===u.side)return false;if(p==="Pawn")return a!==x;return true;});
+}
+function select(u){selected=u;legal=patternMoves(u);render();renderProfile();}
+function render(){
+ const board=$("board");board.innerHTML="";
+ for(let y=0;y<8;y++)for(let x=0;x<8;x++){
+  const sq=document.createElement("button");sq.className="square "+((x+y)%2?"dark":"light");sq.setAttribute("role","gridcell");sq.setAttribute("aria-label",coord(x,y));
+  if(selected&&selected.x===x&&selected.y===y)sq.classList.add("selected");
+  if(lastMove&&((lastMove.from[0]===x&&lastMove.from[1]===y)||(lastMove.to[0]===x&&lastMove.to[1]===y)))sq.classList.add("last");
+  const target=at(x,y),isLegal=selected&&legal.some(v=>v[0]===x&&v[1]===y);
+  if(isLegal)sq.classList.add(target?"attackable":"legal");
+  if(x===0){let r=document.createElement("span");r.className="coord rank";r.textContent=8-y;sq.appendChild(r)}
+  if(y===7){let f=document.createElement("span");f.className="coord file";f.textContent=files[x];sq.appendChild(f)}
+  if(target){let t=document.createElement("div");t.className="token "+target.side+(selected===target?" selectedToken":"");t.innerHTML='<span class="facing">'+arrows[target.facing]+'</span><span class="classmark">'+marks[target.cls]+'</span><span class="hpmini"><i style="width:'+Math.max(0,target.hp/target.maxHp*100)+'%"></i></span>';sq.appendChild(t)}
+  sq.addEventListener("click",()=>clickSquare(x,y));board.appendChild(sq);
+ }
+ $("turn").textContent=turn.toUpperCase()+" TO MOVE";$("moveCount").textContent="Round "+round;
+}
+function clickSquare(x,y){
+ const target=at(x,y);
+ if(!selected){if(target&&target.side===turn)select(target);return;}
+ if(target===selected){selected=null;legal=[];render();renderProfile();return;}
+ const ok=legal.some(v=>v[0]===x&&v[1]===y);
+ if(ok){if(target&&target.side!==selected.side)attack(selected,target);else move(selected,x,y);return;}
+ if(target&&target.side===turn)select(target);
+}
+function narrate(tag,story){const el=document.createElement("div");el.className="entry";el.innerHTML='<div class="tag">'+tag+'</div><p>'+story+'</p>';$("chronicle").prepend(el);}
+function faceToward(u,x,y){let dx=x-u.x,dy=y-u.y;if(Math.abs(dx)>Math.abs(dy))u.facing=dx>0?"E":"W";else if(dy!==0)u.facing=dy>0?"S":"N";}
+function move(u,x,y){let from=[u.x,u.y];faceToward(u,x,y);u.x=x;u.y=y;lastMove={from,to:[x,y]};narrate("Movement · "+u.name,u.name+" moved from "+coord(from[0],from[1])+" to "+coord(x,y)+", turning "+u.facing+". The formation shifts to meet the new position.");finishAction(u);}
+function attack(a,d){
+ const from=[a.x,a.y],to=[d.x,d.y],roll=rand(20),total=roll+a.atk,hit=total>=d.ac;
+ let damage=0,story="";
+ if(hit){damage=rand(a.dmg)+a.weaponBonus;d.hp=Math.max(0,d.hp-damage);story=a.name+" attacked "+d.name+". The attack roll was "+roll+" + "+a.atk+" = "+total against AC "+d.ac+". The strike hit for "+damage+" damage.";if(a.weaponEffect==="Knockback"&&d.hp>0){let dx=Math.sign(d.x-a.x),dy=Math.sign(d.y-a.y),nx=d.x+dx,ny=d.y+dy;if(nx>=0&&nx<8&&ny>=0&&ny<8&&!at(nx,ny)){d.x=nx;d.y=ny;story+=" The heavy impact drove the defender back to "+coord(nx,ny)+".";}}}
+ else story=a.name+" lunged at "+d.name+", but the attack roll of "+roll+" + "+a.atk+" = "+total failed to overcome AC "+d.ac+".";
+ if(d.hp<=0){story+=" "+d.name+" fell from the board. This is a playtest defeat, not a statement about their wider AO fate.";units=units.filter(u=>u!==d);}
+ $("dice").innerHTML="<b>Dice:</b> d20 = "+roll+" · attack bonus = "+a.atk+" · total = "+total+" · target AC = "+d.ac+" · "+(hit?"HIT · damage "+damage:"MISS");
+ lastMove={from,to};a.x=to[0];a.y=to[1];faceToward(a,to[0],to[1]);
+ narrate("Combat · "+a.name,story);
+ if(hit&&d.hp>0&&d.trigger==="Guard Counter"&&Math.random()<.35){let cr=rand(20)+d.atk;if(cr>=a.ac){let cd=rand(d.dmg);a.hp=Math.max(0,a.hp-cd);narrate("Trigger · Guard Counter",d.name+" turned the block into a counterattack, rolling "+cr+" against AC "+a.ac+" and dealing "+cd+" damage.");}}
+ finishAction(a);
+}
+function finishAction(u){selected=null;legal=[];render();renderProfile();if(!units.some(x=>x.side!==turn)){narrate("Match result",turn+" side has no opposing combatants remaining.");}}
+function changeTurn(){turn=turn==="white"?"black":"white";if(turn==="white")round++;selected=null;legal=[];render();renderProfile();narrate("Turn · "+turn,turn==="white"?"The Silver Hollow Wardens take their turn.":"The Conversion Host advances. Its fighters read the shifting lines.");}
+function renderProfile(){
+ const box=$("profile");if(!selected){box.innerHTML='<div class="empty">Select a token to inspect their dossier.</div>';$("squareLabel").textContent="No selection";return;}
+ const u=selected;$("squareLabel").textContent=coord(u.x,u.y)+" · "+u.pattern+" pattern";
+ const hp=Math.max(0,u.hp);
+ box.innerHTML='<div class="profiletop"><div class="portrait">'+marks[u.cls]+'</div><div><h2>'+u.name+'</h2><p>'+u.side.toUpperCase()+' · '+u.cls+' · TIER '+u.tier+'</p></div></div>'+
+ '<div class="stats"><div class="stat"><b>'+hp+'/'+u.maxHp+'</b><span>HP</span></div><div class="stat"><b>'+u.ac+'</b><span>AC</span></div><div class="stat"><b>'+u.atk+'</b><span>ATTACK</span></div><div class="stat"><b>d'+(u.dmg*2)+'</b><span>WEAPON DIE</span></div></div><div class="hpbar"><i style="width:'+(hp/u.maxHp*100)+'%"></i></div>'+
+ '<div class="kv"><div><span>Archetype</span><b>'+u.archetype+'</b></div><div><span>Movement pattern</span><b>'+u.pattern+'</b></div><div><span>Facing</span><b>'+u.facing+'</b></div><div><span>Affinity</span><b>'+u.affinity+'</b></div><div><span>AP</span><b>'+u.ap+'/'+u.apMax+'</b></div><div><span>EA</span><b>'+u.ea+'/'+u.eaMax+'</b></div></div>'+
+ '<h3 style="margin-top:14px">Equipment slots</h3><div class="slots">'+slot("Head",u.head)+slot("Body",u.armor)+slot("Main hand",u.weapon+(u.weaponBonus?" +"+u.weaponBonus:""))+slot("Off hand",u.offhand)+slot("Accessory 1",u.accessory1)+slot("Accessory 2",u.accessory2)+slot("Footwear",u.boots)+slot("Artifact",u.artifact)+'</div>'+
+ '<h3 style="margin-top:14px">Technique & triggers</h3><div class="tech"><b>'+u.technique+'</b><small>Class: '+u.cls+' · Archetype: '+u.archetype+' · Technique Tier: '+u.techniqueTier+' · Pattern: '+u.techniquePattern+'</small><p>AP '+u.techniqueCost+' · EA 3 · Uses/day '+u.uses+' · Affinity: '+u.affinity+(u.special?'<br>Divine Pursuit is available only while Askar uses the Knight movement pattern.':'')+'</p></div><div class="tech"><b>Trigger: '+u.trigger+'</b><p>Conditional combat response. Trigger resolution is currently a lightweight prototype rule.</p></div>';
+}
+function slot(a,b){return '<div class="slot"><span>'+a+'</span><b>'+b+'</b></div>'}
+$("rotate").addEventListener("click",()=>{if(!selected)return;selected.facing=dirs[(dirs.indexOf(selected.facing)+1)%4];narrate("Facing · "+selected.name,selected.name+" pivots to face "+selected.facing+". Their position and movement pattern remain unchanged.");render();renderProfile();});
+$("pattern").addEventListener("click",()=>{if(!selected)return;let old=selected.pattern,i=patterns.indexOf(old);selected.pattern=patterns[(i+1)%patterns.length];selected.techniqueDormant=selected.special&&selected.pattern!=="Knight";narrate("Configuration · "+selected.name,selected.name+" changes movement pattern from "+old+" to "+selected.pattern+". "+(selected.techniqueDormant?"Divine Pursuit remains learned but is dormant until the Knight pattern is restored.":"Their movement options update to the "+selected.pattern+" pattern."));render();renderProfile();});
+$("endTurn").addEventListener("click",changeTurn);
+$("reset").addEventListener("click",setup);
+setup();
+})();
+</script>
+</body></html>
