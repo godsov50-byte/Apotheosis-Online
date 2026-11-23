@@ -9,7 +9,7 @@ import {
 } from "../engine/board-engine-bridge.mjs";
 
 const unit = (id, side, x, y, overrides = {}) => ({
-  id, side, x, y, name: id, cls: "Saber", tier: 9,
+  id, side, x, y, name: id, cls: "Saber", pattern: "Knight", tier: 9,
   hp: 20, maxHp: 20, ac: 10, atk: 5, dmg: 6,
   ap: 8, apMax: 8, ea: 6, eaMax: 6, facing: side === "white" ? "N" : "S",
   affinity: "Unassigned", ...overrides
@@ -53,6 +53,17 @@ test("engine bridge commits a legal chess jump and preserves repeat-action board
   });
   assert.equal(second.ok, true);
   assert.deepEqual(second.field.entities.knight.position, { x: 4, y: 4, z: 0 });
+});
+
+test("engine rejects a forged UI candidate that is not legal for the unit chess motion", () => {
+  const field = createBoardField([unit("knight", "white", 1, 7), unit("enemy", "black", 7, 0)]);
+  const result = resolveBoardMove(field, {
+    actorId: "knight",
+    to: { x: 3, y: 3 },
+    legalCells: [{ x: 3, y: 3 }]
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.reason, "illegal_chess_motion");
 });
 
 test("illegal board movement is rejected without mutating the input field", () => {
