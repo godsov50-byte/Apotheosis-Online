@@ -172,7 +172,7 @@ function narrate(tag,story){history.unshift({tag,story});renderChronicle();}
  function loadMatch(){try{const raw=localStorage.getItem("ao-chess-local-match-v1");if(!raw){$("dice").innerHTML="<b>No local save found.</b>";return;}const data=JSON.parse(raw);if(data.version!==1||!Array.isArray(data.units)||!data.units.every(u=>u&&typeof u.id==="string"&&["white","black"].includes(u.side)&&Number.isInteger(u.x)&&Number.isInteger(u.y)&&u.x>=0&&u.x<8&&u.y>=0&&u.y<8&&Number.isFinite(u.hp)&&Number.isFinite(u.maxHp))||!["white","black"].includes(data.turn)||!Number.isInteger(data.round)||data.round<1||!Array.isArray(data.history))throw new Error("invalid save data");units=data.units;turn=data.turn;round=data.round;lastMove=data.lastMove||null;history=data.history.filter(h=>h&&typeof h.tag==="string"&&typeof h.story==="string");techniqueMode=!!data.techniqueMode;selected=null;legal=[];resetBoardEngineBridge();$("techMode").textContent=techniqueMode?"Technique: ON":"Technique: Off";renderChronicle();render();renderProfile();$("dice").innerHTML="<b>Match loaded.</b>";}catch(e){$("dice").innerHTML="<b>Load failed:</b> save file invalid or unreadable.";}}
 function faceToward(u,x,y){let dx=x-u.x,dy=y-u.y;if(Math.abs(dx)>Math.abs(dy))u.facing=dx>0?"E":"W";else if(dy!==0)u.facing=dy>0?"S":"N";}
 function move(u,x,y){
- const request=new CustomEvent("ao-board-move",{detail:{actorId:u.id,to:{x,y},legalCells:legal.map(([cx,cy])=>({x:cx,y:cy}))}});
+ const request=new CustomEvent("ao-board-move",{detail:{actorId:u.id,to:{x,y},legalCells:legal.map(([cx,cy])=>({x:cx,y:cy})),units:units.map(unit=>({...unit}))}});
  window.dispatchEvent(request);
  const result=request.detail.result;
  if(!result||!result.ok){$("dice").innerHTML="<b>Movement rejected by AO engine:</b> "+(result?.reason||"engine bridge unavailable");return;}
@@ -241,6 +241,11 @@ window.addEventListener('ao-board-reset',event=>{try{resetBoardBridge(event.deta
 window.addEventListener('ao-board-move',event=>{
  try{
   if(!boardField)throw new Error('board engine is not initialized');
+  if(Array.isArray(event.detail.units)){
+   const priorLedger=boardField.ledger,priorVersion=boardField.version,activeSide=boardField.activeSide,round=boardField.round;
+   boardField=BoardBridge.createBoardField(event.detail.units,{turn:activeSide,round});
+   boardField={...boardField,ledger:priorLedger,version:priorVersion};
+  }
   const result=BoardBridge.resolveBoardMove(boardField,event.detail);
   event.detail.result={ok:result.ok,reason:result.reason};
   if(result.ok){boardField=result.field;boardRoster=BoardBridge.projectBoardUnits(boardRoster,boardField);event.detail.units=boardRoster.map(u=>({...u}));}
