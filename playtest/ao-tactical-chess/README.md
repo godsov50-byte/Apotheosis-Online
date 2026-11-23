@@ -60,3 +60,8 @@ The separate module `engine/racial-elemental-synergy.js` models racial alignment
 ### Heirloom technique damage axes prototype
 
 Technique damage can be enhanced independently through three Heirloom axes: elemental alignment (+10% when the Heirloom element matches the technique and the target has negative resistance), compatible weapon type (+5%), and quality (+2% per quality level above level 1, capped at level 5). These values are provisional demonstration settings, not AO canon. A test-only Emberbound Greatsword profile on Askar demonstrates the integration. The resolver tests can be run with `node engine/heirloom-technique-damage.test.js` from this directory.
+
+
+### Heirloom stat modifiers prototype
+
+Heirlooms may optionally provide stat modifiers in addition to the independent elemental, weapon-type, and quality technique-damage axes. The stat resolver accepts additive modifiers for the seven draft core attributes (STR, DEX, CON, INT, WIS, CHA, ATT); positive and negative values are supported. It recomputes effective stats from base values and equipped Heirlooms to avoid repeated equipment changes double-applying bonuses. Unsupported keys (such as HP or AC) are ignored because derived-stat rules are not established. The demo Emberbound Greatsword shows illustrative STR +4 / ATT +3 only; those values are not canon. The dossier display is illustrative because core attributes are not currently wired into the playtest combat sheet. Run tests with `node engine/heirloom-stat-modifiers.test.js` from this directory.
