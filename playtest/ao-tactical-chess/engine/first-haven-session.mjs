@@ -294,6 +294,7 @@ export function createFirstHavenSession({ seed = "first-haven-tier-9-demo", posi
     tags:["metal"],
     sourceId:"first-haven-resource-cell"
   });
+  field.entities[creature.id] = { ...field.entities[creature.id], kind: "creature", creatureType: creature.creatureType };
   const initialized = {
     ...field,
     resourceNodes: { [node.id]: node },
@@ -452,7 +453,7 @@ export function unequipFirstHavenItem(state,slot="offhand") {
 export function advanceFirstHavenTechnique(state) {
   const result=advanceTechniqueTierFromFragments(state.field,{
     actorId:state.envoyId,techniqueId:"guard-break",targetTier:8
-  },state.registries);
+  },{ techniques: state.registries.techniques, fragmentDefinitions: state.registries.techniqueFragments });
   if(!result.ok)return {ok:false,reason:result.reason,state};
   const next=withRoster(state,result.field);
   next.log=[{tag:"Technique Progression",text:"Guard Break advances from Technique Tier 9 to Technique Tier 8 by consuming the required creature essence and knowledge fragment."},...state.log];
