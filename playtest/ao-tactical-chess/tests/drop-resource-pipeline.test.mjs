@@ -73,3 +73,16 @@ test("collection preserves quality and provenance for both material and equipmen
   assert.equal(equipped.field.entities.miner.inventory[0].quality.score, 97);
   assert.equal(equipped.field.entities.miner.inventory[0].provenance.eventId, "agent-death");
 });
+
+test("shared reward budget balances material units against equipment value", () => {
+  const profile = {
+    rewardBudget: 3,
+    materialDrops: [{ materialId: "hide", chance: 1, min: 5, max: 5, budgetCostPerUnit: 1 }],
+    equipmentDrops: { chance: 1, entries: [{ itemId: "blade", weight: 1, budgetCost: 2 }] }
+  };
+  const result = D.resolveDefeatDrops({ drops: {} }, { source: { id: "budgeted" }, profile, registry, position: { x: 0, y: 0 }, seed: "shared-budget" });
+  assert.equal(result.materialDrops[0].quantity, 3);
+  assert.equal(result.equipmentDrops.length, 0);
+  assert.equal(result.rewardBudgetSpent, 3);
+  assert.equal(result.rewardBudgetRemaining, 0);
+});
