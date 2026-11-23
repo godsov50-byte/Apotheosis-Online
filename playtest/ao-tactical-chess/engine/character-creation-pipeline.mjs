@@ -9,8 +9,11 @@ const ZERO_ATTRIBUTES = Object.freeze(Object.fromEntries(CORE_ATTRIBUTES.map(key
 const clone = value => structuredClone(value);
 const finite = (value, fallback = null) => Number.isFinite(value) ? value : fallback;
 const fail = reason => ({ ok:false, reason });
+export const RACIAL_ACCESS_STAGES=Object.freeze(["Restricted","Rumored","Discoverable","Verified","Accessible"]);
 export const RACIAL_ACCESS_GRANT_TYPES=Object.freeze(["individual_unlock","route_discovery","conditional_availability","global_starting_availability"]);
 export function validateRacialStartingAccess(race,decision,{ancestryId=null,subAncestryId=null}={}){
+  const stage=race?.accessibility?.stage;
+  if(stage!=null&&!RACIAL_ACCESS_STAGES.includes(stage))return fail("racial_access_stage_invalid");
   const governed=Object.keys(race?.accessibility||{}).length||Object.keys(race?.acquisitionGovernance||{}).length;
   if(!governed)return {ok:true,governanceRequired:false};
   if(!decision||decision.allowed!==true||decision.validated!==true)return fail("racial_starting_access_not_validated");
