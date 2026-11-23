@@ -142,3 +142,21 @@ test("equipment transfers preserve instance identity and provenance",()=>{
   assert.equal(result.field.entities.ally.inventory[0].provenance.recipeId,"forge-sword");
   assert.equal(field.entities.smith.inventory.some(x=>x.instanceId==="i1"),true);
 });
+
+test("ordinary crafting cannot manufacture Conceptual Heirlooms or Cursed Conceptual Heirlooms",()=>{
+  const {field,registry}=fixture();
+  registry.items.derived=E.createItemDefinition({id:"derived",name:"Derived Relic",category:"Conceptual Heirloom"});
+  registry.recipes.ordinary-relic=E.createCraftingRecipe({id:"ordinary-relic",name:"Ordinary Relic Recipe",knownByDefault:true,ingredients:[{materialId:"iron",quantity:1}],output:{itemId:"derived"}});
+  const result=E.craftEquipment(field,{actorId:"smith",recipeId:"ordinary-relic"},registry);
+  assert.equal(result.ok,false);
+  assert.equal(result.reason,"conceptual_heirloom_requires_agent_origin");
+  assert.equal(field.entities.smith.inventory[0].quantity,2);
+});
+test("equipped modifiers aggregate without applying broken equipment bonuses",()=>{
+  const totals=E.aggregateEquipmentModifiers({equipment:{
+    weapon:{state:"intact",modifiers:{attack:5,accuracy:2}},
+    armor:{state:"damaged",modifiers:{defense:3,attack:1}},
+    broken:{state:"broken",modifiers:{attack:100}}
+  }});
+  assert.deepEqual(totals,{attack:6,accuracy:2,defense:3});
+});
