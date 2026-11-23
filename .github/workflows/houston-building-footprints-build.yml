@@ -1,0 +1,43 @@
+name: AO Houston building footprint snapshot
+# Touching this workflow config triggers a one-time source snapshot refresh.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/houston-building-footprints-build.yml"
+      - "scripts/geography/acquire_houston_building_footprints.py"
+
+permissions:
+  contents: read
+
+jobs:
+  build-building-registry:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate acquisition pipeline
+        run: |
+          python -m py_compile scripts/geography/acquire_houston_building_footprints.py
+          python scripts/geography/acquire_houston_building_footprints.py --self-test
+      - name: Acquire Houston-intersecting building footprints
+        run: |
+          python scripts/geography/acquire_houston_building_footprints.py \
+            --output-dir build/houston-building-footprints \
+            --batch-size 200 --timeout 90 --pause 0.15
+      - name: Upload building GeoJSON and provenance manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: ao-houston-building-footprints-${{ github.sha }}
+          path: |
+            build/houston-building-footprints/buildings.geojson
+            build/houston-building-footprints/manifest.json
+          if-no-files-found: error
+          retention-days: 30

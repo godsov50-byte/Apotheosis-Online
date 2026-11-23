@@ -1,0 +1,66 @@
+name: Deploy AO Spatial Console to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "geography/**"
+      - "playtest/**"
+      - ".github/workflows/deploy-ao-spatial-console-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: ao-spatial-console-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare static site
+        run: |
+          mkdir -p site
+          cp geography/ao-city-console.html site/index.html
+          mkdir -p site/tactical-chess
+          cp playtest/ao-tactical-chess/index.html site/tactical-chess/board.html\n          cp playtest/ao-tactical-chess/site-shell.html site/tactical-chess/index.html
+          mkdir -p site/spatial-mock
+          cp geography/ao-spatial-mock/index.html site/spatial-mock/index.html
+          cp geography/ao-street-network.js site/ao-street-network.js
+          cp geography/ao-city-console.js site/
+          cp geography/ao-city-registry.js site/
+          cp geography/ao-city-road-import.js site/
+          cp geography/ao-city-navigation.js site/
+          cp geography/ao-street-name-overlay.js site/
+          cp geography/ao-city-console.css site/ 2>/dev/null || true
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+          # Reruns retain previous artifacts, so use a unique name per attempt.
+          name: github-pages-${{ github.run_attempt }}
+
+      # GitHub's artifact metadata API can briefly lag upload finalization.
+      # Give the artifact time to become visible before deploy-pages queries it.
+      - name: Wait for artifact metadata propagation
+        run: sleep 20
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}

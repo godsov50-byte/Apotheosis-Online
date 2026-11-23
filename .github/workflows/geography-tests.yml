@@ -1,0 +1,79 @@
+name: Geography adapter tests
+
+on:
+  pull_request:
+    paths:
+      - "geography/**"
+      - "spatial/**"
+      - "tests/spatial/**"
+      - "tests/street_registry/**"
+      - "scripts/geography/**"
+      - ".github/workflows/houston-building-footprints-build.yml"
+      - ".github/workflows/geography-tests.yml"
+      - ".github/workflows/houston-street-registry-build.yml"
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  python-contract-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned Houston projection dependency
+        run: python -m pip install pyproj==3.7.2
+      - name: Check city console JavaScript syntax
+        run: node --check geography/ao-city-console.js
+      - name: Check city registry adapter JavaScript syntax
+        run: node --check geography/ao-city-registry.js
+      - name: Check city navigation adapter JavaScript syntax
+        run: node --check geography/ao-city-navigation.js
+      - name: Test Houston building footprint acquisition
+        run: python scripts/geography/acquire_houston_building_footprints.py --self-test
+      - name: Test Houston AO GIS source conversion
+        run: |
+          python -m py_compile scripts/geography/acquire_houston_ao_sources.py
+          python scripts/geography/acquire_houston_ao_sources.py --self-test
+          python -m unittest discover -s tests/spatial -p "test_houston_ao_source_catalog.py" -v
+      - name: Test deterministic registry helpers
+        run: node tests/spatial/consistency-registry.test.js
+      - name: Test Houston street registry compiler
+        run: python scripts/geography/build_houston_street_registry.py --self-test
+      - name: Test AO spatial address resolver
+        run: node --test spatial/ao-spatial-addressing.test.mjs
+      - name: Test AO global geographic resolver and feature bridge
+        run: node --test spatial/ao-global-geographic-reference.test.mjs
+      - name: Check AO geographic feature registry syntax
+        run: node --check spatial/ao-geographic-feature-registry.mjs
+      - name: Check AO grid rasterizer syntax
+        run: node --check spatial/ao-grid-rasterizer.mjs
+      - name: Test deterministic AO grid rasterizer
+        run: node --test tests/spatial/ao-grid-rasterizer.test.mjs
+      - name: Check Houston road-grid builder syntax
+        run: python -m py_compile scripts/geography/build_houston_road_grid.py
+      - name: Test Houston road-grid coordinate builder
+        run: python scripts/geography/build_houston_road_grid.py --self-test
+      - name: Check Houston road-grid rasterizer syntax
+        run: node --check scripts/geography/rasterize_houston_road_grid.mjs
+      - name: Test Houston road-grid rasterizer
+        run: node --test tests/spatial/rasterize-houston-road-grid.test.mjs
+      - name: Test AO spatial movement kernel
+        run: node --test spatial/ao-spatial-movement.test.mjs
+      - name: Test lightweight address-box projection
+        run: node --test spatial/ao-address-box.test.mjs
+      - name: Compile Python modules
+        run: python -m compileall -q geography tests scripts/geography
+      - name: Run unit and migration contract tests
+        run: python -m unittest discover -s tests -v
+      - name: Validate Houston profile JSON
+        run: |
+          python -m json.tool geography/profiles/houston-v1.json > /dev/null
+          python -m json.tool geography/profiles/houston-v2.json > /dev/null

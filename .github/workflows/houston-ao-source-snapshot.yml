@@ -1,0 +1,158 @@
+name: Houston AO source snapshot
+on:
+  workflow_dispatch:
+    inputs:
+      bbox_wgs84:
+        description: "WGS84 extent: west,south,east,north. Default is a bounded downtown Houston pilot."
+        required: true
+        type: string
+        default: "-95.40,29.73,-95.33,29.80"
+      source_ids:
+        description: "Comma-separated IDs. Blank uses the four pilot layers; enter all to acquire the full catalog."
+        required: false
+        type: string
+        default: "city-harris-3d-building-footprints,houston-road-centerlines,houston-sidewalks-hpw,houston-site-addresses"
+
+permissions:
+  contents: read
+
+jobs:
+  acquire-houston-sources:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Derive a cache-safe extent key
+        id: cache-key
+        env:
+          BBOX_WGS84: ${{ inputs.bbox_wgs84 }}
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import hashlib
+          import os
+          bbox = os.environ["BBOX_WGS84"].strip()
+          print("extent_hash=" + hashlib.sha256(bbox.encode("utf-8")).hexdigest())
+          PY
+
+      - name: Restore cached Houston source snapshots for this exact extent
+        uses: actions/cache@v4
+        with:
+          path: build/houston-ao-source-data
+          key: houston-ao-v1-${{ hashFiles('geography/houston-source-catalog.json') }}-${{ steps.cache-key.outputs.extent_hash }}
+
+      - name: Acquire registered GIS sources into AO staging GeoJSON
+        id: acquire
+        continue-on-error: true
+        env:
+          BBOX_WGS84: ${{ inputs.bbox_wgs84 }}
+          SOURCE_IDS: ${{ inputs.source_ids }}
+        run: |
+          set -u
+          output_dir="build/houston-ao-source-data"
+          mkdir -p "$output_dir"
+          log_file="$output_dir/acquisition.log"
+          echo "Starting Houston AO GIS acquisition"
+          echo "Bounding box: $BBOX_WGS84"
+          pilot_source_ids="city-harris-3d-building-footprints,houston-road-centerlines,houston-sidewalks-hpw,houston-site-addresses"
+          if [[ -z "$SOURCE_IDS" ]]; then SOURCE_IDS="$pilot_source_ids"; fi
+          args=()
+          if [[ "$SOURCE_IDS" == "all" ]]; then
+            echo "Selected source IDs: ALL catalog entries"
+          else
+            echo "Selected source IDs: $SOURCE_IDS"
+            IFS=',' read -r -a ids <<< "$SOURCE_IDS"
+            for raw_id in "${ids[@]}"; do
+              source_id="$(printf '%s' "$raw_id" | xargs)"
+              if [[ -n "$source_id" ]]; then args+=(--source "$source_id"); fi
+            done
+          fi
+          set +e
+          python -u scripts/geography/acquire_houston_ao_sources.py \
+            --bbox="$BBOX_WGS84" \
+            --output-dir "$output_dir" \
+            --reuse-existing \
+            "${args[@]}" 2>&1 | tee "$log_file"
+          acquire_status=${PIPESTATUS[0]}
+          set -e
+          printf '%s\n' "$acquire_status" > "$output_dir/acquisition-exit-code.txt"
+          echo "Python acquisition exit code: $acquire_status"
+          if [[ ! -f "$output_dir/run-manifest.json" ]]; then
+            echo "No run-manifest.json was produced; the failure occurred before normal per-source reporting." | tee -a "$log_file"
+          fi
+          exit "$acquire_status"
+
+      - name: Summarize source acquisition
+        if: always()
+        run: |
+          output_dir="build/houston-ao-source-data"
+          {
+            echo "## Houston AO GIS source acquisition"
+            if [[ -f "$output_dir/run-manifest.json" ]]; then
+              python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path("build/houston-ao-source-data/run-manifest.json")
+          data = json.loads(p.read_text())
+          done = data.get("completed", [])
+          failed = data.get("failures", [])
+          print(f"- Bounding box: `{data.get('bbox_wgs84')}`")
+          print(f"- Completed layers: **{len(done)}**")
+          print(f"- Failed layers: **{len(failed)}**")
+          for item in done:
+              reused = " (reused verified cache)" if item.get("reused_existing_snapshot") else ""
+              print(f"- ✓ {item.get('dataset_id')}: {item.get('downloaded_feature_count')} features{reused}")
+          for item in failed:
+              print(f"- ✗ {item.get('dataset_id')}: {item.get('error')}")
+          PY
+            else
+              echo "- No run manifest was produced; see the captured acquisition log below."
+            fi
+            if [[ -f "$output_dir/acquisition-exit-code.txt" ]]; then
+              echo "- Python exit code: $(cat "$output_dir/acquisition-exit-code.txt")"
+            fi
+            if [[ -f "$output_dir/acquisition.log" ]]; then
+              echo
+              echo "### Acquisition log (last 100 lines)"
+              echo '~~~text'
+              tail -n 100 "$output_dir/acquisition.log"
+              echo '~~~'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload AO staging source bundle and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: houston-ao-source-data
+          path: build/houston-ao-source-data/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Evaluate partial acquisition
+        if: always()
+        run: |
+          output_dir="build/houston-ao-source-data"
+          if [[ ! -f "$output_dir/run-manifest.json" ]]; then
+            echo "::error::No run manifest was produced; no usable source snapshot is available."
+            [[ -f "$output_dir/acquisition.log" ]] && tail -n 200 "$output_dir/acquisition.log"
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path("build/houston-ao-source-data/run-manifest.json").read_text())
+          completed = data.get("completed", [])
+          failed = data.get("failures", [])
+          print(f"Usable layers: {len(completed)}; failed layers: {len(failed)}")
+          if not completed:
+              raise SystemExit("No layer completed; acquisition cannot advance.")
+          if failed:
+              print("::warning::Partial snapshot retained. Retry only failed source IDs; completed layers will be reused when checksums, extent and source edit dates still match.")
+          PY

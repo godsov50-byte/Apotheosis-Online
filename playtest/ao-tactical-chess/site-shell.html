@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b1017">
+<meta name="description" content="Apotheosis Online tactical Chessboard workspace.">
+<title>AO Chessboard — Tactical Workspace</title>
+<style>
+:root{color-scheme:dark;--bg:#090e15;--surface:#101a26;--surface2:#152333;--surface3:#1c2d40;--line:#2a4055;--ink:#edf2f7;--muted:#9aabbd;--gold:#d9b46a;--gold2:#a98445;--blue:#83b8df;--green:#7fc59c;--radius:14px}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% -20%,#24364a 0,var(--bg) 54%);color:var(--ink);font:14px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+button,a{font:inherit}
+a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
+.topbar{height:66px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 22px;border-bottom:1px solid var(--line);background:#0b131dec;position:sticky;top:0;z-index:10;backdrop-filter:blur(12px)}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}.sigil{width:38px;height:38px;display:grid;place-items:center;border:1px solid var(--gold);border-radius:10px;color:var(--gold);font-size:22px;flex:none}.brand strong{display:block;letter-spacing:.13em;font-size:12px}.brand small{display:block;color:var(--muted);letter-spacing:.16em;font-size:9px}
+.topmeta{display:flex;align-items:center;gap:14px;color:var(--muted);font-size:11px}.status{display:flex;align-items:center;gap:7px;border:1px solid #315441;border-radius:99px;padding:5px 10px;color:#a9d7b7}.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 10px #7fc59c88}
+.layout{display:grid;grid-template-columns:218px minmax(0,1fr);max-width:1800px;margin:0 auto;min-height:calc(100vh - 66px)}
+.sidebar{padding:20px 12px;border-right:1px solid var(--line);background:#0b131bcc}
+.navlabel{padding:5px 12px 10px;color:#71859a;font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase}
+.nav{display:grid;gap:5px}.nav button{display:flex;align-items:center;gap:11px;width:100%;padding:11px 12px;text-align:left;color:#aebdcb;background:transparent;border:1px solid transparent;border-radius:9px;cursor:pointer;font-size:12px}.nav button:hover{background:#172638;border-color:#2d4055;color:var(--ink)}.nav button[aria-current=page]{background:linear-gradient(100deg,#4b3b23,#202b36);border-color:#80673d;color:#f2dfb8}.navicon{width:19px;text-align:center;color:var(--gold);font-size:15px}.sidefoot{margin:25px 8px 0;padding:13px 11px;border-top:1px solid var(--line);color:var(--muted);font-size:10px}
+main{min-width:0;padding:22px clamp(12px,2vw,28px) 40px}
+.pagehead{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin:0 0 17px}.eyebrow{color:var(--gold);font-size:9px;letter-spacing:.2em;text-transform:uppercase;font-weight:700}.pagehead h1{margin:4px 0 0;font-size:clamp(21px,2.5vw,30px);letter-spacing:.015em}.pagehead p{margin:5px 0 0;color:var(--muted);font-size:12px}.head-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:8px 12px;border:1px solid #40566e;border-radius:8px;color:var(--ink);background:#203247;cursor:pointer;font-size:11px}.button:hover{border-color:var(--gold);background:#2a4056}.button.primary{background:#594629;border-color:#9c7942;color:#ffebc4}.button:disabled{opacity:.45;cursor:not-allowed}
+.panel{background:linear-gradient(155deg,#172432,#101923);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 14px 36px #0004;overflow:hidden}.panelhead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;border-bottom:1px solid var(--line)}.panelhead h2{margin:0;font-size:11px;letter-spacing:.14em;text-transform:uppercase}.muted{color:var(--muted)}.tiny{font-size:10px}
+.boardframe{width:100%;height:calc(100vh - 190px);min-height:680px;border:0;display:block;background:#0b1017}
+.boardnote{padding:9px 14px;border-top:1px solid var(--line);font-size:10px;color:var(--muted);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.view{display:none}.view.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin-top:15px}.info{padding:17px}.info .symbol{font-size:20px;color:var(--gold)}.info h3{margin:8px 0 4px;font-size:13px}.info p{margin:0;color:var(--muted);font-size:11px}
+.empty-state{padding:38px 24px;text-align:center}.empty-state .emblem{font-size:28px;color:var(--gold)}.empty-state h2{font-size:18px;margin:10px 0 5px}.empty-state p{max-width:520px;margin:0 auto;color:var(--muted);font-size:12px}
+.archetypegrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:14px}.archcard{padding:16px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(145deg,#1a2836,#111923)}.archcard h3{margin:7px 0 5px;font-size:13px}.archcard p{margin:0;color:var(--muted);font-size:11px}.archcard .archnum{font-size:10px;color:var(--gold);letter-spacing:.16em}.archfilters{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.archfilters input{min-width:220px;flex:1;background:#101a26;border:1px solid var(--line);border-radius:8px;color:var(--ink);padding:9px 12px}.archcandidate{border-color:#80673d;background:linear-gradient(145deg,#2a251b,#111923)}.archcandidate .archnum{color:#f0d49d}.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.listrow{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 16px;border-bottom:1px solid #263849}.listrow:last-child{border-bottom:0}.listrow strong{font-size:12px}.listrow p{margin:3px 0 0;color:var(--muted);font-size:10px}
+.pill{display:inline-flex;padding:4px 8px;border:1px solid #394d61;border-radius:99px;color:#b9c6d3;font-size:9px;white-space:nowrap}.pill.gold{border-color:#81673c;color:#f0d49d}.callout{padding:14px 16px;border-left:2px solid var(--gold);background:#171f29;color:#c6d0db;font-size:11px;margin:15px 0;border-radius:0 8px 8px 0}
+footer{margin-top:24px;color:#718397;font-size:10px}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.sidebar{position:sticky;top:66px;z-index:8;padding:7px 9px;border-right:0;border-bottom:1px solid var(--line);overflow-x:auto}.navlabel,.sidefoot{display:none}.nav{display:flex;min-width:max-content;gap:4px}.nav button{width:auto;padding:9px 11px}.navicon{width:auto}.boardframe{height:calc(100vh - 230px);min-height:620px}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.topbar{height:58px;padding:0 12px}.sigil{width:32px;height:32px}.brand strong{font-size:10px}.brand small{font-size:8px}.topmeta .status{font-size:9px}.topmeta>span:last-child{display:none}.sidebar{top:58px}.nav button{font-size:10px;padding:8px}.navicon{display:none}main{padding:15px 9px 28px}.pagehead{align-items:flex-start;flex-direction:column}.boardframe{height:calc(100vh - 230px);min-height:560px}.cards,.grid2{grid-template-columns:1fr}.panelhead{padding:11px 12px}}
+</style>
+</head>
+<body>
+<header class="topbar">
+ <div class="brand"><div class="sigil" aria-hidden="true">✦</div><div><strong>APOTHEOSIS ONLINE</strong><small>TACTICAL CHESSBOARD</small></div></div>
+ <div class="topmeta"><span class="status"><i class="dot"></i> Local playtest</span><span>WORKSPACE · <b style="color:var(--gold)">01</b></span></div>
+</header>
+<div class="layout">
+ <aside class="sidebar" aria-label="Chessboard navigation">
+  <div class="navlabel">Tactical workspace</div>
+  <nav class="nav" id="navigation">
+   <button type="button" data-view="battlefield" aria-current="page"><span class="navicon">▦</span>Battlefield</button>
+   <button type="button" data-view="envoys"><span class="navicon">♙</span>Envoys</button>
+   <button type="button" data-view="session"><span class="navicon">◷</span>Session</button>
+   <button type="button" data-view="chronicle"><span class="navicon">▤</span>Chronicle</button>
+   <button type="button" data-view="inventory"><span class="navicon">◇</span>Inventory</button>
+   <button type="button" data-view="field"><span class="navicon">⌖</span>Field objects</button>
+   <button type="button" data-view="archetypes"><span class="navicon">⚔</span>Archetypes</button>
+   <button type="button" data-view="codex"><span class="navicon">✧</span>Codex</button>
+   <button type="button" data-view="settings"><span class="navicon">⚙</span>Settings</button>
+  </nav>
+  <div class="sidefoot">AO CHESSBOARD<br>Spatial combat workspace<br><br><span class="pill gold">Prototype · isolated</span></div>
+ </aside>
+ <main>
+  <section class="view active" id="view-battlefield">
+   <div class="pagehead"><div><div class="eyebrow">Active encounter</div><h1>Battlefield</h1><p>Spatial position and tactical state are presented on the board.</p></div><div class="head-actions"><a class="button" href="./board.html" target="_blank" rel="noopener">↗ Open board alone</a></div></div>
+   <div class="panel"><div class="panelhead"><h2>AO Tactical Chess · Playtest</h2><span class="pill gold">Local two-player</span></div><iframe class="boardframe" src="./board.html" title="AO Tactical Chessboard" loading="eager" allow="fullscreen"></iframe><div class="boardnote"><span>Board state is local to this playtest.</span><span>No persistent world or Kernel writes.</span></div></div>
+  </section>
+  <section class="view" id="view-envoys">
+   <div class="pagehead"><div><div class="eyebrow">Character registry</div><h1>Envoys</h1><p>Roster and individual dossiers for characters assigned to tactical encounters.</p></div></div>
+   <div class="panel empty-state"><div class="emblem">♙</div><h2>No connected Envoy registry</h2><p>The current board contains playtest tokens and temporary profiles. A canonical Envoy roster, race/ancestry records, and approved Tier 9 baseline profiles have not yet been connected to this workspace.</p></div>
+   <div class="cards"><article class="panel info"><div class="symbol">01</div><h3>Identity</h3><p>Name, title, race, ancestry, sub-ancestry, sex, and age.</p></article><article class="panel info"><div class="symbol">02</div><h3>Classification</h3><p>Tier, class, Archetype, nature/type, subtype, and scale.</p></article><article class="panel info"><div class="symbol">03</div><h3>Capabilities</h3><p>Attributes, skills, techniques, affinities, proficiencies, and reactions.</p></article></div>
+  </section>
+  <section class="view" id="view-session">
+   <div class="pagehead"><div><div class="eyebrow">Encounter management</div><h1>Session</h1><p>Participant control, Envoy assignment, turn state, and reaction policy.</p></div></div>
+   <div class="grid2"><div class="panel"><div class="panelhead"><h2>Current playtest</h2><span class="pill">Local</span></div><div class="listrow"><div><strong>Session authority</strong><p>Browser-local prototype</p></div><span class="pill">Isolated</span></div><div class="listrow"><div><strong>Participants</strong><p>Same-device local play</p></div><span class="pill">2 sides</span></div><div class="listrow"><div><strong>Persistence</strong><p>Not connected</p></div><span class="pill">Off</span></div></div><div class="panel"><div class="panelhead"><h2>Planned session controls</h2><span class="pill gold">Not connected</span></div><div class="listrow"><div><strong>Participant invitations</strong><p>Identity and access routing</p></div></div><div class="listrow"><div><strong>Envoy assignment</strong><p>Controller permissions and sides</p></div></div><div class="listrow"><div><strong>Reaction policy</strong><p>Async, timed, automatic, or hybrid</p></div></div></div></div>
+   <div class="callout">The prototype's End turn control is local. This workspace does not yet create persistent sessions, invite participants, or resume server-side reaction checkpoints.</div>
+  </section>
+  <section class="view" id="view-chronicle">
+   <div class="pagehead"><div><div class="eyebrow">Encounter record</div><h1>Chronicle</h1><p>The complete story of a session, derived from its authoritative event history.</p></div></div>
+   <div class="panel empty-state"><div class="emblem">▤</div><h2>Chronicle workspace reserved</h2><p>The playtest board currently has a local narrative log. A persistent Chronicle will be generated from committed Kernel events, preserving action order, causality, participants, outcomes, and perspective limits.</p></div>
+   <div class="cards"><article class="panel info"><div class="symbol">Ⅰ</div><h3>Event timeline</h3><p>Actions, reactions, movement, combat, object interactions, and outcomes.</p></article><article class="panel info"><div class="symbol">Ⅱ</div><h3>Character perspectives</h3><p>Perspective-limited accounts grounded in what each character could know.</p></article><article class="panel info"><div class="symbol">Ⅲ</div><h3>Completed story</h3><p>A coherent account rendered from the same committed event record.</p></article></div>
+  </section>
+  <section class="view" id="view-inventory">
+   <div class="pagehead"><div><div class="eyebrow">Possessions and materials</div><h1>Inventory</h1><p>Carried items, equipment, consumables, and successfully collected materials.</p></div></div>
+   <div class="panel empty-state"><div class="emblem">◇</div><h2>No persistent inventory connected</h2><p>Board drops and collected materials must remain distinct. A visible drop does not enter an Envoy's inventory until an authorized collection action resolves.</p></div>
+   <div class="callout">Equipment slots, carried capacity, transfers, and storage will use shared Envoy and item identifiers when the inventory data contract is implemented.</div>
+  </section>
+  <section class="view" id="view-field">
+   <div class="pagehead"><div><div class="eyebrow">Battlefield interactions</div><h1>Field objects</h1><p>Drops, resource cells, special containers, hazards, and interactable terrain.</p></div></div>
+   <div class="cards"><article class="panel info"><div class="symbol">✧</div><h3>Dropped material</h3><p>Material produced when an enemy is slain; remains on the battlefield until retrieved.</p></article><article class="panel info"><div class="symbol">▦</div><h3>Resource cells</h3><p>Resource locations that may spawn independently and occupy a spatial position.</p></article><article class="panel info"><div class="symbol">▣</div><h3>Special containers</h3><p>Resources held inside objects that must be accessed before contents can be collected.</p></article></div>
+   <div class="callout">Collection, opening, extraction, harvesting, searching, and carrying are candidate interaction labels. Availability and costs must come from the authoritative action rules.</div>
+  </section>
+  <section class="view" id="view-archetypes">
+   <div class="pagehead"><div><div class="eyebrow">Combat target specialization</div><h1>Archetypes</h1><p>Classification for what a technique, weapon, or combatant is specialized to counter or affect.</p></div></div>
+   <div class="callout">Archetypes describe a combat specialization against a target or target property. They are independent of Class, Race, Type, Tier, and scale. This refined roster is still provisional.</div>
+   <div class="archfilters"><input id="archetypeSearch" type="search" aria-label="Search archetypes" placeholder="Search archetypes or targets…"></div>
+   <div class="archetypegrid" id="archetypeGrid">
+    <article class="archcard" data-archetype="anti-unit individual single target duel"><div class="archnum">01 · TARGET COUNT</div><h3>Anti-Unit</h3><p>Optimized to engage one target at a time. It is about focus and individual engagement—not automatically armor penetration or bonus against a specific species.</p></article>
+    <article class="archcard" data-archetype="anti-army groups formations swarm mass combat"><div class="archnum">02 · TARGET COUNT</div><h3>Anti-Army</h3><p>Optimized for multiple targets, troops, formations, crowds, or swarms—through area, multi-target, disruption, or sustained pressure.</p></article>
+    <article class="archcard" data-archetype="anti-armor anti-tank armored mobile heavy defense penetration dr"><div class="archnum">03 · DEFENSE PROPERTY</div><h3>Anti-Armor / Anti-Tank</h3><p>Optimized to penetrate, disable, or defeat heavily armored mobile targets—armored Envoys, beasts, vehicles, or units with extreme DR. Not a general bonus against walls.</p></article>
+    <article class="archcard" data-archetype="anti-fortress walls fortifications strongholds structure siege"><div class="archnum">04 · FIXED STRUCTURE</div><h3>Anti-Fortress</h3><p>Optimized to breach, collapse, or neutralize fixed defenses: walls, bunkers, gates, strongholds, and fortifications.</p></article>
+    <article class="archcard" data-archetype="anti-city urban infrastructure city-scale"><div class="archnum">05 · SCALE</div><h3>Anti-City</h3><p>Optimized to threaten city-scale assets or broad urban areas and infrastructure. It is scale-focused, not necessarily a siege technique.</p></article>
+    <article class="archcard" data-archetype="anti-country nation national strategic territory"><div class="archnum">06 · SCALE</div><h3>Anti-Country</h3><p>Optimized against national-scale targets, strategic assets, state-level defenses, or territory-wide objectives.</p></article>
+    <article class="archcard" data-archetype="anti-world world planetary existential"><div class="archnum">07 · SCALE</div><h3>Anti-World</h3><p>Optimized against world-scale systems, structures, or existential targets. Scope refers to target scale, not an automatic destructive radius.</p></article>
+    <article class="archcard" data-archetype="anti-divine divine god authority celestial"><div class="archnum">08 · NATURE</div><h3>Anti-Divine</h3><p>Optimized against divine nature, divine defenses, authorities, or divine beings. Does not mean every divine target shares identical weaknesses.</p></article>
+    <article class="archcard" data-archetype="anti-dragon dragon draconic scales"><div class="archnum">09 · NATURE</div><h3>Anti-Dragon</h3><p>Optimized against draconic traits such as dragon scales, bodies, abilities, or innate defenses; distinct from Anti-Armor unless armor is specifically draconic.</p></article>
+    <article class="archcard" data-archetype="anti-thaumaturgy magic spells enchantments magical techniques"><div class="archnum">10 · SYSTEM</div><h3>Anti-Thaumaturgy</h3><p>Optimized to counter magical systems: techniques, spells, enchantments, magical defenses, or ongoing thaumaturgical effects.</p></article>
+    <article class="archcard archcandidate" data-archetype="anti-spirit spirits souls incorporeal spiritual"><div class="archnum">REVIEW CANDIDATE · OUTSIDE THE TEN</div><h3>Anti-Spirit</h3><p>Candidate for specialization against spirits, incorporeal entities, souls, or spiritual defenses. We are evaluating whether this is a dedicated Archetype or a capability granted by specific techniques, Types, affinities, or properties.</p></article>
+   </div>
+   <p class="muted tiny" id="archetypeCount" aria-live="polite">11 entries shown · 10 refined categories + 1 review candidate</p>
+  </section>
+  <section class="view" id="view-codex">
+   <div class="pagehead"><div><div class="eyebrow">Reference library</div><h1>Codex</h1><p>Rules and reference material available to the current participant.</p></div></div>
+   <div class="panel"><div class="listrow"><div><strong>Combat fundamentals</strong><p>AP, EA, AC, DR, Damage Resistance, Penetration, and Break remain independent mechanics.</p></div><span class="pill gold">Reference</span></div><div class="listrow"><div><strong>Classes</strong><p>Saber, Archer, Lancer, Rider, Caster, Assassin, Berserker, Shielder, Avenger, and Ruler.</p></div><span class="pill gold">10 classes</span></div><div class="listrow"><div><strong>Character dimensions</strong><p>Race, ancestry, sub-ancestry, class, Archetype, nature/type, subtype, and scale.</p></div><span class="pill">In progress</span></div><div class="listrow"><div><strong>Movement patterns</strong><p>King, Queen, Rook, Bishop, Knight, and Pawn patterns in the current playtest.</p></div><span class="pill">Playtest</span></div></div>
+   <div class="callout">This initial Codex panel is a navigation scaffold, not a complete or authoritative rules catalogue. Hidden or restricted knowledge must never be exposed by a general reference page.</div>
+  </section>
+  <section class="view" id="view-settings">
+   <div class="pagehead"><div><div class="eyebrow">Workspace preferences</div><h1>Settings</h1><p>Display and accessibility preferences for the tactical workspace.</p></div></div>
+   <div class="panel"><div class="listrow"><div><strong>Board experience</strong><p>Open the existing board in its standalone playtest view.</p></div><a class="button" href="./board.html" target="_blank" rel="noopener">Open board ↗</a></div><div class="listrow"><div><strong>Responsive layout</strong><p>Navigation and content adapt to desktop, tablet, and phone widths.</p></div><span class="pill">Automatic</span></div><div class="listrow"><div><strong>Motion and contrast</strong><p>System-level reduced motion and high contrast are respected where supported.</p></div><span class="pill">Baseline</span></div><div class="listrow"><div><strong>Data connection</strong><p>No live Kernel, WorldHeart, or Supabase connection.</p></div><span class="pill">Disconnected</span></div></div>
+  </section>
+  <footer>APOTHEOSIS ONLINE · CHESSBOARD WORKSPACE · Interface foundation only. Local playtest values are not canon.</footer>
+ </main>
+</div>
+<script>
+(()=>{const buttons=[...document.querySelectorAll("[data-view]")];const views=[...document.querySelectorAll(".view")];function show(name){buttons.forEach(b=>{if(b.dataset.view===name)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});views.forEach(v=>v.classList.toggle("active",v.id==="view-"+name));const heading=document.querySelector("#view-"+name+" h1");if(heading){document.title="AO Chessboard — "+heading.textContent;heading.setAttribute("tabindex","-1");heading.focus({preventScroll:true})}history.replaceState(null,"","#"+name)}buttons.forEach(b=>b.addEventListener("click",()=>show(b.dataset.view)));const archetypeSearch=document.getElementById("archetypeSearch");if(archetypeSearch){archetypeSearch.addEventListener("input",()=>{const q=archetypeSearch.value.trim().toLowerCase();const cards=[...document.querySelectorAll("#archetypeGrid .archcard")];let visible=0;cards.forEach(c=>{const ok=!q||c.dataset.archetype.includes(q)||c.innerText.toLowerCase().includes(q);c.style.display=ok?"":"none";if(ok)visible++});const count=document.getElementById("archetypeCount");if(count)count.textContent=visible+" of 11 entries shown · candidate is outside the ten"});}const initial=location.hash.slice(1);if(buttons.some(b=>b.dataset.view===initial))show(initial)})();
+</script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "environment": "test-only",
+  "worldId": "ao-houston-test",
+  "grid": {
+    "chunkSizeM": 1024,
+    "tileSizeM": 64,
+    "cellSizeM": 1
+  },
+  "regions": [
+    {
+      "id": "houston-test",
+      "coordinateSystem": "local-equirectangular-wgs84",
+      "originLat": 29.76,
+      "originLon": -95.37,
+      "maxRadiusKm": 100,
+      "sourceStatus": "test-only",
+      "notes": "Coordinate-frame fixture only. Not an approved AO region boundary, complete Houston extent, vertical datum, or canonical geography. Supply regionId explicitly until authoritative bounds are configured."
+    }
+  ]
+}
