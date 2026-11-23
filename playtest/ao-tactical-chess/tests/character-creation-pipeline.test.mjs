@@ -56,3 +56,31 @@ test("ancestry selection is validated and sub-ancestry remains optional",()=>{
  assert.equal(createEnvoyFromCreation({...input,ancestryId:"a",subAncestryId:"missing"},r).reason,"unknown_sub_ancestry");
  assert.equal(createEnvoyFromCreation({...input,ancestryId:"a"},r).ok,true);
 });
+
+test("existence, lineage, form, species classification and player access remain independent",()=>{
+ const r=createRacialRegistry([{id:"race-independent",name:"Race Independent",lineageId:"lineage-origin",
+  existence:{beingTypeId:"being-kind-a"},originLineage:{lineageId:"lineage-origin",transformationHistory:["origin-event"]},
+  formNature:{formId:"body-form-a",physiology:{locomotion:["bipedal"]}},
+  speciesClassification:{speciesId:"species-class-a",recognizedBy:"kernel"},
+  inhabitantUnderstanding:{commonBelief:"folk-belief-a"},population:{livingCount:12},
+  accessibility:{stage:"Discoverable"},acquisitionGovernance:{allowedRoutes:["invitation"]},
+  rarityProfiles:[{rarityId:"grade-a"}]}]);
+ const input={id:"separate-layers",name:"Separate Layers",side:"white",raceId:"race-independent",rarityId:"grade-a",characterTier:9,
+  baseAttributes:base,vitality:{base:10,perConstitution:1}};
+ assert.equal(createEnvoyFromCreation(input,r).reason,"racial_starting_access_not_validated");
+ const created=createEnvoyFromCreation({...input,accessDecision:{allowed:true,validated:true,grantId:"grant-1",
+  grantType:"route_discovery",raceId:"race-independent",ancestryId:null,subAncestryId:null}},r);
+ assert.equal(created.ok,true);
+ assert.equal(created.entity.lineageId,"lineage-origin");
+ assert.equal(created.entity.originLineage.race.lineageId,"lineage-origin");
+ assert.equal(created.entity.speciesClassification.speciesId,"species-class-a");
+ assert.equal(created.entity.existence.beingTypeId,"being-kind-a");
+ assert.equal(created.entity.formNature.race.formId,"body-form-a");
+ assert.equal(created.entity.population,undefined);
+ assert.equal(created.entity.accessibility,undefined);
+ assert.equal(created.creationContext.inhabitantUnderstanding.commonBelief,"folk-belief-a");
+ assert.equal(created.creationContext.population.livingCount,12);
+ assert.equal(created.creationContext.accessibility.stage,"Discoverable");
+ assert.equal(created.creationContext.acquisitionGovernance.allowedRoutes[0],"invitation");
+ assert.equal(created.creationContext.accessDecision.grantId,"grant-1");
+});
