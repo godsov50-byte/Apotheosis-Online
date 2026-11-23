@@ -70,8 +70,6 @@ The separate `mechanics/20-chessboard-elemental-axes-proposal.md` captures a pro
 The `mechanics/23-tier-9-envoy-creature-benchmark-framework.md` establishes the benchmark record shapes, class-counter pairings, ten provisional creature design briefs, coverage rules, test protocol, and explicit source blockers. It does not invent missing race, type, affinity, or composite-affinity rosters.
 
 
-## Encounter Director (Layer 12)
+## AO Chess Engine — Layers 1–13
 
-The Layer 12 Encounter Director proposal is in `mechanics/26-encounter-director-and-battlefield-simulation-proposal.md`. It defines encounter origins/lifecycle, sourced composition, deployment validation, reinforcements and travel, waves, objectives, ecology, persistence, resolution, reward provenance, and anti-cheating constraints. It is proposal-only, not canon or persistent-world runtime behavior.
-
-
+The tactical Chess playtest now contains a modular reference engine prototype covering entity/grid basics, skills and synergies, affinity/defense, action validation, techniques, projectiles, ranged/melee gates, resource handling, tactical AI perception, encounter objectives/reinforcement scheduling, item refinement, harvesting/crafting, rewards and influence. The implementation and limits are documented under `playtest/ao-tactical-chess/engine/README.md`. This remains isolated from production Kernel and WorldHeart persistence.
