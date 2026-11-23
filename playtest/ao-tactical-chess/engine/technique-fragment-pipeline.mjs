@@ -30,6 +30,20 @@ function validateFragmentCosts(entity, costs, fragmentDefinitions) {
     if (cost.requiredTraits?.length && !cost.requiredTraits.every(trait => (definition.traits || []).includes(trait))) {
       return fail("fragment_trait_requirement", { fragmentId: cost.fragmentId, requiredTraits: cost.requiredTraits });
     }
+    const essence = definition.essence || {};
+    const knowledge = definition.knowledge || {};
+    if (cost.requiredEssenceTraits?.length && !cost.requiredEssenceTraits.every(trait => (essence.traits || []).includes(trait))) {
+      return fail("fragment_essence_requirement", { fragmentId: cost.fragmentId, requiredEssenceTraits: cost.requiredEssenceTraits });
+    }
+    if (cost.requiredKnowledgeTraits?.length && !cost.requiredKnowledgeTraits.every(trait => (knowledge.traits || []).includes(trait))) {
+      return fail("fragment_knowledge_requirement", { fragmentId: cost.fragmentId, requiredKnowledgeTraits: cost.requiredKnowledgeTraits });
+    }
+    if (cost.minimumEssencePotency != null && num(essence.potency) < cost.minimumEssencePotency) {
+      return fail("fragment_essence_potency_requirement", { fragmentId: cost.fragmentId, required: cost.minimumEssencePotency, actual: num(essence.potency) });
+    }
+    if (cost.minimumKnowledgePotency != null && num(knowledge.potency) < cost.minimumKnowledgePotency) {
+      return fail("fragment_knowledge_potency_requirement", { fragmentId: cost.fragmentId, required: cost.minimumKnowledgePotency, actual: num(knowledge.potency) });
+    }
   }
   return { ok: true };
 }
