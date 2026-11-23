@@ -5,6 +5,7 @@ import {
   resolveBoardMove,
   resolveBoardAttack,
   resolveBoardTechnique,
+  collectBoardDrop,
   endBoardTurn,
   projectBoardUnits
 } from "../engine/board-engine-bridge.mjs";
@@ -198,6 +199,97 @@ test("defeated defenders are removed from cell occupancy and board projection", 
   assert.deepEqual(result.field.entities.attacker.position, { x: 1, y: 0, z: 0 });
   assert.deepEqual(projectBoardUnits(units, result.field).map(x => x.id), ["attacker"]);
   assert.equal(projectBoardUnits(units, result.field, { includeDefeated: true }).find(x => x.id === "defender").hp, 0);
+});
+
+test("defeated creatures create configured physical material and technique-fragment drops", () => {
+  const units = [
+    unit("envoy", "white", 0, 0, { pattern: "King", atk: 20 }),
+    unit("creature", "black", 1, 0, { ac: 1, hp: 4, maxHp: 4 })
+  ];
+  const registry = {
+    materials: { hide: { id: "hide", name: "Hide" } },
+    items: {},
+    techniqueFragments: {
+      "beast-fragment": {
+        id: "beast-fragment",
+        traits: ["beast"],
+        essence: { traits: ["beast"], potency: 1 },
+        knowledge: { traits: ["instinct"], potency: 1 }
+      }
+    }
+  };
+  const dropContext = {
+    source: { type: "creature", materialQuality: 55, essenceQuality: 60, fragmentQuality: 60 },
+    profile: {
+      id: "test-creature-profile",
+      materialDrops: [{ materialId: "hide", chance: 1, min: 2, max: 2 }],
+      equipmentDrops: { chance: 0, entries: [] },
+      techniqueFragmentDrops: [{ fragmentId: "beast-fragment", chance: 1, min: 1, max: 1 }]
+    },
+    registry,
+    seed: "fixed-creature-drop"
+  };
+  const field = createBoardField(units);
+  const result = resolveBoardAttack(field, {
+    attackerId: "envoy", defenderId: "creature", roll: 20,
+    damagePackets: [{ type: "physical", amount: 10 }],
+    eventId: "creature-defeat",
+    dropContext
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.defeated, true);
+  assert.equal(result.drops.length, 2);
+  assert.ok(result.drops.every(drop => drop.collected === false));
+  assert.ok(result.drops.every(drop => drop.position.x === 1 && drop.position.y === 0));
+  assert.ok(result.field.ledger.some(event => event.type === "defeat_drops_resolved"));
+});
+
+test("manual field collection preserves fragment payloads and provenance", () => {
+  const units = [
+    unit("envoy", "white", 1, 0, { pattern: "King", atk: 20 }),
+    unit("creature", "black", 2, 0, { ac: 1, hp: 4, maxHp: 4 })
+  ];
+  const registry = {
+    materials: { hide: { id: "hide", name: "Hide" } },
+    items: {},
+    techniqueFragments: {
+      "beast-fragment": {
+        id: "beast-fragment",
+        traits: ["beast"],
+        essence: { traits: ["beast"], potency: 2 },
+        knowledge: { traits: ["instinct"], potency: 3 }
+      }
+    }
+  };
+  const field = createBoardField(units);
+  const defeat = resolveBoardAttack(field, {
+    attackerId: "envoy", defenderId: "creature", roll: 20,
+    damagePackets: [{ type: "physical", amount: 10 }],
+    eventId: "collectable-defeat",
+    dropContext: {
+      source: { type: "creature" },
+      profile: {
+        id: "collectable-profile",
+        materialDrops: [{ materialId: "hide", chance: 1, min: 1, max: 1 }],
+        equipmentDrops: { chance: 0, entries: [] },
+        techniqueFragmentDrops: [{ fragmentId: "beast-fragment", chance: 1, min: 1, max: 1 }]
+      },
+      registry,
+      seed: "collectable"
+    }
+  });
+  const fragment = defeat.drops.find(drop => drop.kind === "technique_fragment_drop");
+  const denied = collectBoardDrop(defeat.field, { actorId: "envoy", dropId: fragment.id, registry, confirm: false });
+  assert.equal(denied.ok, false);
+  assert.equal(denied.reason, "manual_collection_required");
+  const collected = collectBoardDrop(defeat.field, { actorId: "envoy", dropId: fragment.id, registry, confirm: true });
+  assert.equal(collected.ok, true);
+  const stack = collected.field.entities.envoy.inventory.find(item => item.kind === "technique_fragment");
+  assert.equal(stack.fragmentId, "beast-fragment");
+  assert.deepEqual(stack.essence, { traits: ["beast"], potency: 2 });
+  assert.deepEqual(stack.knowledge, { traits: ["instinct"], potency: 3 });
+  assert.equal(stack.provenance.sourceId, "creature");
+  assert.equal(collected.field.drops[fragment.id].collected, true);
 });
 
 test("turn handoff changes active side and advances round only after black returns to white", () => {
