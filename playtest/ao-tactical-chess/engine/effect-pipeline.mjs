@@ -76,7 +76,7 @@ export function resolveEffectBatch(field,{sourceId,targetId,effects=[],eventId,c
    if(!recipient)return fail("modifier_target_missing",field);
    const stat=effect.stat;if(!["STR","DEX","CON","INT","WIS","CHA","ATT"].includes(stat)||!Number.isFinite(effect.amount))return fail("invalid_attribute_modifier",field);
    const statusId=effect.statusId||`modifier-${eventId}-${stat}`;
-   const statuses=applyStatus(recipient.statuses||[],{id:statusId,duration:effect.duration??null,remaining:effect.duration??null,stackRule:effect.stackRule||"replace",modifiers:{[stat]:effect.amount},tags:effect.tags||["attribute-modifier"]});
+   const statuses=applyStatus(recipient.statuses||[],{id:statusId,duration:effect.duration??null,remaining:effect.duration??null,stackRule:effect.stackRule||"replace",modifiers:{[stat]:effect.amount},sourceItemId:effect.sourceItemId||null,tags:effect.tags||["attribute-modifier"]});
    if(!statuses)return fail("modifier_status_invalid",field);
    recipient.statuses=statuses;
    outcomes.push({type:"attribute_modifier",targetId:recipient.id,stat,amount:effect.amount,duration:effect.duration??null});
@@ -118,6 +118,14 @@ export function resolveEffectiveAttributes(entity){
   for(const status of entity.statuses||[])value+=num(status.modifiers?.[stat])*Math.max(1,num(status.stacks,1));
   out[stat]=Math.max(1,value);
  }
+ return out;
+}
+export function resolveEffectiveDefense(entity){
+ const base=entity.baseDefense||entity.defense||{},out=clone(base);
+ let dr=num(base.DR);
+ for(const item of Object.values(entity.equipment||{}))if(item&&item.state!=="broken"&&item.state!=="destroyed")dr+=num(item.modifiers?.DR);
+ for(const status of entity.statuses||[])dr+=num(status.modifiers?.DR)*Math.max(1,num(status.stacks,1));
+ out.DR=Math.max(0,dr);
  return out;
 }
 export function tickEntityEffects(entity,{phase="end_turn"}={}){
