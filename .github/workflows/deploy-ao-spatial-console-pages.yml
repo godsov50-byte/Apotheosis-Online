@@ -37,6 +37,7 @@ jobs:
           cp playtest/ao-tactical-chess/site-shell.html site/tactical-chess/index.html
           mkdir -p site/first-haven
           cp playtest/ao-tactical-chess/first-haven.html site/first-haven/index.html
+          cp playtest/ao-tactical-chess/piece-arena.html site/first-haven/piece-arena.html
           cp -R playtest/ao-tactical-chess/engine site/first-haven/engine
           mkdir -p site/spatial-mock
           cp geography/ao-spatial-mock/index.html site/spatial-mock/index.html

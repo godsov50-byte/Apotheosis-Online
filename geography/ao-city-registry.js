@@ -21,18 +21,62 @@
   let entrancePins = loadEntrancePins();
   let entranceLayer = L.layerGroup().addTo(map);
   const layer = L.layerGroup().addTo(map);
+  map.createPane("registryFootprints").style.zIndex = "390";
   let dbPromise;
   let refreshToken = 0;
   let selectedRecord = null;
   let searchTimer = null;
+  const city = window.AOCityConsoleRuntime;
 
   function loadEntrancePins(){try{return JSON.parse(localStorage.getItem(ADDRESS_KEY)||"[]")}catch{return []}}
   function saveEntrancePins(){try{localStorage.setItem(ADDRESS_KEY,JSON.stringify(entrancePins))}catch(e){status("Could not save entrance/address markers locally: "+e.message)}}
   function entranceIcon(){return L.divIcon({className:"",html:'<div class="ao-address-icon" aria-label="Address or entrance">⌂</div>',iconSize:[28,28],iconAnchor:[14,25]})}
-  function openEntranceCard(pin){const card=$("aoEntranceCard"),body=$("aoEntranceCardBody");if(!card||!body)return;body.replaceChildren();const title=document.createElement("h2");title.textContent=pin.address||"Entrance";body.append(title);const subtitle=document.createElement("div");subtitle.className="hint";subtitle.textContent="AO entrance/address marker · browser-local record";body.append(subtitle);const info=document.createElement("p");info.textContent=pin.description||"Door position recorded. Interior visibility and access are not assumed.";body.append(info);const coords=document.createElement("div");coords.className="hint";coords.textContent=Number(pin.lat).toFixed(7)+", "+Number(pin.lng).toFixed(7);body.append(coords);if(pin.parentName){const p=document.createElement("div");p.className="hint";p.textContent="Building: "+pin.parentName;body.append(p)}const btn=document.createElement("button");btn.className="primary ao-card-action";btn.textContent="Inspect location";btn.onclick=()=>{card.hidden=true;map.setView([pin.lat,pin.lng],19)};body.append(btn);card.hidden=false}
-  $("aoEntranceClose").onclick=()=>{$("aoEntranceCard").hidden=true};
+  function openEntranceCard(pin) {
+    city.selectObject(null);
+    city.openLocationCard({
+      name: pin.address || "Entrance",
+      description: pin.description || "Teleport places your Envoy at this recorded exterior entrance.",
+      entrances: [pin]
+    });
+    const inspect = document.createElement("button");
+    inspect.className = "ao-card-action";
+    inspect.textContent = "Center map on entrance";
+    inspect.onclick = () => {
+      $("aoEntranceCard").hidden = true;
+      map.setView([pin.lat, pin.lng], 19);
+    };
+    $("aoEntranceCardBody").append(inspect);
+  }
+  function containsPoint(geometry, point) {
+    const polygons = geometry.type === "MultiPolygon" ? geometry.coordinates : [geometry.coordinates];
+    return polygons.some(([exterior, ...holes]) => {
+      const contains = ring => city.pointInRing(point, ring.map(([lng, lat]) => [lat, lng]));
+      return contains(exterior) && !holes.some(contains);
+    });
+  }
+  function showPlaceActions(record, bounds, tapPoint) {
+    const building = record.kind === "building";
+    const saved = building && record.sourceIdentity && city.state.objects.find(o =>
+      o.kind === "building" && o.sourceIdentity === record.sourceIdentity && o.sourceDataset === record.dataset);
+    city.selectObject(saved?.id || null);
+    const authoredDoors = city.state.objects.filter(o => o.kind === "entrance" && o.source !== "envoy-building-contact");
+    const entrances = building
+      ? [...authoredDoors.filter(o => saved && o.parentId === saved.id), ...entrancePins.filter(pin =>
+          pin.parentRecordId === record.id ||
+          (!pin.parentRecordId && pin.parentName === record.name && bounds.pad(0.25).contains([pin.lat, pin.lng])))]
+      : [...authoredDoors, ...entrancePins].filter(door => containsPoint(record.geometry, door));
+    const center = bounds.getCenter();
+    const point = building ? {lat: bounds.getSouth() - 2 / 111320, lng: center.lng} : (tapPoint || center);
+    city.openLocationCard({
+      name: record.name,
+      point,
+      entrances,
+      description: entrances.length ? "Teleport places your Envoy outside at the selected entrance." :
+        "No recorded entrance. Teleport moves your Envoy to a map point."
+    });
+  }
   function renderEntrancePins(){entranceLayer.clearLayers();entrancePins.forEach(pin=>{const marker=L.marker([pin.lat,pin.lng],{icon:entranceIcon()}).addTo(entranceLayer);marker.on("click",e=>{if(e.originalEvent)L.DomEvent.stopPropagation(e.originalEvent);openEntranceCard(pin)});marker.bindTooltip(pin.address||"Entrance")})}
-  function addEntrancePinAt(latlng){if(!pinAuthoring)return;pinAuthoring=false;const address=prompt("Address / entrance label (do not guess):","");if(address===null||!address.trim())return;const description=prompt("Optional description / access note (leave blank if unknown):","")||"";const parentName=selectedRecord&&selectedRecord.kind==="building"?selectedRecord.name:"";const pin={id:"ao-door-"+Date.now(),lat:latlng.lat,lng:latlng.lng,address:address.trim(),description,parentName,createdAt:new Date().toISOString(),source:"user-authored"};entrancePins.push(pin);saveEntrancePins();renderEntrancePins();openEntranceCard(pin);status("Entrance/address pin added at clicked door location (local-only).")}
+  function addEntrancePinAt(latlng){if(!pinAuthoring)return;pinAuthoring=false;const address=prompt("Address / entrance label (do not guess):","");if(address===null||!address.trim())return;const description=prompt("Optional description / access note (leave blank if unknown):","")||"";const parent=selectedRecord?.kind==="building"?selectedRecord:null;const pin={id:"ao-door-"+Date.now(),lat:latlng.lat,lng:latlng.lng,address:address.trim(),description,parentName:parent?.name||"",parentRecordId:parent?.id,createdAt:new Date().toISOString(),source:"user-authored"};entrancePins.push(pin);saveEntrancePins();renderEntrancePins();openEntranceCard(pin);status("Entrance/address pin added at clicked door location (local-only).")}
 
   function status(message) {
     const el = $("registryStatus");
@@ -330,11 +374,14 @@
       const viewBox = [view.getWest(), view.getSouth(), view.getEast(), view.getNorth()];
       const records = fetched.filter((record) => record && intersects(record.bbox, viewBox));
       if (token !== refreshToken) return;
-      records.sort((a, b) => a.kind.localeCompare(b.kind) || a.name.localeCompare(b.name));
+      const priority = {lot: 0, building: 1, street: 2};
+      records.sort((a, b) => priority[a.kind] - priority[b.kind] || a.name.localeCompare(b.name));
       layer.clearLayers();
       records.slice(0, MAX_RENDER_FEATURES).forEach((record) => {
         const feature = { type: "Feature", geometry: record.geometry, properties: {} };
         const drawn = L.geoJSON(feature, {
+          pane: "registryFootprints",
+          bubblingMouseEvents: false,
           style: () => record.kind === "street"
             ? { color: "#64c7e8", weight: 2.2, opacity: 0.86 }
             : record.kind === "lot"
@@ -346,7 +393,8 @@
         drawn.on("click", (event) => {
           if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
           if(pinAuthoring){addEntrancePinAt(event.latlng);return;}
-          showRecord(record);
+          if(city.handleAuthorClick(event.latlng))return;
+          showRecord(record, event.latlng);
         });
       });
       const suffix = records.length > MAX_RENDER_FEATURES ? " (render limit applied)" : "";
@@ -360,7 +408,7 @@
   window.AOCityRegistryRefresh = refreshVisible;
   window.AOCityRegistryUpdateCounts = updateCounts;
   window.addEventListener("ao:street-names-updated", refreshVisible);
-  function showRecord(record) {
+  function showRecord(record, tapPoint) {
     selectedRecord = record;
     const panel = $("registryInspector");
     if (!panel) return;
@@ -404,7 +452,10 @@
       panel.append(note);
     }
     const bounds = L.geoJSON({ type: "Feature", geometry: record.geometry, properties: {} }).getBounds();
-    if (bounds.isValid()) map.fitBounds(bounds.pad(0.8), { maxZoom: 19 });
+    if (bounds.isValid()) {
+      if (!tapPoint) map.fitBounds(bounds.pad(0.8), { maxZoom: 19 });
+      if (record.kind === "building" || record.kind === "lot") showPlaceActions(record, bounds, tapPoint);
+    }
     if(record.kind==="building"){const trace=document.createElement("button");trace.className="primary";trace.textContent="Trace / save this building in AO";trace.onclick=()=>{window.dispatchEvent(new CustomEvent("ao:trace-building",{detail:record}));status("Source footprint sent to AO local building authoring.");};panel.append(trace);const add=document.createElement("button");add.textContent="Manually place entrance pin";add.onclick=()=>{pinAuthoring=true;status("Click the map exactly where the doorway is; then enter its address/label. No entrance is inferred.");};panel.append(add);}
   }
   async function searchRecords() {
@@ -424,7 +475,8 @@
         const aoName = record.kind === "street" && window.AOStreetNames ? window.AOStreetNames.getName(record) : null;
         if (record.name.toLocaleLowerCase().includes(query) || (aoName && aoName.toLocaleLowerCase().includes(query))) {
           const button = document.createElement("button");
-          button.textContent = (record.kind === "street" ? (aoName ? "Road · " + aoName + " · " : "Road · ") : "Building · ") + record.name;
+          button.textContent = (record.kind === "street" ? (aoName ? "Road · " + aoName + " · " : "Road · ") :
+            record.kind === "lot" ? "Lot · " : "Building · ") + record.name;
           button.onclick = () => showRecord(record);
           results.append(button);
           found++;
