@@ -40,6 +40,10 @@ This repository holds **proposed** game mechanics for *Apotheosis Online* (AO), 
 
 The Kernel determines reality; the AI interprets intentions and describes the committed result, but never decides what is true.
 
+## Battlefield intelligence proposal
+
+The new `mechanics/25-battlefield-intelligence-and-creature-behavior-proposal.md` defines a proposed framework for creature awareness, perception, bounded tactical decisions, social coordination, territory, ecology, memory, adaptation, and off-screen simulation. It preserves Kernel authority and does not make creature AI a source of world truth. The document is a working proposal, not canon or a runtime implementation.
+
 ## Verification (package of Nov 9, 2026)
 
 The full working package (Python model, JSON data and test suite, not included in this repository) was verified on Nov 9, 2026:
