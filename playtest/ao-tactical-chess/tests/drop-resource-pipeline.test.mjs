@@ -58,3 +58,18 @@ test("balance preview reports expected yields and equipment rates", () => {
   assert.equal(result.ok, true); assert.equal(result.expectedMaterialUnitsPerTrial, 2);
   assert.ok(result.equipmentDropRate > 0.1 && result.equipmentDropRate < 0.4);
 });
+
+test("collection preserves quality and provenance for both material and equipment drops", () => {
+  const material = D.createBalancedMaterialDrop({ id: "m1", materialId: "ore", quantity: 3, position: { x: 0, y: 0 }, sourceId: "vein-1", quality: { score: 88, grade: "exceptional" }, provenance: { nodeId: "vein-1" } });
+  const field = { entities: { miner: { id: "miner", alive: true, position: { x: 0, y: 0 }, inventory: [] } }, drops: { m1: material } };
+  const picked = D.collectBalancedDrop(field, { actorId: "miner", dropId: "m1", confirm: true }, registry);
+  assert.equal(picked.ok, true);
+  assert.equal(picked.field.entities.miner.inventory[0].quality.score, 88);
+  assert.equal(picked.field.entities.miner.inventory[0].provenance.nodeId, "vein-1");
+  const equipmentField = { entities: { miner: { id: "miner", alive: true, position: { x: 0, y: 0 }, inventory: [] } }, drops: { e1: { id: "e1", kind: "equipment_drop", itemId: "charm", quantity: 1, quality: { score: 97, grade: "exceptional" }, position: { x: 0, y: 0 }, sourceId: "agent-1", collected: false, provenance: { eventId: "agent-death" } } } };
+  const equipped = D.collectBalancedDrop(equipmentField, { actorId: "miner", dropId: "e1", confirm: true }, registry);
+  assert.equal(equipped.ok, true);
+  assert.equal(equipped.field.entities.miner.inventory[0].category, "Heirloom");
+  assert.equal(equipped.field.entities.miner.inventory[0].quality.score, 97);
+  assert.equal(equipped.field.entities.miner.inventory[0].provenance.eventId, "agent-death");
+});
