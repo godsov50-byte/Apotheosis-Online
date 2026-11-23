@@ -62,7 +62,7 @@ button,select{font:inherit;color:var(--ink);background:#233447;border:1px solid 
 const files="abcdefgh";
 const classNames=["Saber","Archer","Lancer","Rider","Caster","Assassin","Berserker","Shielder","Avenger","Ruler"];
 const marks={Saber:"S",Archer:"A",Lancer:"L",Rider:"R",Caster:"C",Assassin:"X",Berserker:"B",Shielder:"H",Avenger:"V",Ruler:"U"};
-const base={Saber:[30,15,5,3],Archer:[25,13,4,4],Lancer:[32,15,5,3],Rider:[32,14,5,4],Caster:[24,12,4,3],Assassin:[25,16,5,4],Berserker:[38,12,7,2],Shielder:[42,18,4,2],Avenger:[36,14,6,3],Ruler:[34,16,5,3]};
+const base={Saber:[30,15,5,6],Archer:[25,13,4,8],Lancer:[32,15,5,8],Rider:[32,14,5,8],Caster:[24,12,4,6],Assassin:[25,16,5,6],Berserker:[38,12,7,12],Shielder:[42,18,4,6],Avenger:[36,14,6,10],Ruler:[34,16,5,8]};
 const patterns=["King","Queen","Rook","Bishop","Knight","Pawn"];
 const glyph={King:"K",Queen:"Q",Rook:"R",Bishop:"B",Knight:"N",Pawn:"P"};
 const dirs=["N","E","S","W"],arrows={N:"↑",E:"→",S:"↓",W:"←"};
@@ -72,7 +72,7 @@ const coord=(x,y)=>files[x]+(8-y);
 const at=(x,y)=>units.find(u=>u.x===x&&u.y===y&&u.hp>0);
 const rand=n=>Math.floor(Math.random()*n)+1;
 function makeUnit(id,side,x,y,pattern,index){
- const cls=classNames[index%10],b=base[cls];
+ const classIndex=side==="black"?(index+1)%10:index%10;const cls=classNames[classIndex],b=base[cls];
  return {id,side,x,y,pattern,cls,tier:5,archetype:cls==="Berserker"?"Anti-Unit":cls==="Shielder"?"Anti-Fortress":"Anti-Unit",hp:b[0],maxHp:b[0],ac:b[1],atk:b[2],dmg:b[3],facing:side==="white"?"N":"S",ap:8,apMax:8,ea:8,eaMax:8,affinity:"Unassigned",weapon:pattern==="Archer"?"Recurve bow":pattern==="Lancer"?"War spear":pattern==="Rook"?"War hammer":"Steel weapon",weaponBonus:0,weaponEffect:pattern==="Rook"?"Knockback":pattern==="Knight"?"Pursuit":"None",armor:"Field armor",head:"Travel helm",offhand:pattern==="Rook"?"Tower shield":"Empty",accessory1:"Warding ring",accessory2:"Empty",boots:"Marching boots",artifact:"Empty",uses:3,technique:cls==="Berserker"?"Heavy Breaker":cls==="Archer"?"Piercing Shot":"Class Strike",techniquePattern:pattern,techniqueTier:5,techniqueCost:2,trigger:cls==="Shielder"?"Guard Counter":cls==="Berserker"?"Impact Trigger":"Opportunity Strike",name:side==="black"&&coord(x,y)==="b8"?"Askar Venn":(side==="white"?"Silver":"Host")+" "+cls+" "+String(index+1).padStart(2,"0"),special:side==="black"&&coord(x,y)==="b8"};
 }
 function setup(){
@@ -135,7 +135,7 @@ function attack(a,d){
  else story=a.name+" lunged at "+d.name+", but the attack roll of "+roll+" + "+a.atk+" = "+total failed to overcome AC "+d.ac+".";
  if(d.hp<=0){story+=" "+d.name+" fell from the board. This is a playtest defeat, not a statement about their wider AO fate.";units=units.filter(u=>u!==d);}
  $("dice").innerHTML="<b>Dice:</b> d20 = "+roll+" · attack bonus = "+a.atk+" · total = "+total+" · target AC = "+d.ac+" · "+(hit?"HIT · damage "+damage:"MISS");
- lastMove={from,to};a.x=to[0];a.y=to[1];faceToward(a,to[0],to[1]);
+ lastMove={from,to};faceToward(a,to[0],to[1]);a.x=to[0];a.y=to[1];
  narrate("Combat · "+a.name,story);
  if(hit&&d.hp>0&&d.trigger==="Guard Counter"&&Math.random()<.35){let cr=rand(20)+d.atk;if(cr>=a.ac){let cd=rand(d.dmg);a.hp=Math.max(0,a.hp-cd);narrate("Trigger · Guard Counter",d.name+" turned the block into a counterattack, rolling "+cr+" against AC "+a.ac+" and dealing "+cd+" damage.");}}
  finishAction(a);
@@ -147,10 +147,10 @@ function renderProfile(){
  const u=selected;$("squareLabel").textContent=coord(u.x,u.y)+" · "+u.pattern+" pattern";
  const hp=Math.max(0,u.hp);
  box.innerHTML='<div class="profiletop"><div class="portrait">'+marks[u.cls]+'</div><div><h2>'+u.name+'</h2><p>'+u.side.toUpperCase()+' · '+u.cls+' · TIER '+u.tier+'</p></div></div>'+
- '<div class="stats"><div class="stat"><b>'+hp+'/'+u.maxHp+'</b><span>HP</span></div><div class="stat"><b>'+u.ac+'</b><span>AC</span></div><div class="stat"><b>'+u.atk+'</b><span>ATTACK</span></div><div class="stat"><b>d'+(u.dmg*2)+'</b><span>WEAPON DIE</span></div></div><div class="hpbar"><i style="width:'+(hp/u.maxHp*100)+'%"></i></div>'+
+ '<div class="stats"><div class="stat"><b>'+hp+'/'+u.maxHp+'</b><span>HP</span></div><div class="stat"><b>'+u.ac+'</b><span>AC</span></div><div class="stat"><b>'+u.atk+'</b><span>ATTACK</span></div><div class="stat"><b>d'+u.dmg+'</b><span>WEAPON DIE</span></div></div><div class="hpbar"><i style="width:'+(hp/u.maxHp*100)+'%"></i></div>'+
  '<div class="kv"><div><span>Archetype</span><b>'+u.archetype+'</b></div><div><span>Movement pattern</span><b>'+u.pattern+'</b></div><div><span>Facing</span><b>'+u.facing+'</b></div><div><span>Affinity</span><b>'+u.affinity+'</b></div><div><span>AP</span><b>'+u.ap+'/'+u.apMax+'</b></div><div><span>EA</span><b>'+u.ea+'/'+u.eaMax+'</b></div></div>'+
  '<h3 style="margin-top:14px">Equipment slots</h3><div class="slots">'+slot("Head",u.head)+slot("Body",u.armor)+slot("Main hand",u.weapon+(u.weaponBonus?" +"+u.weaponBonus:""))+slot("Off hand",u.offhand)+slot("Accessory 1",u.accessory1)+slot("Accessory 2",u.accessory2)+slot("Footwear",u.boots)+slot("Artifact",u.artifact)+'</div>'+
- '<h3 style="margin-top:14px">Technique & triggers</h3><div class="tech"><b>'+u.technique+'</b><small>Class: '+u.cls+' · Archetype: '+u.archetype+' · Technique Tier: '+u.techniqueTier+' · Pattern: '+u.techniquePattern+'</small><p>AP '+u.techniqueCost+' · EA 3 · Uses/day '+u.uses+' · Affinity: '+u.affinity+(u.special?'<br>Divine Pursuit is available only while Askar uses the Knight movement pattern.':'')+'</p></div><div class="tech"><b>Trigger: '+u.trigger+'</b><p>Conditional combat response. Trigger resolution is currently a lightweight prototype rule.</p></div>';
+ '<h3 style="margin-top:14px">Technique & triggers</h3><div class="tech"><b>'+u.technique+'</b><small>Class: '+u.cls+' · Archetype: '+u.archetype+' · Technique Tier: '+u.techniqueTier+' · Pattern: '+u.techniquePattern+'</small><p>AP '+u.techniqueCost+' · EA 3 · Uses/day '+u.uses+' · Affinity: '+u.affinity+(u.techniqueDormant?'<br><b>DORMANT</b> — requires Knight movement.':'')+(u.special?'<br>Divine Pursuit is available only while Askar uses the Knight movement pattern.':'')+'</p></div><div class="tech"><b>Trigger: '+u.trigger+'</b><p>Conditional combat response. Trigger resolution is currently a lightweight prototype rule.</p></div>';
 }
 function slot(a,b){return '<div class="slot"><span>'+a+'</span><b>'+b+'</b></div>'}
 $("rotate").addEventListener("click",()=>{if(!selected)return;selected.facing=dirs[(dirs.indexOf(selected.facing)+1)%4];narrate("Facing · "+selected.name,selected.name+" pivots to face "+selected.facing+". Their position and movement pattern remain unchanged.");render();renderProfile();});
