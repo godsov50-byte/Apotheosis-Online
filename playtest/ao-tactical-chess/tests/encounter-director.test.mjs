@@ -22,7 +22,7 @@ const seed = () => createEncounterRecord({
 test("record rejects duplicate participant IDs", () => {
   assert.throws(() => createEncounterRecord({
     id: "dup", source: { kind: "fixture" }, state: "candidate", scale: "group",
-    composition: { participants: [{ entityId: "a" }, { entityId: "a" } },
+    composition: { participants: [{ entityId: "a" }, { entityId: "a" }] },
     objectives: {}, environment: {}, deployment: {}, persistence: {}, history: {}
   }), /unique/);
 });
