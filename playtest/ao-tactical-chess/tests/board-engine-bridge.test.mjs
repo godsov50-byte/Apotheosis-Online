@@ -208,3 +208,24 @@ test("turn handoff changes active side and advances round only after black retur
   assert.equal(field.round, 2);
   assert.equal(field.activeSide, "white");
 });
+
+test("board technique profile enforces learned skill and applies its data-driven effects",()=>{
+ const units=[
+  unit("envoy","white",0,0,{pattern:"King",techniqueId:"guard-break",technique:"Guard Break",techniqueProfile:{
+   id:"guard-break",name:"Guard Break",tier:9,target:{type:"enemy"},geometry:{kind:"range",range:1,minRange:1},
+   cost:{ap:2,ea:1},uses:3,requiredSkills:[{id:"SK01",level:1}],
+   effects:[{type:"damage",packets:[{type:"physical",amount:6}],break:1},
+    {type:"status",status:{id:"opened-guard",duration:2,remaining:2,stackRule:"refresh"}}]
+  },baseAttributes:{STR:10,DEX:10,CON:10,INT:10,WIS:10,CHA:10,ATT:10},skills:{SK01:{xp:50,learnedLevel:1}},uses:3}),
+  unit("foe","black",1,0,{ac:1,dr:1,hp:20})
+ ];
+ const field=createBoardField(units);
+ const result=resolveBoardTechnique(field,{actorId:"envoy",defenderId:"foe",roll:20,eventId:"profile-technique"});
+ assert.equal(result.ok,true);
+ assert.equal(result.damage,5);
+ assert.equal(result.field.entities.envoy.ap.current,6);
+ assert.equal(result.field.entities.envoy.ea.current,5);
+ assert.equal(result.field.entities.foe.defense.break,1);
+ assert.equal(result.field.entities.foe.statuses[0].id,"opened-guard");
+ assert.equal(projectBoardUnits(units,result.field)[0].uses,2);
+});
