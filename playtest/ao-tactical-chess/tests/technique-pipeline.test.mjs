@@ -100,3 +100,23 @@ test("active side and malformed targets are rejected safely",()=>{
   assert.equal(T.validateTechniqueIntent({...field,activeSide:"black"},{actorId:"envoy",techniqueId:"cut",target:{entityId:"foe"}},registry).reason,"not_active_side");
   assert.equal(T.validateTechniqueIntent(field,{actorId:"envoy",techniqueId:"cut",target:{}},registry).reason,"target_missing");
 });
+
+test("technique requirements validate learned skill level, attributes, race and traits",()=>{
+ const field=fixture().field;
+ const registry=T.createTechniqueRegistry([{
+  id:"trained-cut",name:"Trained Cut",target:{type:"enemy"},geometry:{range:1},
+  requiredSkills:[{id:"SK01",level:2}],requiredAttributes:{STR:12},
+  raceRequirements:["lineage-a"],traitRequirements:["keen-sight"],
+  cost:{ap:1,ea:0},effects:[{type:"damage",amount:1}]
+ }]);
+ const intent={actorId:"envoy",techniqueId:"trained-cut",target:{entityId:"foe"}};
+ field.entities.envoy.techniques.push("trained-cut");
+ field.entities.envoy.baseAttributes={STR:12};
+ field.entities.envoy.stats={STR:12};
+ field.entities.envoy.raceId="lineage-a";
+ field.entities.envoy.traits=["keen-sight"];
+ field.entities.envoy.skills={SK01:{xp:150,learnedLevel:2}};
+ assert.equal(T.validateTechniqueIntent(field,intent,registry).ok,true);
+ field.entities.envoy.skills.SK01.learnedLevel=1;
+ assert.equal(T.validateTechniqueIntent(field,intent,registry).reason,"skill_requirement");
+});

@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { createRacialRegistry, createEnvoyFromCreation } from "../engine/character-creation-pipeline.mjs";
 import {
   createBoardField,
   resolveBoardMove,
@@ -207,4 +208,55 @@ test("turn handoff changes active side and advances round only after black retur
   field = endBoardTurn(field, "white");
   assert.equal(field.round, 2);
   assert.equal(field.activeSide, "white");
+});
+
+test("board technique profile enforces learned skill and applies its data-driven effects",()=>{
+ const units=[
+  unit("envoy","white",0,0,{pattern:"King",techniqueId:"guard-break",technique:"Guard Break",techniqueProfile:{
+   id:"guard-break",name:"Guard Break",tier:9,target:{type:"enemy"},geometry:{kind:"range",range:1,minRange:1},
+   cost:{ap:2,ea:1},uses:3,requiredSkills:[{id:"SK01",level:1}],
+   effects:[{type:"damage",packets:[{type:"physical",amount:6}],break:1},
+    {type:"status",status:{id:"opened-guard",duration:2,remaining:2,stackRule:"refresh"}}]
+  },baseAttributes:{STR:10,DEX:10,CON:10,INT:10,WIS:10,CHA:10,ATT:10},skills:{SK01:{xp:50,learnedLevel:1}},uses:3}),
+  unit("foe","black",1,0,{ac:1,dr:1,hp:20})
+ ];
+ const field=createBoardField(units);
+ const result=resolveBoardTechnique(field,{actorId:"envoy",defenderId:"foe",roll:20,eventId:"profile-technique"});
+ assert.equal(result.ok,true);
+ assert.equal(result.damage,5);
+ assert.equal(result.field.entities.envoy.ap.current,6);
+ assert.equal(result.field.entities.envoy.ea.current,5);
+ assert.equal(result.field.entities.foe.defense.break,1);
+ assert.equal(result.field.entities.foe.statuses[0].id,"opened-guard");
+ assert.equal(projectBoardUnits(units,result.field)[0].uses,2);
+});
+
+test("racially created Envoy can enter AO Chess with derived HP, ancestry, rarity, affinities and passive effects",()=>{
+ const registry=createRacialRegistry([{id:"race-a",name:"Race A",lineageId:"lineage-a",existence:{beingTypeId:"being-a"},originLineage:{lineageId:"lineage-a"},formNature:{formId:"form-a"},speciesClassification:{speciesId:"species-a"},attributeModifiers:{STR:2},modifiers:{defense:{DR:1}},naturalAffinity:"Fire",effects:[{type:"status",target:"self",status:{id:"innate-guard",stackRule:"replace",modifiers:{STR:1,DR:1},tags:["racial-passive"]}}],
+  ancestries:[{id:"ancestry-a",name:"Ancestry A",attributeModifiers:{DEX:1}}],
+  rarityProfiles:[{rarityId:"rarity-a",attributeModifiers:{ATT:2},modifiers:{defense:{DR:2}},traits:["rare-trait"]}]
+ }]);
+ const created=createEnvoyFromCreation({id:"born-envoy",name:"Born Envoy",side:"white",raceId:"race-a",ancestryId:"ancestry-a",rarityId:"rarity-a",characterTier:9,
+  baseAttributes:{STR:10,DEX:10,CON:10,INT:10,WIS:10,CHA:10,ATT:10},
+  vitality:{base:10,perConstitution:2,racialHpFlat:1},ap:{current:5,max:8},ea:{current:3,max:6,affinities:["Water"]}
+ },registry);
+ assert.equal(created.ok,true);
+ const field=createBoardField([{...created.entity,x:1,y:1,cls:"Saber",pattern:"King"}]);
+ const projected=projectBoardUnits([{...created.entity,x:1,y:1,cls:"Saber",pattern:"King"}],field)[0];
+ assert.equal(projected.hp,31);
+ assert.equal(projected.maxHp,31);
+ assert.equal(projected.stats.STR,13);
+ assert.equal(projected.stats.DEX,11);
+ assert.equal(projected.stats.ATT,12);
+ assert.equal(projected.defense.DR,4);
+ assert.equal(projected.raceId,"race-a");
+ assert.equal(projected.lineageId,"lineage-a");
+ assert.equal(projected.existence.beingTypeId,"being-a");
+ assert.equal(projected.originLineage.race.lineageId,"lineage-a");
+ assert.equal(projected.formNature.race.formId,"form-a");
+ assert.equal(projected.speciesClassification.speciesId,"species-a");
+ assert.equal(projected.ancestryId,"ancestry-a");
+ assert.equal(projected.racialRarityId,"rarity-a");
+ assert.deepEqual(field.entities["born-envoy"].ea.affinities,["Water","Fire"]);
+ assert.ok(field.entities["born-envoy"].statuses.some(status=>status.id==="innate-guard"));
 });

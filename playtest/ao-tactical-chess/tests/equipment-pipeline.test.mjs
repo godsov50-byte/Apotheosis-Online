@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import * as E from "../engine/equipment-pipeline.mjs";
+import {resolveEffectiveDefense} from "../engine/effect-pipeline.mjs";
 
 function fixture() {
   const registry = E.createEquipmentRegistry({
@@ -159,4 +160,20 @@ test("equipped modifiers aggregate without applying broken equipment bonuses",()
     broken:{state:"broken",modifiers:{attack:100}}
   }});
   assert.deepEqual(totals,{attack:6,accuracy:2,defense:3});
+});
+
+test("equipped passive effects apply and are removed when the item is unequipped",()=>{
+ const registry=E.createEquipmentRegistry({
+  items:[{id:"ward-buckler",name:"Ward Buckler",category:"Regular Item",itemType:"shield",equipmentSlot:"offhand",effects:[{type:"attribute_modifier",stat:"DR",amount:2,statusId:"ward",stackRule:"replace"}]}],
+  materials:[],recipes:[]
+ });
+ let field={version:0,ledger:[],entities:{a:{id:"a",alive:true,class:"Shielder",race:"test-race",tier:9,inventory:[{id:"ward-buckler",kind:"equipment",instanceId:"ward-1",equipmentSlot:"offhand",state:"intact",effects:registry.items["ward-buckler"].effects,modifiers:{}}],equipment:{},statuses:[],baseDefense:{DR:1},defense:{DR:1}}}};
+ const equipped=E.equipEquipment(field,{actorId:"a",instanceId:"ward-1",slot:"offhand"});
+ assert.equal(equipped.ok,true);
+ assert.equal(equipped.field.entities.a.statuses[0].sourceItemId,"ward-1");
+ assert.equal(resolveEffectiveDefense(equipped.field.entities.a).DR,3);
+ const unequipped=E.unequipEquipment(equipped.field,{actorId:"a",slot:"offhand"});
+ assert.equal(unequipped.ok,true);
+ assert.equal(unequipped.field.entities.a.statuses.length,0);
+ assert.equal(resolveEffectiveDefense(unequipped.field.entities.a).DR,1);
 });

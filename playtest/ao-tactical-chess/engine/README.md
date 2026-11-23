@@ -127,3 +127,23 @@ Both transactions consume fragment stacks atomically, update the Envoy's learned
 
 
 Each technique fragment definition has two distinct payloads: `essence` (the creature's inherent nature, affinities, lineage, or conceptual qualities) and `knowledge` (the patterns, principles, and technique understanding embodied by that creature). These are preserved separately when collected and are both considered during technique learning and advancement checks. A technique's fragment costs can require matching essence traits, knowledge traits, minimum essence potency, and minimum knowledge potency independently. This prevents a powerful creature essence from automatically satisfying an unrelated technique's knowledge requirement, or vice versa.
+
+
+## Racial character creation and board integration
+
+`character-creation-pipeline.mjs` creates an Envoy from explicit, versioned source data. Its hierarchy is Race → Ancestry → optional Sub-ancestry. Base attributes are supplied by the approved entry package; the pipeline does not impose a point-buy pool or infer values from character Tier.
+
+Race, ancestry, sub-ancestry and racial-rarity profiles retain separate attribute, flat-HP, general-modifier, trait, technique and passive-effect contributions. The returned breakdown preserves each contribution for review. HP is calculated from an explicit vitality rule:
+
+`max HP = vitality base + effective CON × per-CON + configured racial/ancestry/sub-ancestry/rarity flat HP`.
+
+Racial rarity is independent of character Tier, technique Tier and item rarity. A rarity profile is selected explicitly during creation, or by `resolveRacialRarity` when the Kernel supplies a committed integer roll and every configured profile has a positive integer weight. Missing weights block random selection; this module defines no rarity labels, probabilities, race roster, or numerical modifiers.
+
+The board bridge accepts the resulting Envoy record directly when board coordinates and a combat class/movement pattern are supplied. It carries current/max HP, AP/EA, base and effective attributes, race/ancestry/sub-ancestry IDs, rarity, defensive modifiers, skills, equipment, traits and racial techniques into the combat entity. Racial passive effects are initialized through the shared effect pipeline and recorded as local events. Effective attributes and defense are recomputed from base values plus their independent racial, rarity, equipment and active-status layers.
+
+This is still playtest integration. It does not connect character creation to production Kernel/WorldHeart persistence. `AO_PROVISIONAL_RACIAL_PROFILES` remains empty until the creator supplies or approves the actual race and rarity content; example fixtures in tests are not canon.
+
+
+Racial identity records also keep world dimensions independent: actual existence, origin/lineage history, current form/nature, and species classification are carried as separate fields. Species classification is descriptive recognition and never rewrites the ancestry chain. Inhabitant understanding, current population, player accessibility, and acquisition governance are returned in a separate `creationContext`; they are not copied onto the Envoy as biological or combat traits.
+
+When a race profile declares accessibility or acquisition-governance metadata, character creation requires a validated, scope-matched access decision. Supported grant event types are individual unlock, route discovery, conditional availability, and global starting availability. The creator/Kernel-side authority must validate the actual qualification and route; this playtest function checks the resulting attestation and does not itself grant access. Race records without access metadata remain usable as isolated synthetic test fixtures.
