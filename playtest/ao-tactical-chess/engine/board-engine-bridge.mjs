@@ -144,7 +144,9 @@ function beginBoardAction(field, actorId) {
   // Clear only this actor's prior acted marker before each validated action.
   const acted = { ...(field.acted || {}) };
   delete acted[actorId];
-  return { ok: true, field: { ...field, acted } };
+  const entities = { ...field.entities, [actorId]: { ...actor } };
+  delete entities[actorId].acted;
+  return { ok: true, field: { ...field, entities, acted } };
 }
 
 function finishBoardAction(field, actorId) {
