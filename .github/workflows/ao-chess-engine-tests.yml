@@ -5,6 +5,7 @@ on:
     paths:
       - 'playtest/ao-tactical-chess/engine/**'
       - 'playtest/ao-tactical-chess/index.html'
+      - 'playtest/ao-tactical-chess/first-haven.html'
       - 'playtest/ao-tactical-chess/tests/**'
       - 'playtest/ao-tactical-chess/encounter-director.mjs'
       - '.github/workflows/ao-chess-engine-tests.yml'
