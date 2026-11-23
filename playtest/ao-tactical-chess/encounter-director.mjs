@@ -70,11 +70,12 @@ export function transitionEncounter(encounter, nextState, event) {
   if (!allowed.includes(nextState)) {
     throw new Error(`Invalid encounter transition: ${encounter.state} -> ${nextState}`);
   }
+  const transitionEvent = event ?? { id: `transition:${encounter.history?.stateVersion ?? 0}`, type: "state_transition", timestamp: new Date().toISOString(), payload: { from: encounter.state, to: nextState } };
+  if ((encounter.history?.eventLedger ?? []).some((existing) => existing.id === transitionEvent.id)) return encounter;
   return appendEncounterEvent({
     ...encounter,
-    state: nextState,
-    history: { ...encounter.history, stateVersion: (encounter.history?.stateVersion ?? 0) + 1 }
-  }, event ?? { id: `transition:${encounter.history?.stateVersion ?? 0}`, type: "state_transition", timestamp: new Date().toISOString(), payload: { from: encounter.state, to: nextState } });
+    state: nextState
+  }, transitionEvent);
 }
 
 export function appendEncounterEvent(encounter, event) {
@@ -201,10 +202,15 @@ export function updateObjectiveState(encounter, objectiveId, nextState, progress
 export function resolveEncounter(encounter, outcome, conditions = {}) {
   if (!RESOLUTION_OUTCOMES.includes(outcome)) throw new TypeError("Invalid encounter outcome");
   if (!["active", "escalating", "paused", "suspended"].includes(encounter.state)) throw new Error("Encounter cannot resolve from current state");
-  return {
+  const resolvedAt = conditions.resolvedAt ?? new Date().toISOString();
+  const result = {
     ...encounter,
     state: outcome === "victory" || outcome === "partial_victory" || outcome === "draw" || outcome === "retreat" || outcome === "escape" || outcome === "surrender" || outcome === "capture" || outcome === "stalemate" || outcome === "interrupted" ? "resolved" : "failed",
-    resolution: { outcome, conditionsMet: conditions.met ?? [], conditionsFailed: conditions.failed ?? [], unresolved: conditions.unresolved ?? [], resolvedAt: conditions.resolvedAt ?? new Date().toISOString() },
-    history: { ...encounter.history, stateVersion: (encounter.history?.stateVersion ?? 0) + 1 }
+    resolution: { outcome, conditionsMet: conditions.met ?? [], conditionsFailed: conditions.failed ?? [], unresolved: conditions.unresolved ?? [], resolvedAt }
   };
+  return appendEncounterEvent(result, {
+    id: `resolution:${encounter.id}:${encounter.history?.stateVersion ?? 0}`,
+    type: "encounter_resolved", timestamp: resolvedAt,
+    payload: { outcome, conditionsMet: result.resolution.conditionsMet, conditionsFailed: result.resolution.conditionsFailed, unresolved: result.resolution.unresolved }
+  });
 }
