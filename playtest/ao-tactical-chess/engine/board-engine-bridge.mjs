@@ -89,6 +89,11 @@ export function createBoardField(units, { width = 8, height = 8, turn = "white",
     entity.baseAttributes = baseAttributes;
     entity.raceId = unit.raceId || unit.race || null;
     entity.raceName = unit.raceName || null;
+    entity.lineageId = unit.lineageId || unit.originLineage?.race?.lineageId || null;
+    entity.existence = clone(unit.existence || {});
+    entity.originLineage = clone(unit.originLineage || {});
+    entity.formNature = clone(unit.formNature || {});
+    entity.speciesClassification = clone(unit.speciesClassification || {});
     entity.ancestryId = unit.ancestryId || null;
     entity.subAncestryId = unit.subAncestryId || null;
     entity.racialRarityId = unit.racialRarityId || null;
@@ -403,6 +408,11 @@ export function projectBoardUnits(boardUnits, field, { includeDefeated = false }
       equipment: clone(entity.equipment),
       raceId: entity.raceId,
       raceName: entity.raceName,
+      lineageId:entity.lineageId,
+      existence:clone(entity.existence||{}),
+      originLineage:clone(entity.originLineage||{}),
+      formNature:clone(entity.formNature||{}),
+      speciesClassification:clone(entity.speciesClassification||{}),
       ancestryId:entity.ancestryId,
       subAncestryId:entity.subAncestryId,
       racialRarityId: entity.racialRarityId,
