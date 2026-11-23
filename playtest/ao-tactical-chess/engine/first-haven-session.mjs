@@ -503,10 +503,67 @@ export function saveFirstHavenSession(state) {
   return JSON.stringify(state);
 }
 
+function isRecord(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function isBoardPosition(value) {
+  return isRecord(value) &&
+    Number.isInteger(value.x) && value.x >= 0 && value.x < 16 &&
+    Number.isInteger(value.y) && value.y >= 0 && value.y < 16;
+}
+
 export function loadFirstHavenSession(serialized) {
-  const state=JSON.parse(serialized);
-  if(state?.version!==1||state.width!==16||!state.field?.entities?.[state.envoyId]||!state.roster?.length) {
-    throw new Error("Invalid First Haven local save.");
+  let state;
+  try {
+    state = JSON.parse(serialized);
+  } catch {
+    throw new Error("Invalid First Haven local save: malformed JSON.");
+  }
+
+  const field = state?.field;
+  const entities = field?.entities;
+  const envoy = entities?.[state?.envoyId];
+  const creature = entities?.[state?.creatureId];
+  const station = field?.stations?.["haven-forge"];
+  const validEntities = isRecord(entities) &&
+    Object.entries(entities).every(([id, entity]) =>
+      isRecord(entity) && entity.id === id && isBoardPosition(entity.position) &&
+      typeof entity.alive === "boolean"
+    );
+
+  const validLog = Array.isArray(state?.log) &&
+    state.log.every(entry => isRecord(entry) &&
+      typeof entry.tag === "string" && typeof entry.text === "string");
+
+  const validRegistries = isRecord(state?.registries) &&
+    ["equipment", "drops", "resources", "methods", "techniques", "techniqueFragments"]
+      .every(key => isRecord(state.registries[key]));
+
+  const validField = isRecord(field) &&
+    field.width === 16 && field.height === 16 &&
+    ["white", "black"].includes(field.activeSide) &&
+    validEntities &&
+    isRecord(field.drops) &&
+    isRecord(field.containers) &&
+    isRecord(field.resourceNodes) &&
+    isRecord(field.stations) &&
+    Array.isArray(field.ledger) &&
+    isRecord(station) && isBoardPosition(station.position);
+
+  const validSession = isRecord(state) &&
+    state.version === 1 && state.width === 16 && state.height === 16 &&
+    typeof state.seed === "string" &&
+    typeof state.envoyId === "string" && typeof state.creatureId === "string" &&
+    Array.isArray(state.roster) && state.roster.length >= 2 &&
+    isRecord(envoy) && envoy.side === "white" &&
+    isRecord(creature) && creature.side === "black" &&
+    validField && validRegistries && validLog &&
+    typeof state.rewardsResolved === "boolean" &&
+    ["active", "complete"].includes(state.status);
+
+  if (!validSession) {
+    throw new Error("Invalid First Haven local save: session structure is incomplete or inconsistent.");
   }
   return state;
 }

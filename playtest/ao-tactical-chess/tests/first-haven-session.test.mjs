@@ -116,3 +116,26 @@ test("local save and load preserve encounter state",()=>{
   assert.equal(restored.field.entities[restored.envoyId].characterTier,9);
   assert.equal(restored.field.entities[restored.creatureId].alive,true);
 });
+
+test("local save loader rejects malformed JSON and structurally corrupted sessions",()=>{
+  assert.throws(()=>loadFirstHavenSession("{not-json"),/malformed JSON/);
+  const original=createFirstHavenSession();
+  const wrongSize=structuredClone(original);
+  wrongSize.field.width=8;
+  assert.throws(()=>loadFirstHavenSession(JSON.stringify(wrongSize)),/structure is incomplete/);
+  const missingCreature=structuredClone(original);
+  delete missingCreature.field.entities[missingCreature.creatureId];
+  assert.throws(()=>loadFirstHavenSession(JSON.stringify(missingCreature)),/structure is incomplete/);
+  const invalidPosition=structuredClone(original);
+  invalidPosition.field.entities[invalidPosition.envoyId].position.x=99;
+  assert.throws(()=>loadFirstHavenSession(JSON.stringify(invalidPosition)),/structure is incomplete/);
+});
+
+test("save validation accepts a progressed encounter with physical drops and ledger entries",()=>{
+  let state=createFirstHavenSession({positions:{envoy:{x:8,y:7},creature:{x:9,y:7}}});
+  state=attackFirstHavenCreature(state,{roll:20,damage:100}).state;
+  const restored=loadFirstHavenSession(saveFirstHavenSession(state));
+  assert.equal(restored.rewardsResolved,true);
+  assert.ok(Object.keys(restored.field.drops).length>0);
+  assert.ok(restored.field.ledger.length>0);
+});
