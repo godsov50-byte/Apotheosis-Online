@@ -98,5 +98,5 @@ test("turn reset clears action lock and optionally advances cooldowns",()=>{
 test("active side and malformed targets are rejected safely",()=>{
   const {field,registry}=fixture();
   assert.equal(T.validateTechniqueIntent({...field,activeSide:"black"},{actorId:"envoy",techniqueId:"cut",target:{entityId:"foe"}},registry).reason,"not_active_side");
-  assert.equal(T.validateTechniqueIntent(field,{actorId:"envoy",techniqueId:"cut",target:{}},registry).reason,"target_position_missing");
+  assert.equal(T.validateTechniqueIntent(field,{actorId:"envoy",techniqueId:"cut",target:{}},registry).reason,"target_missing");
 });
