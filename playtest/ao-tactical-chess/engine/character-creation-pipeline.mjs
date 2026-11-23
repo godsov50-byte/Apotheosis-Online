@@ -187,7 +187,8 @@ export function createEnvoyFromCreation(input, registry) {
   };
   return { ok:true, entity:envoy, breakdown:{
     baseAttributes:base,raceModifiers:raceAttrs,ancestryModifiers:ancestryAttrs,
-    subAncestryModifiers:subAttrs,rarityModifiers:rarityAttrs,effectiveAttributes:stats,
+    subAncestryModifiers:subAttrs,rarityModifiers:rarityAttrs,
+    racialModifiers:addStats({...ZERO_ATTRIBUTES},raceAttrs,ancestryAttrs,subAttrs),effectiveAttributes:stats,
     hp:{base:input.vitality.base,constitution:stats.CON,perConstitution:input.vitality.perConstitution,
       racialFlat:vitalityHpFlat+race.hpFlat,raceFlat:race.hpFlat,
       ancestryFlat:ancestry?.hpFlat||0,subAncestryFlat:subAncestry?.hpFlat||0,
