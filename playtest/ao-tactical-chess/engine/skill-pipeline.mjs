@@ -59,7 +59,7 @@ export function skillProgress(entity, skillId, registry = createSkillRegistry())
   if (!definition) return fail("unknown_skill");
   const record = entity.skills?.[skillId] || { xp:0, learnedLevel:0 };
   const learnedLevel = Math.max(0, record.learnedLevel || 0);
-  const core = entity.baseAttributes?.[definition.core] ?? entity.stats?.[definition.core];
+  const core = entity.stats?.[definition.core] ?? entity.baseAttributes?.[definition.core];
   if (!Number.isFinite(core)) return fail("core_attribute_missing");
   return {ok:true,skillId,core:definition.core,xp:record.xp || 0,learnedLevel,
     effectiveLevel:Math.min(learnedLevel,Math.max(0,Math.floor(core))),
