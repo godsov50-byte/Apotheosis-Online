@@ -16,7 +16,9 @@ Heirlooms are modular. Fields that do not apply to a particular item may be omit
 ### 2. Classification (optional)
 - `weaponType`, `armorType`, `equipmentSlot`
 - `element`: item element, if any
-- `quality`: item quality, if assigned
+- `quality`: object quality grade, if assigned. Supported grades, in ascending order: Standard, Masterwork, Perfected, Mythic, Fabled.
+  - Quality describes craftsmanship/refinement, not rarity, power, Tier, or advancement eligibility.
+  - A high-quality item is not automatically powerful or rare; a low-quality item can still have exceptional inherent effects.
 - `tier`: only if the item/effect system explicitly uses tiers; never infer this from character Tier or item quality
 - `tags`: search, filtering, and compatibility labels
 
@@ -46,7 +48,7 @@ These are independently evaluated and may stack. This schema does not prescribe 
 - Use explicit unknown/null values when information is not available. Do not create an owner or binding restriction just to fill the field.
 
 ### 7. Origin, provenance, and history (optional)
-- `creator`, `origin`, `creationDate`, `acquisitionMethod)
+- `creator`, `origin`, `creationDate`, `acquisitionMethod`
 - `previousOwners`, `eventHistory`, `appraisal`, `sourceNotes`
 - Track confirmed events only. Keep unverified appraisals marked unverified.
 
@@ -77,7 +79,7 @@ Hide empty sections in player-facing displays. Do not imply that missing data me
   "itemType": "Weapon",
   "weaponType": "Greatsword",
   "element": "Fire",
-  "quality": 3,
+  "quality": "Perfected",
   "condition": "Intact",
   "statModifiers": {
     "STR": 4,
@@ -109,7 +111,6 @@ Hide empty sections in player-facing displays. Do not imply that missing data me
   }
 }
 ```
-
 Example bonuses are only placeholders from the current prototype conversation and are not approved AO rules.
 
 ## Record integrity rules
