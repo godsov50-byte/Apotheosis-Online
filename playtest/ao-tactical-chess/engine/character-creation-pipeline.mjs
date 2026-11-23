@@ -30,6 +30,7 @@ export function createRacialProfile(definition) {
       attributeModifiers: modifiers(profile.attributeModifiers),
       hpFlat: finite(profile.hpFlat, 0),
       traits: [...(profile.traits || [])],
+      modifiers: clone(profile.modifiers || {}),
       racialTechniques: [...(profile.racialTechniques || [])]
     };
   }
@@ -40,6 +41,7 @@ export function createRacialProfile(definition) {
     naturalAffinity: definition.naturalAffinity ?? null,
     attributeModifiers: modifiers(definition.attributeModifiers),
     hpFlat: finite(definition.hpFlat, 0),
+    modifiers: clone(definition.modifiers || {}),
     traits: [...(definition.traits || [])],
     racialTechniques: [...(definition.racialTechniques || [])],
     rarityProfiles
@@ -90,6 +92,8 @@ export function createEnvoyFromCreation(input, registry) {
     baseAttributes: base,
     racialAttributeModifiers: clone(race.attributeModifiers),
     rarityAttributeModifiers: clone(rarity.attributeModifiers),
+    racialModifiers: clone(race.modifiers),
+    rarityModifiers: clone(rarity.modifiers),
     stats,
     hp: { current: hp, max: hp, base: hp },
     ap: clone(input.ap || { current: 8, max: 8 }),
