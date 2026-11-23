@@ -31,3 +31,14 @@ test("rejects non-polygon geometry rather than silently converting", () => {
 test("rejects malformed outer rings", () => {
   assert.throws(() => createSourceBuildingRecord({ ...feature, geometry: { type: "Polygon", coordinates: [[[0,0],[1,1],[NaN,2]]] } }), /valid outer ring/);
 });
+
+test("rejects interior rings because the staging renderer cannot represent building courtyards yet", () => {
+  const withHole = structuredClone(feature);
+  withHole.geometry.coordinates.push([[-95.3698,29.7602],[-95.3697,29.7602],[-95.3697,29.7603],[-95.3698,29.7603],[-95.3698,29.7602]]);
+  assert.throws(() => createSourceBuildingRecord(withHole), /Polygon holes are not supported/);
+});
+test("rejects unclosed GeoJSON outer rings", () => {
+  const unclosed = structuredClone(feature);
+  unclosed.geometry.coordinates[0].pop();
+  assert.throws(() => createSourceBuildingRecord(unclosed), /outer ring must be closed/);
+});
