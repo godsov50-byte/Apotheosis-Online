@@ -219,6 +219,36 @@ export function extractResource(field, intent, {
   return { ok: true, field: committed, drop, extracted: quantity, quality: q, remaining: updatedNode.quantity };
 }
 
+
+/** Collect a balanced material/equipment drop while preserving its quality and origin. */
+export function collectBalancedDrop(field, intent, registry) {
+  const drop = field.drops?.[intent.dropId], actor = field.entities?.[intent.actorId];
+  if (!actor || actor.alive === false) return { ...fail("collector_unavailable"), field };
+  if (!drop || drop.collected) return { ...fail("drop_unavailable"), field };
+  if (drop.requiresManualCollection && intent.confirm !== true) return { ...fail("manual_collection_required"), field };
+  const reach = num(intent.collectionRange, 1);
+  if (actor.position && drop.position && Math.max(Math.abs(actor.position.x - drop.position.x), Math.abs(actor.position.y - drop.position.y)) > reach) return { ...fail("drop_out_of_reach"), field };
+  const next = clone(field), a = next.entities[actor.id], d = next.drops[drop.id];
+  if (d.kind === "material_drop") {
+    if (!registry?.materials?.[d.materialId]) return { ...fail("unknown_material"), field };
+    a.inventory = [...(a.inventory || []), { kind: "material", materialId: d.materialId, quantity: d.quantity, quality: clone(d.quality), provenance: { sourceId: d.sourceId, ...clone(d.provenance || {}) } }];
+  } else if (d.kind === "equipment_drop") {
+    const template = registry?.items?.[d.itemId];
+    if (!template) return { ...fail("unknown_equipment_item"), field };
+    const sequence = num(next.equipmentSequence) + 1;
+    next.equipmentSequence = sequence;
+    const instance = {
+      ...clone(template), instanceId: `drop-item-${sequence}`, kind: "equipment",
+      quality: clone(d.quality), provenance: { sourceId: d.sourceId, originType: "equipment_drop", ...clone(d.provenance || {}) },
+      state: "intact", refinementHistory: []
+    };
+    a.inventory = [...(a.inventory || []), instance];
+  } else return { ...fail("unsupported_drop_kind"), field };
+  d.collected = true;
+  next.entities[a.id] = a; next.drops[d.id] = d;
+  return { ok: true, field: addLedger(next, { type: "balanced_drop_collected", actorId: a.id, dropId: d.id, dropKind: d.kind, sourceId: d.sourceId, quality: clone(d.quality) }) };
+}
+
 /** Deterministic preview helper; useful for encounter authoring and automated balance tests. */
 export function simulateDropProfile({ source, profile, registry, trials = 1000, seed = "balance-preview", position = { x: 0, y: 0 }, quality = {} }) {
   const totals = { trials, materialUnits: 0, materialDrops: 0, equipmentDrops: 0, equipmentByItem: {}, qualityScores: [] };
