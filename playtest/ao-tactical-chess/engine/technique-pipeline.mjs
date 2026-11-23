@@ -155,14 +155,25 @@ export function validateTechniqueIntent(field, intent, registry, { requireOffens
   return { ok: true, actor: clone(actor), target: target ? clone(target) : null, technique: clone(technique), targetPosition: position ? clone(position) : null };
 }
 
-function damagePacket(target, packet) {
+function affinityMultiplier(affinity, targetAffinities = [], chart = {}) {
+  if (!affinity) return 1;
+  const rule = chart[affinity] || {};
+  if (targetAffinities.some(value => (rule.strong || []).includes(value))) return num(rule.multiplier, 1.5);
+  if (targetAffinities.some(value => (rule.weak || []).includes(value))) return num(rule.weakMultiplier, 0.75);
+  return 1;
+}
+function damagePacket(target, packet, affinityChart = {}) {
   const type = packet.type || "physical";
   const trueDamage = packet.trueDamage === true || type === "true";
   if (trueDamage) return Math.max(0, num(packet.amount));
   const penetration = Math.max(0, num(packet.penetration));
+  const armor = Math.max(0, num(target.defense?.armor) - penetration);
   const dr = Math.max(0, num(target.defense?.DR) - penetration);
+  const afterArmor = Math.max(0, num(packet.amount) - armor);
+  const afterDR = Math.max(0, afterArmor - dr);
   const resistance = clamp(num(target.defense?.resistance?.[type]), -1, 1);
-  return Math.max(0, (num(packet.amount) - dr) * (1 - resistance));
+  const affinity = affinityMultiplier(packet.affinity, target.ea?.affinities || target.affinities || [], affinityChart);
+  return Math.max(0, afterDR * (1 - resistance) * affinity);
 }
 function addEvent(field, event) {
   const ledger = [...(field.ledger || []), { id: event.id || `tech_${(field.ledger || []).length + 1}`, ...clone(event) }];
@@ -189,7 +200,7 @@ export function resolveTechniqueIntent(field, intent, registry, options = {}) {
     if (effect.type === "damage") {
       if (!targetEntity) continue;
       const packets = effect.packets || [{ type: effect.damageType || "physical", amount: effect.amount || 0, penetration: effect.penetration, trueDamage: effect.trueDamage }];
-      const amount = Math.round(packets.reduce((sum, packet) => sum + damagePacket(targetEntity, packet), 0));
+      const amount = Math.round(packets.reduce((sum, packet) => sum + damagePacket(targetEntity, packet, options.affinityChart || {}), 0));
       targetEntity.hp.current = Math.max(0, num(targetEntity.hp?.current) - amount);
       if (effect.break != null) targetEntity.defense = { ...(targetEntity.defense || {}), break: num(targetEntity.defense?.break) + num(effect.break) };
       if (targetEntity.hp.current <= 0) targetEntity.alive = false;
