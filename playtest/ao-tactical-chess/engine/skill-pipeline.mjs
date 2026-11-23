@@ -45,6 +45,14 @@ export function cumulativeSkillXp(level) {
   if (!Number.isInteger(level) || level < 0) throw new Error("skill level must be a nonnegative integer");
   return 25 * level * (level + 1);
 }
+/** F03 qualifying-learning XP proposal; this is a configurable playtest rule, not canon. */
+export function calculateQualifyingLearningXp({difficulty,level,quality=1,qualifying=true,failure=false}={}){
+ if(!Number.isFinite(difficulty)||difficulty<0||!Number.isFinite(level)||level<0||![0,0.5,1].includes(quality))throw new Error("invalid learning challenge inputs");
+ if(!qualifying||quality===0)return 0;
+ const feedback= difficulty / Math.max(1,level);
+ const failureFactor=failure?0.5:1;
+ return Math.max(0,Math.floor(20*Math.min(2,feedback)*quality*failureFactor));
+}
 export function createSkillRegistry(definitions = AO_SKILL_DEFINITIONS) {
   const skills = {};
   for (const d of definitions) {
