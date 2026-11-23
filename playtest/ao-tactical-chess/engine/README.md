@@ -21,3 +21,10 @@ The existing Chessboard UI continues to run its older local match rules. The new
 Run tests locally with Node: `node --test tests/engine.test.mjs`.
 
 **Not complete:** full 3D volume/collision, all projectile trajectory types and interception rules, advanced aim/cover model, grappling/continuous-space melee, full reaction priority/formation/zone control, ecology simulation, persistent-world adapter, and canonical numeric balance. Values/charts are supplied as data rather than inferred as canon.
+
+
+## Full Combat Simulation Expansion (additive module)
+
+`combat-simulation.mjs` adds independent reusable resolution primitives for: 3D cell paths and trajectory families (straight/arc/zigzag/spiral/wave/guided/falling); entity volumes and overlap; facing/attack sectors; aim and cover math; damage packet layers; status stacking/ticks/action restrictions; reaction candidate priority and resource costs; formations and integrity/cohesion; spatial zones and contested control; body-part injury states; equipment durability/broken/destroyed states; melee-state transitions and grapple contests; terrain durability/destruction and passage; projectile traversal/target collision; resource transactions; skill XP and technique mastery; advancement gates; and a handler-driven combat-event pipeline.
+
+This module is a rules utility expansion. It is not yet wired as the authoritative board match loop, and numerical values remain configurable/provisional. Tests are in `tests/combat-simulation.test.mjs`.
