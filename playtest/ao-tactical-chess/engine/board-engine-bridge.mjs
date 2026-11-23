@@ -19,7 +19,7 @@ import {
   createTechniqueRegistry,
   resolveTechniqueIntent
 } from "./technique-pipeline.mjs";
-import { resolveEffectiveAttributes, resolveEffectBatch } from "./effect-pipeline.mjs";
+import { resolveEffectiveAttributes, resolveEffectiveDefense, resolveEffectBatch } from "./effect-pipeline.mjs";
 
 const clone = value => structuredClone(value);
 const finite = (value, fallback = 0) => Number.isFinite(value) ? value : fallback;
@@ -97,7 +97,8 @@ export function createBoardField(units, { width = 8, height = 8, turn = "white",
     entity.boardTechniqueEaCost = finite(unit.techniqueEaCost ?? unit.techniqueProfile?.cost?.ea, 3);
     entity.boardTechniqueUsesMax = finite(unit.maxTechniqueUses ?? unit.techniqueProfile?.uses, maxTechniqueUses);
     if (unit.baseAttributes || unit.stats) entity.stats = resolveEffectiveAttributes(entity);
-    entity.defense = { ...entity.defense, DR: finite(unit.dr) + Object.values(equipment).reduce((sum,item)=>sum+finite(item?.modifiers?.DR),0) };
+    entity.baseDefense = { ...entity.defense, DR: finite(unit.dr, entity.defense.DR) };
+    entity.defense = resolveEffectiveDefense(entity);
     entity.techniqueState = techniqueId ? {
       [techniqueId]: { used: Math.max(0, maxTechniqueUses - currentTechniqueUses), cooldownRemaining: 0 }
     } : {};
