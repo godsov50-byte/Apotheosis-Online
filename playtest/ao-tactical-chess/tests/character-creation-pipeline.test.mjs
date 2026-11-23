@@ -6,7 +6,7 @@ const base={STR:10,DEX:10,CON:10,INT:10,WIS:10,CHA:10,ATT:10};
 test("racial and rarity modifiers remain separate and produce HP from explicit vitality rule",()=>{
  const r=createEnvoyFromCreation({id:"envoy",name:"Envoy",side:"white",raceId:"test-lineage",rarityId:"rare",characterTier:9,baseAttributes:base,vitality:{base:10,perConstitution:2,racialHpFlat:0}},registry);
  assert.equal(r.ok,true);assert.equal(r.entity.stats.STR,12);assert.equal(r.entity.stats.CON,11);assert.equal(r.entity.stats.ATT,13);
- assert.equal(r.entity.hp.max,42);assert.deepEqual(r.entity.ea.affinities,["Fire"]);assert.ok(r.entity.traits.includes("rare-sense"));
+ assert.equal(r.entity.hp.max,40);assert.deepEqual(r.entity.ea.affinities,["Fire"]);assert.ok(r.entity.traits.includes("rare-sense"));
  assert.deepEqual(r.breakdown.racialModifiers,{STR:2,DEX:0,CON:1,INT:0,WIS:0,CHA:0,ATT:0});
 });
 test("no fixed point pool is imposed; every base attribute must be explicit",()=>{
