@@ -45,7 +45,8 @@ export function createBoardField(units, { width = 8, height = 8, turn = "white",
     assertBoardUnit(unit, width, height);
     if (ids.has(unit.id)) throw new Error("duplicate board unit id: " + unit.id);
     ids.add(unit.id);
-    const affinities = unit.affinity && !/unassigned|none assigned/i.test(unit.affinity) ? [unit.affinity] : [];
+    const affinity = unit.naturalAffinity || unit.affinity;
+    const affinities = affinity && !/unassigned|none assigned/i.test(affinity) ? [affinity] : [];
     const techniqueId = unit.techniqueId || (unit.technique ? techniqueIdFor(unit.technique) : null);
     const baseAttributes = clone(unit.baseAttributes || unit.stats || { ATT: 0 });
     const equipment = clone(unit.equipment || {});
@@ -87,6 +88,8 @@ export function createBoardField(units, { width = 8, height = 8, turn = "white",
     entity.racialAttributeModifiers = clone(unit.racialAttributeModifiers || {});
     entity.rarityAttributeModifiers = clone(unit.rarityAttributeModifiers || {});
     entity.naturalAffinity = unit.naturalAffinity || unit.affinity || null;
+    entity.traits = clone(unit.traits || []);
+    entity.racialTechniques = clone(unit.racialTechniques || []);
     entity.equipment = equipment;
     entity.nature = unit.nature || null;
     entity.boardTechniqueId = techniqueId;
@@ -379,6 +382,8 @@ export function projectBoardUnits(boardUnits, field, { includeDefeated = false }
       equipment: clone(entity.equipment),
       raceId: entity.raceId,
       racialRarityId: entity.racialRarityId,
+      traits: clone(entity.traits || []),
+      naturalAffinity: entity.naturalAffinity,
       uses: entity.boardTechniqueId
         ? Math.max(0, entity.boardTechniqueUsesMax - finite(entity.techniqueState?.[entity.boardTechniqueId]?.used))
         : unit.uses
