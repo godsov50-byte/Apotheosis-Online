@@ -16,4 +16,4 @@ jobs:
         with:
           node-version: '22'
       - name: Run AO Chess engine regression tests
-        run: node --test playtest/ao-tactical-chess/tests/engine.test.mjs
+        run: node --test playtest/ao-tactical-chess/tests/*.test.mjs
