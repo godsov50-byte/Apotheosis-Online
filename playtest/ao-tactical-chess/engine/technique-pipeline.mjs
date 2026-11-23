@@ -7,6 +7,8 @@ const clone = value => structuredClone(value);
 const num = (value, fallback = 0) => Number.isFinite(value) ? value : fallback;
 const key = p => `${p.x},${p.y},${p.z || 0}`;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+import { skillProgress, createSkillRegistry } from "./skill-pipeline.mjs";
+const skillRegistry = createSkillRegistry();
 
 export const CHESS_MOTIONS = Object.freeze(["King", "Queen", "Rook", "Bishop", "Knight", "Pawn"]);
 
@@ -20,6 +22,10 @@ export function createTechnique(definition) {
     classRequirements: [...(definition.classRequirements || [])],
     archetypeRequirements: [...(definition.archetypeRequirements || [])],
     affinityRequirements: [...(definition.affinityRequirements || [])],
+    raceRequirements: [...(definition.raceRequirements || [])],
+    traitRequirements: [...(definition.traitRequirements || [])],
+    requiredAttributes: clone(definition.requiredAttributes || {}),
+    requiredSkills: clone(definition.requiredSkills || []),
     target: { type: "enemy", ...(definition.target || {}) },
     geometry: { kind: "range", range: 1, minRange: 0, ...(definition.geometry || {}) },
     chessMotion: definition.chessMotion || null,
@@ -126,6 +132,17 @@ export function validateTechniqueIntent(field, intent, registry, { requireOffens
   if (technique.classRequirements.length && !technique.classRequirements.includes(actor.class)) return fail("class_requirement");
   if (technique.archetypeRequirements.length && !technique.archetypeRequirements.includes(actor.archetype)) return fail("archetype_requirement");
   if (technique.affinityRequirements.length && !technique.affinityRequirements.some(a => (actor.ea?.affinities || actor.affinities || []).includes(a))) return fail("affinity_requirement");
+  if (technique.raceRequirements.length && !technique.raceRequirements.includes(actor.raceId || actor.race)) return fail("race_requirement");
+  if (technique.traitRequirements.some(id => !(actor.traits || []).includes(id))) return fail("trait_requirement");
+  for (const [stat, minimum] of Object.entries(technique.requiredAttributes)) {
+    if (!Number.isFinite(minimum) || !Number.isFinite(actor.stats?.[stat]) || actor.stats[stat] < minimum) return fail("attribute_requirement", { stat, minimum });
+  }
+  for (const requirement of technique.requiredSkills) {
+    const skillId = requirement.id || requirement.skillId;
+    const progress = skillProgress(actor, skillId, skillRegistry);
+    const minimum = num(requirement.level, 1);
+    if (!progress.ok || progress.effectiveLevel < minimum) return fail("skill_requirement", { skillId, minimum, actual: progress.effectiveLevel ?? 0 });
+  }
   if (technique.prerequisites.some(id => !(actor.techniques || []).includes(id))) return fail("prerequisite_missing");
   const usage = actor.techniqueState?.[technique.id] || {};
   if (technique.uses != null && num(usage.used) >= technique.uses) return fail("uses_exhausted");
