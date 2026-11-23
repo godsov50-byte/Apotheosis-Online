@@ -41,7 +41,8 @@ function createSubAncestryProfile(definition) {
   return {id:definition.id,name:definition.name,attributeModifiers:modifiers(definition.attributeModifiers),
     hpFlat:finite(definition.hpFlat,0),modifiers:clone(definition.modifiers||{}),
     traits:[...(definition.traits||[])],racialTechniques:[...(definition.racialTechniques||[])],
-    effects:clone(definition.effects||[])};
+    effects:clone(definition.effects||[]),originLineage:clone(definition.originLineage||{}),
+    formNature:clone(definition.formNature||{})};
 }
 function createAncestryProfile(definition) {
   if(!definition?.id||!definition?.name)throw new Error("ancestry id and name required");
@@ -54,7 +55,8 @@ function createAncestryProfile(definition) {
   return {id:definition.id,name:definition.name,attributeModifiers:modifiers(definition.attributeModifiers),
     hpFlat:finite(definition.hpFlat,0),modifiers:clone(definition.modifiers||{}),
     traits:[...(definition.traits||[])],racialTechniques:[...(definition.racialTechniques||[])],
-    effects:clone(definition.effects||[]),subAncestries};
+    effects:clone(definition.effects||[]),originLineage:clone(definition.originLineage||{}),
+    formNature:clone(definition.formNature||{}),subAncestries};
 }
 export function createRacialProfile(definition) {
   if (!definition?.id || !definition?.name) throw new Error("race id and name required");
@@ -80,8 +82,15 @@ export function createRacialProfile(definition) {
   }
   return {
     id: definition.id, name: definition.name,
-    lineageId: definition.lineageId || null,
-    racialType: definition.racialType || null,
+    lineageId: definition.lineageId || definition.originLineage?.lineageId || null,
+    existence:clone(definition.existence||{}),
+    originLineage:clone(definition.originLineage||{}),
+    formNature:clone(definition.formNature||{}),
+    speciesClassification:clone(definition.speciesClassification||{}),
+    inhabitantUnderstanding:clone(definition.inhabitantUnderstanding||{}),
+    population:clone(definition.population||{}),
+    accessibility:clone(definition.accessibility||{}),
+    acquisitionGovernance:clone(definition.acquisitionGovernance||{}),
     naturalAffinity: definition.naturalAffinity ?? null,
     attributeModifiers: modifiers(definition.attributeModifiers),
     hpFlat: finite(definition.hpFlat, 0),
@@ -164,8 +173,17 @@ export function createEnvoyFromCreation(input, registry) {
     raceId: race.id, raceName: race.name, lineageId: race.lineageId,
     ancestryId:ancestry?.id||null,ancestryName:ancestry?.name||null,
     subAncestryId:subAncestry?.id||null,subAncestryName:subAncestry?.name||null,
-    racialType: race.racialType, racialRarityId: input.rarityId,
+    racialRarityId: input.rarityId,
     characterTier, tier: characterTier, race: race.id,
+    existence:clone(race.existence),
+    originLineage:{race:clone(race.originLineage),ancestry:clone(ancestry?.originLineage||{}),
+      subAncestry:clone(subAncestry?.originLineage||{}),ancestryPath:[race.id,...(ancestry?[ancestry.id]:[]),...(subAncestry?[subAncestry.id]:[])]},
+    formNature:{race:clone(race.formNature),ancestry:clone(ancestry?.formNature||{}),subAncestry:clone(subAncestry?.formNature||{})},
+    speciesClassification:clone(race.speciesClassification),
+    inhabitantUnderstanding:clone(race.inhabitantUnderstanding),
+    population:clone(race.population),
+    accessibility:clone(race.accessibility),
+    acquisitionGovernance:clone(race.acquisitionGovernance),
     naturalAffinity: race.naturalAffinity,
     baseAttributes: base,
     raceAttributeModifiers:clone(raceAttrs),ancestryAttributeModifiers:clone(ancestryAttrs),
