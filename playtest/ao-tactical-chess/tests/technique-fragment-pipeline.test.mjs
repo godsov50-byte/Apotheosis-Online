@@ -99,3 +99,11 @@ test("Tier advancement cannot skip a Tier or exceed Tier 0", () => {
   assert.equal(result.reason, "invalid_tier_step");
   assert.equal(field.entities.e.techniqueTiers.flame, 9);
 });
+
+test("balance simulation reports expected technique fragment yields and rates", () => {
+  const result = Drops.simulateDropProfile({ source: { id: "fire-beast" }, profile: { techniqueFragmentDrops: [{ fragmentId: "ember", chance: 1, min: 2, max: 2 }] }, registry, trials: 20, seed: "fragment-preview" });
+  assert.equal(result.ok, true);
+  assert.equal(result.expectedTechniqueFragmentUnitsPerTrial, 2);
+  assert.equal(result.techniqueFragmentDropRate, 1);
+  assert.equal(result.fragmentsById.ember, 40);
+});
