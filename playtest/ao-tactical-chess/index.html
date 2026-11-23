@@ -17,12 +17,16 @@ main{max-width:1500px;margin:auto;padding:18px;display:grid;grid-template-column
 .square{position:relative;min-width:0;display:grid;place-items:center;border:0;padding:2px;cursor:pointer}
 .square.light{background:#c5c0ad}.square.dark{background:#536675}.square.selected{outline:3px solid var(--gold);outline-offset:-3px;z-index:1}.square.legal:after{content:"";position:absolute;width:23%;aspect-ratio:1;border-radius:50%;background:#162b3b88}.square.attackable:after{content:"";position:absolute;inset:4px;border:3px solid #9e4141;border-radius:50%}.square.last{box-shadow:inset 0 0 0 4px #d9b46a99}
 .coord{position:absolute;font-size:9px;font-weight:700;opacity:.7;pointer-events:none}.coord.file{bottom:2px;right:4px}.coord.rank{top:2px;left:4px}
-.token{width:83%;height:83%;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;border:2px solid #e4d8b9;box-shadow:0 3px 7px #0008,inset 0 0 0 2px #0004;font-weight:800;transition:transform .12s}
-.token.white{background:radial-gradient(circle at 35% 25%,#f5f0df,#aebbc4 70%,#687887);color:#172432;border-color:#f4e9cb}
-.token.black{background:radial-gradient(circle at 35% 25%,#536b82,#182638 72%,#0b111a);color:#f2dfb8;border-color:#d3b777}
-.token .classmark{font-size:clamp(11px,2vw,20px);text-shadow:0 1px 1px #0004}.token .facing{position:absolute;top:-7%;left:50%;transform:translateX(-50%);font-size:clamp(13px,2vw,20px);line-height:1;color:#ffd778;text-shadow:0 1px 4px #000;filter:drop-shadow(0 1px 2px #000)}
-.token .hpmini{position:absolute;bottom:-5px;left:12%;right:12%;height:4px;background:#111b;border-radius:4px;overflow:hidden;border:1px solid #0008}.token .hpmini i{display:block;height:100%;background:var(--green)}
-.token.selectedToken{transform:scale(1.08);box-shadow:0 0 0 3px var(--gold),0 5px 12px #0009}
+/* Surface token: portrait + name only. The three frame channels encode
+   class, archetype and natural affinity; these palette values are provisional UI styling. */
+.token{width:94%;height:96%;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;position:relative;padding:2px 1px;border:0;background:transparent;box-shadow:none;transition:transform .12s}
+.token-frame{width:min(70%,58px);aspect-ratio:1;border-radius:50%;padding:3px;background:var(--class-color,#7b8490);box-shadow:0 2px 7px #0009,inset 0 0 0 1px #ffffff55;position:relative}
+.token-frame:before{content:"";position:absolute;inset:3px;border:2px solid var(--archetype-color,#a4a4a4);border-radius:50%;pointer-events:none;z-index:2}
+.token-frame:after{content:"";position:absolute;inset:0;border:2px solid var(--affinity-color,#777);border-radius:50%;pointer-events:none;opacity:.95}
+.token-portrait{display:block;width:100%;height:100%;object-fit:cover;border-radius:50%;background:#172331}
+.token-name{display:block;max-width:100%;padding:0 2px;color:#fff;text-shadow:0 1px 3px #000,0 1px 5px #000;font-size:clamp(7px,1.05vw,10px);font-weight:700;line-height:1.05;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.token.selectedToken{transform:scale(1.06);filter:drop-shadow(0 0 4px var(--gold));z-index:2}
+.token.white .token-name,.token.black .token-name{color:#fff}
 .boardcontrols{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
 button,select{font:inherit;color:var(--ink);background:#233447;border:1px solid #40566e;border-radius:8px;padding:8px 11px;cursor:pointer}button:hover{border-color:var(--gold);background:#2b4055}button:disabled{opacity:.4;cursor:not-allowed}.goldbtn{background:#5a4728;border-color:#9b7942}.small{font-size:11px;padding:6px 9px}
 .side{display:flex;flex-direction:column;gap:14px}.section{padding:14px 16px}.section h3{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--gold);margin:0 0 11px}
@@ -72,6 +76,21 @@ button,select{font:inherit;color:var(--ink);background:#233447;border:1px solid 
 const files="abcdefgh";
 const classNames=["Saber","Archer","Lancer","Rider","Caster","Assassin","Berserker","Shielder","Avenger","Ruler"];
 const marks={Saber:"S",Archer:"A",Lancer:"L",Rider:"R",Caster:"C",Assassin:"X",Berserker:"B",Shielder:"H",Avenger:"V",Ruler:"U"};
+const classColors={Saber:"#b88743",Archer:"#568d72",Lancer:"#5279b5",Rider:"#a67b45",Caster:"#6757a8",Assassin:"#687487",Berserker:"#a84d42",Shielder:"#648b9a",Avenger:"#80506f",Ruler:"#b49b64"};
+const archetypeColors={"Anti-Unit":"#d8c28a","Anti-Fortress":"#8798ad","Anti-Divine":"#b47d9a"};
+const affinityColors={Fire:"#c65b3e",Water:"#4d91c2",Earth:"#9a8153",Wind:"#70a77d",Ice:"#79b7cf",Lightning:"#c1a64b",Light:"#d5c27b",Shadow:"#76658e"};
+const colorKey=value=>String(value||"").trim().toLowerCase();
+function identityColors(u){
+ const cls=classColors[u.cls]||"#7b8490";
+ const archetype=archetypeColors[u.archetype]||"#a4a4a4";
+ const affinity=affinityColors[u.affinity]||"#777777";
+ return {"--class-color":cls,"--archetype-color":archetype,"--affinity-color":affinity};
+}
+function portraitFallback(u){
+ const tint=classColors[u.cls]||"#596b7b";
+ const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g" x2="1" y2="1"><stop stop-color="'+tint+'"/><stop offset="1" stop-color="#101923"/></linearGradient></defs><rect width="100" height="100" fill="url(#g)"/><path d="M12 100c3-22 17-34 38-34s35 12 38 34" fill="#17212c"/><ellipse cx="50" cy="38" rx="19" ry="23" fill="#b98c70"/><path d="M30 38c0-22 11-30 22-30 16 0 24 13 19 32-5-9-13-12-23-12-6 0-12 4-18 10z" fill="#20202a"/><path d="M42 48q8 5 16 0" fill="none" stroke="#65483d" stroke-width="2" stroke-linecap="round"/><path d="M36 70l14 12 14-12" fill="none" stroke="#d7c49c" stroke-width="3"/></svg>';
+ return "data:image/svg+xml;charset=UTF-8,"+encodeURIComponent(svg);
+}
 const base={Saber:[30,15,5,6],Archer:[25,13,4,8],Lancer:[32,15,5,8],Rider:[32,14,5,8],Caster:[24,12,4,6],Assassin:[25,16,5,6],Berserker:[38,12,7,12],Shielder:[42,18,4,6],Avenger:[36,14,6,10],Ruler:[34,16,5,8]};
 const patterns=["King","Queen","Rook","Bishop","Knight","Pawn"];
 const glyph={King:"K",Queen:"Q",Rook:"R",Bishop:"B",Knight:"N",Pawn:"P"};
@@ -123,7 +142,17 @@ function render(){
   if(isLegal)sq.classList.add(target?"attackable":"legal");
   if(x===0){let r=document.createElement("span");r.className="coord rank";r.textContent=8-y;sq.appendChild(r)}
   if(y===7){let f=document.createElement("span");f.className="coord file";f.textContent=files[x];sq.appendChild(f)}
-  if(target){let t=document.createElement("div");t.className="token "+target.side+(selected===target?" selectedToken":"");t.innerHTML='<span class="facing">'+arrows[target.facing]+'</span><span class="classmark">'+marks[target.cls]+'</span><span class="hpmini"><i style="width:'+Math.max(0,target.hp/target.maxHp*100)+'%"></i></span>';sq.appendChild(t)}
+  if(target){
+   let t=document.createElement("div");t.className="token "+target.side+(selected===target?" selectedToken":"");
+   const colors=identityColors(target);Object.entries(colors).forEach(([key,value])=>t.style.setProperty(key,value));
+   const frame=document.createElement("div");frame.className="token-frame";
+   const portrait=document.createElement("img");portrait.className="token-portrait";portrait.alt="";portrait.draggable=false;
+   portrait.src=target.portraitUrl||portraitFallback(target);
+   portrait.addEventListener("error",()=>{portrait.src=portraitFallback(target);},{once:true});
+   frame.appendChild(portrait);
+   const name=document.createElement("span");name.className="token-name";name.textContent=target.name;
+   t.append(frame,name);sq.appendChild(t);
+  }
   sq.addEventListener("click",()=>clickSquare(x,y));board.appendChild(sq);
  }
  $("turn").textContent=turn.toUpperCase()+" TO MOVE";$("moveCount").textContent="Round "+round;
