@@ -94,3 +94,16 @@ const result = craftEquipment(field, {
 `regular-combat.mjs` adds match-sized utilities for zones, destructible terrain, localized body effects, formation support, grapples, and simple projectiles. These are standalone utilities pending match integration.
 
 **Not complete:** full 3D volume/collision, every projectile trajectory/interception rule, advanced aim/cover, grappling/continuous-space melee, full reaction priority, ecology simulation, persistent-world adapter, canonical numerical balance, and full board UI integration. Values/charts are supplied as data rather than inferred as canon.
+
+
+## Drop, equipment reward and resource extraction pipeline
+
+`drop-resource-pipeline.mjs` separates defeat-origin material drops, independent equipment drops, finite resource nodes, extraction, and collection. A source-linked reward profile defines material chances and quantity ranges independently from equipment chance and weighted item selection. Optional material-unit caps can be combined with a shared reward-point budget: material units and equipment entries spend explicitly configured costs from the same source budget. This makes materials-versus-equipment tradeoffs measurable without imposing a universal value scale. Seeded generation supports deterministic replay and balance previews.
+
+Each drop retains its source, profile/event provenance, position, quality record, and manual-collection state. Equipment drops reference item definitions; their category, rarity, power, and advancement eligibility remain properties of the item definition rather than being inferred from a quality roll.
+
+Resource nodes have finite quantities and independent source quality. Extraction methods define eligible node tags, skill/tool requirements, base yield, skill/tool yield contributions, depletion loss, and quality modifiers. Extraction reduces the node atomically and creates a field drop; it does not put materials directly into inventory. A later collection action remains separate.
+
+Quality is a separate score/grade record from quantity. The score is a playtest comparison value (0–100), with configurable grade thresholds; it is not an AO rarity ladder or canon stat. All drop chances, quantity ranges, weights, yields, skill contributions, quality modifiers, and thresholds are supplied by data. No global numerical drop rates or canonical resource quantities are established by this module.
+
+The balance preview runs seeded trials and reports expected material units, equipment-drop rate, item distribution, and average quality for a supplied profile. It is an authoring/test aid, not an adaptive difficulty system: it does not change rewards based on player success or silently alter committed outcomes.
