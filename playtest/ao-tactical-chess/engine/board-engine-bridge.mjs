@@ -156,25 +156,7 @@ export function resolveBoardAttack(field, {
   }
   return { ...resolved, field: next, entity: clone(next.entities[attackerId]), defeated: !next.entities[defenderId]?.alive };
 }
-  const resolved = resolveAttack(ready.field, {
-    attackerId, defenderId, roll,
-    apCost: 0, eaCost: 0, staminaCost: 0,
-    damagePackets: damagePackets || [],
-    eventId: id + ":commit",
-    resolveEventId: id
-  }, { roll, chart });
-  if (resolved.ok === false) return resolved;
-  let next = finishBoardAction(resolved.field, attackerId);
-  const defender = next.entities[defenderId];
-  if (defender && !defender.alive) {
-    const cells = { ...next.cells };
-    for (const [key, cell] of Object.entries(cells)) {
-      if ((cell.entities || []).includes(defenderId)) cells[key] = { ...cell, entities: cell.entities.filter(x => x !== defenderId) };
-    }
-    next = { ...next, cells };
-  }
-  return { ...resolved, field: next, entity: clone(next.entities[attackerId]), defeated: !next.entities[defenderId]?.alive };
-}
+
 
 export function endBoardTurn(field, nextSide) {
   if (!["white", "black"].includes(nextSide)) throw new Error("invalid next side");
