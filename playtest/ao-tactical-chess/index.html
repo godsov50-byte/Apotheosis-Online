@@ -243,7 +243,8 @@ window.addEventListener('ao-board-move',event=>{
   if(!boardField)throw new Error('board engine is not initialized');
   if(Array.isArray(event.detail.units)){
    const priorLedger=boardField.ledger,priorVersion=boardField.version,activeSide=boardField.activeSide,round=boardField.round;
-   boardField=BoardBridge.createBoardField(event.detail.units,{turn:activeSide,round});
+   boardRoster=event.detail.units.map(u=>({...u}));
+   boardField=BoardBridge.createBoardField(boardRoster,{turn:activeSide,round});
    boardField={...boardField,ledger:priorLedger,version:priorVersion};
   }
   const result=BoardBridge.resolveBoardMove(boardField,event.detail);
