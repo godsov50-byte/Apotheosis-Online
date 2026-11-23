@@ -199,6 +199,7 @@ export function extractResource(field, intent, {
     thresholds: quality.thresholds
   });
   const next = clone(field), updatedNode = next.resourceNodes[node.id];
+  next.entities[actor.id] = { ...next.entities[actor.id], acted: true };
   updatedNode.quantity -= quantity;
   updatedNode.state = updatedNode.quantity <= 0 ? "depleted" : "available";
   const dropId = `extracted-${node.id}-${updatedNode.extractionHistory.length + 1}`;
@@ -225,6 +226,7 @@ export function collectBalancedDrop(field, intent, registry) {
   const drop = field.drops?.[intent.dropId], actor = field.entities?.[intent.actorId];
   if (!actor || actor.alive === false) return { ...fail("collector_unavailable"), field };
   if (!drop || drop.collected) return { ...fail("drop_unavailable"), field };
+  if (drop.containerId) return { ...fail("drop_inside_container"), field };
   if (drop.requiresManualCollection && intent.confirm !== true) return { ...fail("manual_collection_required"), field };
   const reach = num(intent.collectionRange, 1);
   if (actor.position && drop.position && Math.max(Math.abs(actor.position.x - drop.position.x), Math.abs(actor.position.y - drop.position.y)) > reach) return { ...fail("drop_out_of_reach"), field };
