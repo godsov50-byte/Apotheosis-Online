@@ -116,7 +116,9 @@ function clickCell(x,y){
  const envoy=state.field.entities[state.envoyId],creature=state.field.entities[state.creatureId];
  if(!envoy?.alive)return;
  if(creature?.alive&&creature.position.x===x&&creature.position.y===y){
-  const result=attackFirstHavenCreature(state,{technique:mode==="technique",roll:14,damage:mode==="technique"?6:5});
+  const roll=Math.floor(Math.random()*20)+1;
+  const damage=mode==="technique"?6:Math.floor(Math.random()*6)+1;
+  const result=attackFirstHavenCreature(state,{technique:mode==="technique",roll,damage});
   if(act(result,mode==="technique"?"Guard Break resolved.":"Attack resolved."))mode="move";
   return;
  }
