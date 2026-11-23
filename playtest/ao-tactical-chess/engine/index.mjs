@@ -1,1 +1,1 @@
-/mnt/data/ao-chess-layers/engine/index.mjs
+export * from './ao-chess-engine.mjs';
