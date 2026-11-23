@@ -45,8 +45,9 @@ After the feature branch is merged, the Pages workflow publishes the board at:
 All changes are isolated on the feature branch until reviewed and merged.
 
 
-## Encounter Director prototype module
+## AO Chess engine sandbox — Layers 1–13
 
-`encounter-director.mjs` contains isolated, dependency-free utilities for the proposed Layer 12 encounter orchestration: encounter records and state transitions, event-ledger idempotency, deployment validation against a supplied grid snapshot, source-triggered reinforcement schedules with travel ticks, objective state updates, and outcome recording. It is not yet wired into `index.html` or `site-shell.html`; the module does not simulate combat, spawn entities, assign rewards, or persist to the AO world.
+The page includes an Engine Console sandbox for the new reference engine. It can initialize an independent field, launch/advance a projectile toward a blocking wall, run perception/AI, and advance a world tick. The core module lives at `engine/ao-chess-engine.mjs`; regression tests are in `tests/engine.test.mjs` and encounter records have a JSON schema at `../../schemas/ao-chess-encounter.schema.json`.
 
 
+**Important:** the existing board match still uses its original local rules. The sandbox does not yet replace that match loop or connect to WorldHeart/Supabase. The engine is a working prototype with incomplete advanced physics and rules; see its README for boundaries.
