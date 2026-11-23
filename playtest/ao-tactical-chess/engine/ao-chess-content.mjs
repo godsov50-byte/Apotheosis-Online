@@ -12,7 +12,7 @@ import { createEffectRegistry } from "./effect-pipeline.mjs";
 export const AO_PROVISIONAL_RACIAL_PROFILES = Object.freeze([]);
 export const AO_PROVISIONAL_RARITY_PROFILES = Object.freeze([]);
 export const AO_PROVISIONAL_TECHNIQUES = Object.freeze([
- {id:"field-step",name:"Field Step",tier:9,category:"movement",target:{type:"self"},geometry:{kind:"self"},cost:{ap:1,ea:0},uses:null,cooldown:0,effects:[{type:"resource",target:"self",pool:"stamina",amount:0}],tags:["movement"],provisional:true},
+ {id:"field-step",name:"Field Step",tier:9,category:"movement",target:{type:"self"},geometry:{kind:"self"},cost:{ap:1,ea:0},uses:null,cooldown:0,effects:[{type:"attribute_modifier",target:"self",stat:"DEX",amount:1,duration:1,statusId:"field-step"}],tags:["movement"],provisional:true},
  {id:"guard-break",name:"Guard Break",tier:9,category:"combat",target:{type:"enemy"},geometry:{kind:"range",range:1,minRange:1},cost:{ap:2,ea:1},uses:null,cooldown:0,effects:[{type:"damage",packets:[{type:"physical",amount:6,penetration:1}],break:1}],tags:["melee","break"],provisional:true},
  {id:"ember-lance",name:"Ember Lance",tier:8,category:"affinity",affinityRequirements:["Fire"],target:{type:"enemy"},geometry:{kind:"range",range:3,minRange:1,requiresLineOfSight:true},cost:{ap:2,ea:2},uses:3,cooldown:1,effects:[{type:"damage",packets:[{type:"fire",amount:8,affinity:"Fire"}]}],tags:["projectile","fire"],provisional:true},
  {id:"mending-pulse",name:"Mending Pulse",tier:9,category:"support",target:{type:"ally"},geometry:{kind:"range",range:2,minRange:0},cost:{ap:2,ea:2},uses:2,cooldown:1,effects:[{type:"heal",amount:6}],tags:["healing"],provisional:true}
@@ -20,13 +20,13 @@ export const AO_PROVISIONAL_TECHNIQUES = Object.freeze([
 export const AO_PROVISIONAL_EQUIPMENT = Object.freeze({
  materials:[{id:"field-iron",name:"Field Iron",tags:["metal","crafting"]},{id:"beast-hide",name:"Beast Hide",tags:["leather","crafting"]}],
  items:[
-  {id:"field-iron-sabre",name:"Field-Iron Sabre",category:"Regular Item",itemType:"weapon",equipmentSlot:"weapon",modifiers:{},tags:["weapon","sabre","metal"]},
-  {id:"hide-traveler-coat",name:"Hide Traveler Coat",category:"Regular Item",itemType:"armor",equipmentSlot:"body",modifiers:{},tags:["armor","leather"]},
-  {id:"field-iron-buckler",name:"Field-Iron Buckler",category:"Regular Item",itemType:"shield",equipmentSlot:"offhand",modifiers:{},tags:["shield","metal"]}
+  {id:"field-iron-sabre",name:"Field-Iron Sabre",category:"Regular Item",itemType:"weapon",equipmentSlot:"weapon",modifiers:{STR:1},tags:["weapon","sabre","metal"]},
+  {id:"hide-traveler-coat",name:"Hide Traveler Coat",category:"Regular Item",itemType:"armor",equipmentSlot:"body",modifiers:{CON:1},tags:["armor","leather"]},
+  {id:"field-iron-buckler",name:"Field-Iron Buckler",category:"Regular Item",itemType:"shield",equipmentSlot:"offhand",modifiers:{DR:1},tags:["shield","metal"]}
  ],
  recipes:[
   {id:"forge-field-sabre",name:"Forge Field-Iron Sabre",ingredients:[{materialId:"field-iron",quantity:2}],output:{itemId:"field-iron-sabre"},knownByDefault:true,skill:{id:"SK20",level:1}},
-  {id:"stitch-traveler-coat",name:"Stitch Traveler Coat",ingredients:[{materialId:"beast-hide",quantity:2}],output:{itemId:"hide-traveler-coat"},knownByDefault:true,skill:{id:"SK20",level:1}}
+  {id:"stitch-traveler-coat",name:"Stitch Traveler Coat",ingredients:[{materialId:"beast-hide",quantity:2}],output:{itemId:"hide-traveler-coat"},knownByDefault:true,skill:{id:"SK20",level:1}},\n  {id:"forge-field-buckler",name:"Forge Field-Iron Buckler",ingredients:[{materialId:"field-iron",quantity:1}],output:{itemId:"field-iron-buckler"},knownByDefault:true,skill:{id:"SK20",level:1}}
  ]
 });
 export const AO_PROVISIONAL_EFFECTS = Object.freeze([
