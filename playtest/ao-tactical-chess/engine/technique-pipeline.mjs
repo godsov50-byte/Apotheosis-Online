@@ -117,6 +117,7 @@ export function validateTechniqueIntent(field, intent, registry, { requireOffens
   if (!intent?.actorId || !intent?.techniqueId || !intent?.target) return fail("incomplete_intent");
   const actor = field.entities?.[intent.actorId], technique = registry?.[intent.techniqueId];
   if (!actor || actor.alive === false) return fail("actor_unavailable");
+  if (field.activeSide && actor.side !== field.activeSide) return fail("not_active_side");
   if (!technique) return fail("unknown_technique");
   if (!(actor.techniques || []).includes(technique.id)) return fail("technique_not_learned");
   if (requireOffensiveSlot && actor.offensiveTechniqueId !== technique.id) return fail("not_equipped_as_offensive");
@@ -133,7 +134,7 @@ export function validateTechniqueIntent(field, intent, registry, { requireOffens
     const state = actor[pool];
     if (!state || num(state.current) - num(state.reserved) < cost) return fail("insufficient_" + pool.toUpperCase());
   }
-  const target = intent.target.entityId ? field.entities?.[intent.target.entityId] : entityAt(field, intent.target.position);
+  const target = intent.target.entityId ? field.entities?.[intent.target.entityId] : intent.target.position ? entityAt(field, intent.target.position) : null;
   const targetType = technique.target.type;
   if (targetType === "self" && intent.target.entityId !== actor.id) return fail("target_must_be_self");
   if (["enemy", "ally", "entity"].includes(targetType) && (!target || target.alive === false)) return fail("target_missing");
@@ -255,4 +256,11 @@ export function tickTechniqueCooldowns(entity) {
   const state = {};
   for (const [id, record] of Object.entries(entity.techniqueState || {})) state[id] = { ...record, cooldownRemaining: Math.max(0, num(record.cooldownRemaining) - 1) };
   return { ...clone(entity), techniqueState: state };
+}
+
+/** Called by the turn controller when this entity becomes eligible to act again. */
+export function resetTechniqueTurn(entity, { tickCooldowns = true } = {}) {
+  const next = tickCooldowns ? tickTechniqueCooldowns(entity) : clone(entity);
+  delete next.acted;
+  return next;
 }
