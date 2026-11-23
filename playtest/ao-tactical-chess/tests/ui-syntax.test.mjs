@@ -27,7 +27,7 @@ test('board tokens use portrait/name surfaces and three identity color channels'
 
 test('First Haven module script parses as browser JavaScript', () => {
   const html = fs.readFileSync(new URL('../first-haven.html', import.meta.url), 'utf8');
-  const match = html.match(/<script type="module">([\\s\\S]*?)<\\/script>/);
+  const match = html.match(/<script type="module">([\s\S]*?)<\/script>/);
   assert.ok(match, 'First Haven module script exists');
   const checked = spawnSync(process.execPath, ['--check', '--input-type=module'], {
     input: match[1], encoding: 'utf8'
