@@ -6,7 +6,7 @@
 const clone = value => structuredClone(value);
 const num = (v, d = 0) => Number.isFinite(v) ? v : d;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-import { resolveEffectBatch } from "./effect-pipeline.mjs";
+import { resolveEffectBatch, resolveEffectiveAttributes, resolveEffectiveDefense } from "./effect-pipeline.mjs";
 import { skillProgress } from "./skill-pipeline.mjs";
 const ITEM_CATEGORIES = Object.freeze(["Regular Item", "Heirloom", "Conceptual Heirloom", "Cursed Conceptual Heirloom"]);
 const key = p => `${p.x},${p.y},${p.z || 0}`;
@@ -285,6 +285,9 @@ export function equipEquipment(field, intent) {
     const prior = Object.values(entity.equipment || {}).find(x => x.instanceId === priorId);
     if (prior) actor.inventory.push(prior);
   }
+  if (!actor.baseDefense) actor.baseDefense = clone(actor.defense || {});
+  if (actor.baseAttributes) actor.stats = resolveEffectiveAttributes(actor);
+  actor.defense = resolveEffectiveDefense(actor);
   next.entities[actor.id] = actor;
   const committed = addEvent(next, { type: "equipment_equipped", actorId: actor.id, instanceId: item.instanceId, slot: intent.slot });
   const passiveEffects = (equipped.effects || []).map((effect, index) => {
@@ -298,7 +301,12 @@ export function equipEquipment(field, intent) {
     eventId: `equipment-passives:${equipped.instanceId}:${committed.version}`,
     context: { source: "equipment", instanceId: equipped.instanceId }
   });
-  return applied.ok ? { ok: true, field: applied.field } : { ...applied, field };
+  if (!applied.ok) return { ...applied, field };
+  const updatedActor = applied.field.entities[actor.id];
+  if (updatedActor.baseAttributes) updatedActor.stats = resolveEffectiveAttributes(updatedActor);
+  updatedActor.defense = resolveEffectiveDefense(updatedActor);
+  applied.field.entities[actor.id] = updatedActor;
+  return { ok: true, field: applied.field };
 }
 
 export function unequipEquipment(field, intent) {
@@ -307,6 +315,9 @@ export function unequipEquipment(field, intent) {
   const next = clone(field), actor = next.entities[entity.id], removed = actor.equipment[intent.slot];
   delete actor.equipment[intent.slot]; actor.inventory = [...(actor.inventory || []), removed];
   actor.statuses = (actor.statuses || []).filter(status => status.sourceItemId !== removed.instanceId);
+  if (!actor.baseDefense) actor.baseDefense = clone(actor.defense || {});
+  if (actor.baseAttributes) actor.stats = resolveEffectiveAttributes(actor);
+  actor.defense = resolveEffectiveDefense(actor);
   next.entities[actor.id] = actor;
   return { ok: true, field: addEvent(next, { type: "equipment_unequipped", actorId: actor.id, instanceId: removed.instanceId, slot: intent.slot }) };
 }
