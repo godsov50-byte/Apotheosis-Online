@@ -67,6 +67,18 @@ let state=createFirstHavenSession(),mode="move";
 const labels="abcdefghijklmnop";
 const coord=(x,y)=>labels[x]+(16-y);
 const message=text=>{$("status").textContent=text;};
+function itemLabel(title,detail){
+ const label=document.createElement("div");
+ const heading=document.createElement("b");heading.textContent=String(title??"");
+ const meta=document.createElement("small");meta.textContent=String(detail??"");
+ label.append(heading,meta);return label;
+}
+function statCell(label,value){
+ const cell=document.createElement("div");
+ const caption=document.createElement("span");caption.textContent=label;
+ const number=document.createElement("b");number.textContent=String(value??0);
+ cell.append(caption,number);return cell;
+}
 function act(result,successText){
  if(!result.ok){message("Action unavailable: "+result.reason.replaceAll("_"," "));return false;}
  state=result.state||result;
@@ -127,17 +139,24 @@ function clickCell(x,y){
  act(moveFirstHavenEnvoy(state,{x,y}),"The Envoy moves to "+coord(x,y)+".");
 }
 function renderDossier(){
- const e=state.field.entities[state.envoyId],creature=state.field.entities[state.creatureId];
- const summary=getFirstHavenSummary(state);
- if(!e){$("dossier").textContent="No Envoy.";return;}
- const stats=e.stats||{};
- $("dossier").innerHTML=
-  '<div style="display:flex;justify-content:space-between;gap:8px"><div><b>'+e.name+'</b><div class="muted">Tier '+e.characterTier+' · '+e.class+' · '+e.archetype+'</div></div><b style="color:var(--gold)">First Haven</b></div>'+
-  '<div class="stats" style="margin-top:10px"><div class="stat"><b>'+summary.hp+'/'+summary.maxHp+'</b><span>HP</span></div><div class="stat"><b>'+summary.ap+'</b><span>AP</span></div><div class="stat"><b>'+summary.ea+'</b><span>EA</span></div><div class="stat"><b>'+summary.techniqueTier+'</b><span>TECH TIER</span></div></div>'+
-  '<div class="bar"><i style="width:'+(summary.hp/Math.max(1,summary.maxHp)*100)+'%"></i></div>'+
-  '<div class="kv">'+["STR","DEX","CON","INT","WIS","CHA","ATT"].map(k=>'<div><span>'+k+'</span><b>'+Number(stats[k]||0)+'</b></div>').join("")+
-  '<div><span>Natural affinity</span><b>Unassigned</b></div><div><span>Race</span><b>Unclassified</b></div><div><span>Chess motion</span><b>King</b></div><div><span>Creature</span><b>'+(creature?.alive?"Alive · Tier 9":"Defeated")+'</b></div></div>'+
-  '<p class="muted" style="margin-bottom:0">Generated Tier 9 playtest shell. Race, ancestry, rarity, and creature taxonomy remain unassigned; numeric fixture values are not canon.</p>';
+ const box=$("dossier"),e=state.field.entities[state.envoyId],creature=state.field.entities[state.creatureId];
+ const summary=getFirstHavenSummary(state);box.replaceChildren();
+ if(!e){box.textContent="No Envoy.";return;}
+ const header=document.createElement("div");header.style.display="flex";header.style.justifyContent="space-between";header.style.gap="8px";
+ const identity=document.createElement("div"),name=document.createElement("b"),subtitle=document.createElement("div");
+ name.textContent=String(e.name??"Envoy");subtitle.className="muted";
+ subtitle.textContent="Tier "+String(e.characterTier??"—")+" · "+String(e.class??"Unassigned")+" · "+String(e.archetype??"Unassigned");
+ identity.append(name,subtitle);const location=document.createElement("b");location.style.color="var(--gold)";location.textContent="First Haven";
+ header.append(identity,location);box.append(header);
+ const stats=document.createElement("div");stats.className="stats";stats.style.marginTop="10px";
+ [["HP",summary.hp+"/"+summary.maxHp],["AP",summary.ap],["EA",summary.ea],["TECH TIER",summary.techniqueTier]].forEach(([label,value])=>stats.append(statCell(label,value)));box.append(stats);
+ const bar=document.createElement("div");bar.className="bar";const fill=document.createElement("i");
+ fill.style.width=(summary.hp/Math.max(1,summary.maxHp)*100)+"%";bar.append(fill);box.append(bar);
+ const grid=document.createElement("div");grid.className="kv";
+ ["STR","DEX","CON","INT","WIS","CHA","ATT"].forEach(key=>grid.append(statCell(key,Number(e.stats?.[key]??0))));
+ [["Natural affinity","Unassigned"],["Race","Unclassified"],["Chess motion","King"],["Creature",creature?.alive?"Alive · Tier 9":"Defeated"]].forEach(([label,value])=>grid.append(statCell(label,value)));
+ box.append(grid);const note=document.createElement("p");note.className="muted";note.style.marginBottom="0";
+ note.textContent="Generated Tier 9 playtest shell. Race, ancestry, rarity, and creature taxonomy remain unassigned; numeric fixture values are not canon.";box.append(note);
 }
 function renderDrops(){
  const box=$("drops");box.innerHTML="";
@@ -146,14 +165,14 @@ function renderDrops(){
  if(!drops.length&&!containers.length){box.textContent="No field drops yet. Defeat the creature to generate physical rewards.";return;}
  containers.forEach(c=>{
   const row=document.createElement("div");row.className="item";
-  const label=document.createElement("div");label.innerHTML='<b>'+c.name+'</b><small>'+(c.opened?"Opened · contents await collection":"Closed · must be opened first")+'</small>';
+  const label=itemLabel(c.name,c.opened?"Opened · contents await collection":"Closed · must be opened first");
   const btn=document.createElement("button");btn.textContent=c.opened?"Opened":"Open";btn.disabled=c.opened;btn.addEventListener("click",()=>act(openFirstHavenContainer(state,c.id),"Container opened. Collect its contents manually."));
   row.append(label,btn);box.append(row);
  });
  drops.forEach(d=>{
   const row=document.createElement("div");row.className="item";
   const name=d.kind==="technique_fragment_drop"?"Technique fragment":d.kind==="equipment_drop"?"Equipment drop":(d.materialId||"Material drop");
-  const label=document.createElement("div");label.innerHTML='<b>'+name+'</b><small>Qty '+d.quantity+' · '+d.quality.grade+' · '+(d.containerId?"Inside container":"On the ground")+'</small>';
+  const label=itemLabel(name,"Qty "+d.quantity+" · "+(d.quality?.grade??"Unrated")+" · "+(d.containerId?"Inside container":"On the ground"));
   const btn=document.createElement("button");btn.textContent="Collect";btn.disabled=!!(d.containerId&&!state.field.containers[d.containerId]?.opened);
   btn.addEventListener("click",()=>act(collectFirstHavenDrop(state,d.id),"Drop collected into the Envoy's inventory."));
   row.append(label,btn);box.append(row);
@@ -164,7 +183,7 @@ function renderResources(){
  const nodes=Object.values(state.field.resourceNodes||{});
  nodes.forEach(n=>{
   const row=document.createElement("div");row.className="item";
-  const label=document.createElement("div");label.innerHTML='<b>'+n.resourceId+'</b><small>'+n.quantity+'/'+n.maxQuantity+' remaining · '+n.state+'</small>';
+  const label=itemLabel(n.resourceId,n.quantity+"/"+n.maxQuantity+" remaining · "+n.state);
   const btn=document.createElement("button");btn.textContent="Extract";btn.disabled=n.quantity<=0;
   btn.addEventListener("click",()=>act(harvestFirstHavenNode(state,n.id),"Resource extracted. Its drop must be collected separately."));
   row.append(label,btn);box.append(row);
@@ -173,7 +192,7 @@ function renderResources(){
  const fieldDrops=Object.values(state.field.drops||{}).filter(d=>!d.collected&&d.kind==="material_drop"&&!d.containerId);
  fieldDrops.forEach(d=>{
   const row=document.createElement("div");row.className="item";
-  const label=document.createElement("div");label.innerHTML='<b>Extracted '+d.materialId+'</b><small>Field drop · quantity '+d.quantity+'</small>';
+  const label=itemLabel("Extracted "+d.materialId,"Field drop · quantity "+d.quantity);
   const btn=document.createElement("button");btn.textContent="Collect";btn.addEventListener("click",()=>act(collectFirstHavenDrop(state,d.id),"Extracted resource collected."));
   row.append(label,btn);box.append(row);
  });
@@ -186,7 +205,7 @@ function renderInventory(){
   const row=document.createElement("div");row.className="item";
   const label=document.createElement("div");
   const name=item.kind==="material"?item.materialId:item.kind==="technique_fragment"?(item.fragmentId+" fragment"):item.name;
-  label.innerHTML='<b>'+name+'</b><small>'+item.kind+' · qty '+(item.quantity||1)+(item.quality?" · "+item.quality.grade:"")+'</small>';
+  label.replaceChildren(itemLabel(name,item.kind+" · qty "+(item.quantity||1)+(item.quality?" · "+item.quality.grade:"")));
   if(item.kind==="equipment"){
    const btn=document.createElement("button");btn.textContent="Equip";
    btn.addEventListener("click",()=>act(equipFirstHavenItem(state,item.instanceId,item.equipmentSlot||"offhand"),"Equipment equipped."));
@@ -196,7 +215,7 @@ function renderInventory(){
  });
  Object.entries(e.equipment||{}).forEach(([slot,item])=>{
   const row=document.createElement("div");row.className="item";
-  const label=document.createElement("div");label.innerHTML='<b>'+slot+': '+item.name+'</b><small>Equipped · '+item.state+'</small>';
+  const label=itemLabel(slot+": "+item.name,"Equipped · "+item.state);
   row.append(label);box.append(row);
  });
 }
