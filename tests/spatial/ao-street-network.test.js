@@ -5,3 +5,5 @@ test("route reports distance and traversed street IDs",()=>{const route=fixture(
 test("rasterization marks centerline cells",()=>{const mask=fixture().rasterize().grid;assert.equal(mask[5*10+1],1);assert.equal(mask[5*10+8],1);assert.equal(mask[4*10+2],0);});
 test("nearest street returns projected point and metadata",()=>{const hit=fixture().nearestStreet(3,6);assert.equal(hit.name,"Main");assert.equal(hit.point.y,5);});
 test("invalid IDs and geometry are rejected",()=>{assert.throws(()=>createStreetNetwork({width:4,height:4,streets:[{id:"x",name:"X",points:[{x:0,y:0},{x:5,y:1}]}]}));assert.throws(()=>createStreetNetwork({width:4,height:4,streets:[{id:"x",name:"X",points:[{x:0,y:0},{x:2,y:2}]},{id:"x",name:"Dup",points:[{x:0,y:1},{x:2,y:3}]}]}));});
+
+test("intersection entities identify crossings with multiple street names",()=>{const hits=fixture().intersections();assert.equal(hits.length,1);assert.deepEqual(hits[0].streetNames,["Main","Cross"]);assert.equal(hits[0].point.x,5);assert.equal(hits[0].point.y,5);});
