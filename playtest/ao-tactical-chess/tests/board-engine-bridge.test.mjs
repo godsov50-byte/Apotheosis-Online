@@ -140,7 +140,8 @@ test("defeated defenders are removed from cell occupancy and board projection", 
     eventId: "lethal"
   });
   assert.equal(result.defeated, true);
-  assert.deepEqual(result.field.cells["1,0,0"].entities, []);
+  assert.deepEqual(result.field.cells["1,0,0"].entities, ["attacker"]);
+  assert.deepEqual(result.field.entities.attacker.position, { x: 1, y: 0, z: 0 });
   assert.deepEqual(projectBoardUnits(units, result.field).map(x => x.id), ["attacker"]);
   assert.equal(projectBoardUnits(units, result.field, { includeDefeated: true }).find(x => x.id === "defender").hp, 0);
 });
