@@ -30,13 +30,13 @@ After the feature branch is merged, the Pages workflow publishes the board at:
 3. Use **↻ Face** to rotate the selected token.
 4. Use **⇄ Pattern** to cycle its movement pattern. Divine Pursuit becomes dormant unless Askar has Knight movement.
 5. Toggle **Technique: Off/On**, then select an opposing unit on a legal attack square to spend technique resources.
-6. Press **End turn** to pass control to the other side. **Reset match** restores the opening setup.
+6. Use **Save match** to store the current match in browser-local storage; **Load match** restores that save on the same browser/device. **End turn** passes control to the other side. **Reset match** clears the local save and restores the opening setup.
 
 ## Explicit playtest limitations
 
 - Class stat numbers, damage bonuses, technique costs, and trigger odds are temporary test values, not approved AO canon or balance.
-- The match is local and two-player on one device; there is no network multiplayer, account system, save persistence, or AI opponent.
-- Capture/defeat only removes a token from this match. It does not mean the character dies in the AO world.
+- The match is local and two-player on one device; there is no network multiplayer, account system, cloud persistence, or AI opponent. Local save/load is browser-only and device-specific.
+- Capture/defeat only removes a token from this match. It does not mean the character dies in the AO world. Attackers only move into a defeated target's square; they hold their current position if the target survives.
 - The elemental-affinity roster and weakness/resistance chart remain unassigned; technique records display affinity without inventing the canonical chart.
 - The current trigger handling is intentionally small and illustrative. It is not a complete reaction-priority or chain-resolution engine.
 - T1 text is generated from the prototype's local resolved action. It is not a call to Azimah and does not write authoritative world history.
