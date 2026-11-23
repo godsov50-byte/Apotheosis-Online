@@ -5,6 +5,7 @@ on:
     paths:
       - 'playtest/ao-tactical-chess/engine/**'
       - 'playtest/ao-tactical-chess/tests/**'
+      - 'playtest/ao-tactical-chess/encounter-director.mjs'
       - '.github/workflows/ao-chess-engine-tests.yml'
   workflow_dispatch:
 jobs:
@@ -15,5 +16,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Check Encounter Director syntax
+        run: node --check playtest/ao-tactical-chess/encounter-director.mjs
       - name: Run AO Chess engine regression tests
         run: node --test playtest/ao-tactical-chess/tests/*.test.mjs
