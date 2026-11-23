@@ -99,7 +99,7 @@ function patternMoves(u){
  if(p==="Knight"){[[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]].forEach(v=>add(x+v[0],y+v[1]));}
  if(p==="Rook"||p==="Queen"){ray(1,0,7);ray(-1,0,7);ray(0,1,7);ray(0,-1,7);}
  if(p==="Bishop"||p==="Queen"){ray(1,1,7);ray(-1,1,7);ray(1,-1,7);ray(-1,-1,7);}
- if(p==="Pawn"){let d=u.side==="white"?-1:1;add(x,y+d);if((u.side==="white"&&y===6)||(u.side==="black"&&y===1))add(x,y+2*d);add(x-1,y+d);add(x+1,y+d);}
+ if(p==="Pawn"){let d=u.side==="white"?-1:1;if(!at(x,y+d)){add(x,y+d);if((u.side==="white"&&y===6)||(u.side==="black"&&y===1)){if(!at(x,y+2*d))add(x,y+2*d);}}[-1,1].forEach(dx=>{let t=at(x+dx,y+d);if(t&&t.side!==u.side)add(x+dx,y+d);});}
  return out.filter(([a,b])=>{let target=at(a,b);if(!target)return true;if(target.side===u.side)return false;if(p==="Pawn")return a!==x;return true;});
 }
 function select(u){selected=u;legal=patternMoves(u);render();renderProfile();}
@@ -157,7 +157,7 @@ function renderProfile(){
  const hp=Math.max(0,u.hp);
  box.innerHTML='<div class="profiletop"><div class="portrait">'+marks[u.cls]+'</div><div><h2>'+u.name+'</h2><p>'+u.side.toUpperCase()+' · '+u.cls+' · TIER '+u.tier+'</p></div></div>'+
  '<div class="stats"><div class="stat"><b>'+hp+'/'+u.maxHp+'</b><span>HP</span></div><div class="stat"><b>'+u.ac+'</b><span>AC</span></div><div class="stat"><b>'+u.atk+'</b><span>ATTACK</span></div><div class="stat"><b>d'+u.dmg+'</b><span>WEAPON DIE</span></div></div><div class="hpbar"><i style="width:'+(hp/u.maxHp*100)+'%"></i></div>'+
- '<div class="kv"><div><span>Archetype</span><b>'+u.archetype+'</b></div><div><span>Movement pattern</span><b>'+u.pattern+'</b></div><div><span>Facing</span><b>'+u.facing+'</b></div><div><span>Affinity</span><b>'+u.affinity+'</b></div><div><span>AP</span><b>'+u.ap+'/'+u.apMax+'</b></div><div><span>EA</span><b>'+u.ea+'/'+u.eaMax+'</b></div></div>'+
+ '<div class="kv"><div><span>Archetype</span><b>'+u.archetype+'</b></div><div><span>Nature</span><b>'+(u.nature||"Mortal")+'</b></div><div><span>Movement pattern</span><b>'+u.pattern+'</b></div><div><span>Facing</span><b>'+u.facing+'</b></div><div><span>Affinity</span><b>'+u.affinity+'</b></div><div><span>AP</span><b>'+u.ap+'/'+u.apMax+'</b></div><div><span>EA</span><b>'+u.ea+'/'+u.eaMax+'</b></div></div>'+
  '<h3 style="margin-top:14px">Equipment slots</h3><div class="slots">'+slot("Head",u.head)+slot("Body",u.armor)+slot("Main hand",u.weapon+(u.weaponBonus?" +"+u.weaponBonus:""))+slot("Off hand",u.offhand)+slot("Accessory 1",u.accessory1)+slot("Accessory 2",u.accessory2)+slot("Footwear",u.boots)+slot("Artifact",u.artifact)+'</div>'+
  '<h3 style="margin-top:14px">Technique & triggers</h3><div class="tech"><b>'+u.technique+'</b><small>Class: '+u.cls+' · Archetype: '+u.archetype+' · Technique Tier: '+u.techniqueTier+' · Pattern: '+u.techniquePattern+'</small><p>AP '+u.techniqueCost+' · EA 3 · Uses/day '+u.uses+' · Affinity: '+u.affinity+(u.techniqueDormant?'<br><b>DORMANT</b> — requires Knight movement.':'')+(u.special?'<br>Divine Pursuit is available only while Askar uses the Knight movement pattern.':'')+'</p></div><div class="tech"><b>Trigger: '+u.trigger+'</b><p>Conditional combat response. Trigger resolution is currently a lightweight prototype rule.</p></div>';
 }
