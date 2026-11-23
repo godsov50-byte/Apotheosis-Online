@@ -107,6 +107,7 @@ export function resolveRacialRarity(race, roll) {
   if(!profiles.length)return fail("racial_rarity_profiles_missing");
   if(profiles.some(profile=>!Number.isSafeInteger(profile.weight)||profile.weight<1))return fail("racial_rarity_weights_unconfigured");
   const total=profiles.reduce((sum,profile)=>sum+profile.weight,0);
+  if(!Number.isSafeInteger(total))return fail("racial_rarity_weight_total_out_of_range");
   if(!Number.isSafeInteger(roll)||roll<0||roll>=total)return fail("racial_rarity_roll_out_of_range");
   let cursor=roll;
   for(const profile of profiles){if(cursor<profile.weight)return {ok:true,rarityId:profile.rarityId,profile,totalWeight:total};cursor-=profile.weight;}
@@ -145,9 +146,11 @@ export function createEnvoyFromCreation(input, registry) {
       !Number.isFinite(input.vitality.racialHpFlat ?? 0)) return fail("explicit_vitality_rule_required");
   const raceAttrs=race.attributeModifiers,ancestryAttrs=ancestry?.attributeModifiers||ZERO_ATTRIBUTES,
     subAttrs=subAncestry?.attributeModifiers||ZERO_ATTRIBUTES,rarityAttrs=rarity.attributeModifiers;
-  const stats = addStats(base,raceAttrs,ancestryAttrs,subAttrs,rarityAttrs);
+  const rawStats = addStats(base,raceAttrs,ancestryAttrs,subAttrs,rarityAttrs);
+  const stats = Object.fromEntries(CORE_ATTRIBUTES.map(key=>[key,Math.max(1,rawStats[key])]));
+  const vitalityHpFlat=input.vitality.racialHpFlat??0;
   const hp = Math.floor(input.vitality.base + stats.CON * input.vitality.perConstitution +
-    input.vitality.racialHpFlat + race.hpFlat + (ancestry?.hpFlat||0) +
+    vitalityHpFlat + race.hpFlat + (ancestry?.hpFlat||0) +
     (subAncestry?.hpFlat||0) + rarity.hpFlat);
   if (!Number.isFinite(hp) || hp < 1) return fail("invalid_derived_hp");
   const characterTier = input.characterTier;
@@ -186,7 +189,7 @@ export function createEnvoyFromCreation(input, registry) {
     baseAttributes:base,raceModifiers:raceAttrs,ancestryModifiers:ancestryAttrs,
     subAncestryModifiers:subAttrs,rarityModifiers:rarityAttrs,effectiveAttributes:stats,
     hp:{base:input.vitality.base,constitution:stats.CON,perConstitution:input.vitality.perConstitution,
-      racialFlat:input.vitality.racialHpFlat+race.hpFlat,raceFlat:race.hpFlat,
+      racialFlat:vitalityHpFlat+race.hpFlat,raceFlat:race.hpFlat,
       ancestryFlat:ancestry?.hpFlat||0,subAncestryFlat:subAncestry?.hpFlat||0,
       rarityFlat:rarity.hpFlat,max:hp}
   }};
