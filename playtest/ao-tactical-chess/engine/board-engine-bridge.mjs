@@ -214,7 +214,7 @@ export function resolveBoardMove(field, { actorId, to, legalCells, eventId } = {
 }
 
 export function resolveBoardAttack(field, {
-  attackerId, defenderId, roll, damagePackets, eventId, chart = {}, knockback = false, attackBonus = 0
+  attackerId, defenderId, roll, damagePackets, eventId, chart = {}, knockback = false, attackBonus = 0, breakAmount = 0
 } = {}) {
   const ready = beginBoardAction(field, attackerId);
   if (!ready.ok) return ready;
@@ -239,7 +239,9 @@ export function resolveBoardAttack(field, {
   if (resolved.ok === false) return resolved;
   let next = resolved.field;
   const attackerNow = { ...next.entities[attackerId], accuracy: attacker.accuracy };
-  const defenderNow = next.entities[defenderId];
+  const defenderNow = { ...next.entities[defenderId] };
+  if (breakAmount > 0) defenderNow.defense = { ...(defenderNow.defense || {}), break: finite(defenderNow.defense?.break) + breakAmount };
+  next = { ...next, entities: { ...next.entities, [defenderId]: defenderNow } };
   const targetPosition = { ...defenderBefore.position };
   const dx = targetPosition.x - attacker.position.x, dy = targetPosition.y - attacker.position.y;
   attackerNow.facing = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "E" : "W") : dy ? (dy > 0 ? "S" : "N") : attacker.facing;
@@ -328,7 +330,8 @@ export function resolveBoardTechnique(field, {
     eventId: eventId ? eventId + ":attack" : undefined,
     chart,
     knockback,
-    attackBonus
+    attackBonus,
+    breakAmount: (profile.effects || []).filter(effect=>effect.type==="damage").reduce((sum,effect)=>sum+finite(effect.break),0)
   });
   if (!attack.ok) return { ...attack, field };
   const secondaryEffects = (profile.effects || []).filter(effect=>effect.type!=="damage");
@@ -348,7 +351,7 @@ export function resolveBoardTechnique(field, {
     techniqueId,
     techniqueName: actor.boardTechniqueName,
     techniqueCosts: { ap: actor.boardTechniqueCost, ea: actor.boardTechniqueEaCost },
-    field: attack.field
+    field: resolvedAttack.field
   };
 }
 
