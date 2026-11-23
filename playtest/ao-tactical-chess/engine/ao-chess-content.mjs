@@ -12,10 +12,10 @@ import { createEffectRegistry } from "./effect-pipeline.mjs";
 export const AO_PROVISIONAL_RACIAL_PROFILES = Object.freeze([]);
 export const AO_PROVISIONAL_RARITY_PROFILES = Object.freeze([]);
 export const AO_PROVISIONAL_TECHNIQUES = Object.freeze([
- {id:"field-step",name:"Field Step",tier:9,category:"movement",target:{type:"self"},geometry:{kind:"self"},cost:{ap:1,ea:0},uses:null,cooldown:0,effects:[{type:"attribute_modifier",target:"self",stat:"DEX",amount:1,duration:1,statusId:"field-step"}],tags:["movement"],provisional:true},
- {id:"guard-break",name:"Guard Break",tier:9,category:"combat",target:{type:"enemy"},geometry:{kind:"range",range:1,minRange:1},cost:{ap:2,ea:1},uses:null,cooldown:0,effects:[{type:"damage",packets:[{type:"physical",amount:6,penetration:1}],break:1}],tags:["melee","break"],provisional:true},
- {id:"ember-lance",name:"Ember Lance",tier:8,category:"affinity",affinityRequirements:["Fire"],target:{type:"enemy"},geometry:{kind:"range",range:3,minRange:1,requiresLineOfSight:true},cost:{ap:2,ea:2},uses:3,cooldown:1,effects:[{type:"damage",packets:[{type:"fire",amount:8,affinity:"Fire"}]}],tags:["projectile","fire"],provisional:true},
- {id:"mending-pulse",name:"Mending Pulse",tier:9,category:"support",target:{type:"ally"},geometry:{kind:"range",range:2,minRange:0},cost:{ap:2,ea:2},uses:2,cooldown:1,effects:[{type:"heal",amount:6}],tags:["healing"],provisional:true}
+ {id:"field-step",name:"Field Step",tier:9,category:"movement",target:{type:"self"},geometry:{kind:"self"},cost:{ap:1,ea:0},uses:null,cooldown:0,effects:[{type:"attribute_modifier",target:"self",stat:"DEX",amount:1,duration:1,statusId:"field-step"}],requiredSkills:[{id:"SK33",level:1}],tags:["movement"],provisional:true},
+ {id:"guard-break",name:"Guard Break",tier:9,category:"combat",target:{type:"enemy"},geometry:{kind:"range",range:1,minRange:1},cost:{ap:2,ea:1},uses:null,cooldown:0,effects:[{type:"damage",packets:[{type:"physical",amount:6,penetration:1}],break:1}],requiredSkills:[{id:"SK01",level:1}],tags:["melee","break"],provisional:true},
+ {id:"ember-lance",name:"Ember Lance",tier:8,category:"affinity",affinityRequirements:["Fire"],target:{type:"enemy"},geometry:{kind:"range",range:3,minRange:1,requiresLineOfSight:true},cost:{ap:2,ea:2},uses:3,cooldown:1,effects:[{type:"damage",packets:[{type:"fire",amount:8,affinity:"Fire"}]}],requiredSkills:[{id:"SK27",level:1}],tags:["projectile","fire"],provisional:true},
+ {id:"mending-pulse",name:"Mending Pulse",tier:9,category:"support",target:{type:"ally"},geometry:{kind:"range",range:2,minRange:0},cost:{ap:2,ea:2},uses:2,cooldown:1,effects:[{type:"heal",amount:6}],requiredSkills:[{id:"SK29",level:1}],tags:["healing"],provisional:true}
 ]);
 export const AO_PROVISIONAL_EQUIPMENT = Object.freeze({
  materials:[{id:"field-iron",name:"Field Iron",tags:["metal","crafting"]},{id:"beast-hide",name:"Beast Hide",tags:["leather","crafting"]}],
