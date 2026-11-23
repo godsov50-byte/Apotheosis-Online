@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {createRacialRegistry,createEnvoyFromCreation} from "../engine/character-creation-pipeline.mjs";
+import {createRacialRegistry,createEnvoyFromCreation,resolveRacialRarity} from "../engine/character-creation-pipeline.mjs";
 const registry=createRacialRegistry([{id:"test-lineage",name:"Test Lineage",naturalAffinity:"Fire",attributeModifiers:{STR:2,CON:1},hpFlat:3,modifiers:{defense:{DR:1,resistance:{fire:0.1}}},traits:["night-vision"],racialTechniques:["racial-spark"],rarityProfiles:[{rarityId:"common",attributeModifiers:{DEX:1},hpFlat:2},{rarityId:"rare",attributeModifiers:{ATT:3},hpFlat:5,modifiers:{defense:{DR:2}},traits:["rare-sense"]}]}]);
 const base={STR:10,DEX:10,CON:10,INT:10,WIS:10,CHA:10,ATT:10};
 test("racial and rarity modifiers remain separate and produce HP from explicit vitality rule",()=>{
