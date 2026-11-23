@@ -86,3 +86,17 @@ test("uses, cooldowns and action lock are enforced",()=>{
   const cooled=T.tickTechniqueCooldowns(used.field.entities.envoy);
   assert.equal(cooled.techniqueState.cut.cooldownRemaining,0);
 });
+
+test("turn reset clears action lock and optionally advances cooldowns",()=>{
+  const {field,registry}=fixture();
+  const used=T.resolveTechniqueIntent(field,{actorId:"envoy",techniqueId:"cut",target:{entityId:"foe"}},registry);
+  const reset=T.resetTechniqueTurn(used.field.entities.envoy);
+  assert.equal(reset.acted,undefined);
+  assert.equal(reset.techniqueState.cut.cooldownRemaining,0);
+  assert.equal(T.validateTechniqueIntent({...used.field,entities:{...used.field.entities,envoy:reset},activeSide:"white"},{actorId:"envoy",techniqueId:"cut",target:{entityId:"foe"}},registry).ok,true);
+});
+test("active side and malformed targets are rejected safely",()=>{
+  const {field,registry}=fixture();
+  assert.equal(T.validateTechniqueIntent({...field,activeSide:"black"},{actorId:"envoy",techniqueId:"cut",target:{entityId:"foe"}},registry).reason,"not_active_side");
+  assert.equal(T.validateTechniqueIntent(field,{actorId:"envoy",techniqueId:"cut",target:{}},registry).reason,"target_position_missing");
+});
