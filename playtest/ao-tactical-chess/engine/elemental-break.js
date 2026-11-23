@@ -15,7 +15,7 @@
   const profile=normalizeProfile(targetProfile),resistance=profile.resistances[element];
   const appliedDamage=Math.max(0,Math.floor(rawDamage*(1-resistance/100)));
   const affinityHit=profile.affinities.includes(element),integrityBefore=profile.integrity[element]??null;
-  const integrityDamage=affinityHit?Math.max(0,Math.floor(appliedDamage*affinityDamage)):0;
+  const integrityDamage=affinityHit?Math.min(integrityBefore,Math.max(0,Math.floor(appliedDamage*affinityDamage))):0;
   if(affinityHit)profile.integrity[element]=clamp(integrityBefore-integrityDamage,0,100);
   const generatedBreak=affinityHit?Math.max(0,Math.floor(integrityDamage+breakBuildup)):Math.max(0,Math.floor(breakBuildup));
   profile.breakBuildup=clamp(profile.breakBuildup+generatedBreak,0,10000);
