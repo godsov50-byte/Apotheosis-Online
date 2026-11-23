@@ -197,7 +197,7 @@ export function updateObjectiveState(encounter, objectiveId, nextState, progress
     });
   }
   if (!found) throw new Error(`Objective not found: ${objectiveId}`);
-  return { ...encounter, objectives, history: { ...encounter.history, stateVersion: (encounter.history?.stateVersion ?? 0) + 1 };
+  return { ...encounter, objectives, history: { ...encounter.history, stateVersion: (encounter.history?.stateVersion ?? 0) + 1 } };
 }
 
 export function resolveEncounter(encounter, outcome, conditions = {}) {
