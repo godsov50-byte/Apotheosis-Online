@@ -31,6 +31,7 @@ test("encounter state transitions enforce allowed edges", () => {
   const candidate = seed();
   const evaluating = transitionEncounter(candidate, "evaluating", { id: "e1", type: "begin_evaluation", timestamp: "2026-01-01T00:00:00Z" });
   assert.equal(evaluating.state, "evaluating");
+  assert.equal(evaluating.history.stateVersion, 1);
   assert.throws(() => transitionEncounter(candidate, "active"), /Invalid encounter transition/);
 });
 
@@ -71,5 +72,6 @@ test("objective state updates and encounter resolution are validated", () => {
   const resolved = resolveEncounter(active, "victory", { met: ["hold"], resolvedAt: "2026-01-01T00:00:00Z" });
   assert.equal(resolved.state, "resolved");
   assert.equal(resolved.resolution.outcome, "victory");
+  assert.equal(resolved.history.eventLedger.at(-1).type, "encounter_resolved");
   assert.throws(() => resolveEncounter(record, "victory"), /cannot resolve/);
 });
