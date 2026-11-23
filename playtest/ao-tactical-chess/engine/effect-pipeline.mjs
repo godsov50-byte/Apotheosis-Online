@@ -122,10 +122,16 @@ export function resolveEffectiveAttributes(entity){
 }
 export function resolveEffectiveDefense(entity){
  const base=entity.baseDefense||entity.defense||{},out=clone(base);
- let dr=num(base.DR);
- for(const item of Object.values(entity.equipment||{}))if(item&&item.state!=="broken"&&item.state!=="destroyed")dr+=num(item.modifiers?.DR);
- for(const status of entity.statuses||[])dr+=num(status.modifiers?.DR)*Math.max(1,num(status.stacks,1));
- out.DR=Math.max(0,dr);
+ const layers=[entity.racialModifiers?.defense||{},entity.rarityModifiers?.defense||{}];
+ for(const item of Object.values(entity.equipment||{}))if(item&&item.state!=="broken"&&item.state!=="destroyed")layers.push(item.modifiers||{});
+ for(const status of entity.statuses||[])layers.push(status.modifiers||{});
+ for(const stat of ["AC","DR","armor"])out[stat]=num(base[stat])+layers.reduce((sum,layer)=>sum+num(layer[stat]),0);
+ for(const axis of ["resistance","penetration"]){
+  const merged={...(base[axis]||{})};
+  for(const layer of layers)for(const [kind,value] of Object.entries(layer[axis]||{}))merged[kind]=num(merged[kind])+num(value);
+  out[axis]=merged;
+ }
+ out.DR=Math.max(0,out.DR);
  return out;
 }
 export function tickEntityEffects(entity,{phase="end_turn"}={}){
