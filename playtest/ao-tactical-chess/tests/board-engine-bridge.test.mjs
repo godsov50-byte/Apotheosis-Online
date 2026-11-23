@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import {
   createBoardField,
   resolveBoardMove,
-  resolveBoardAttack,\n  resolveBoardTechnique,
+  resolveBoardAttack,
+  resolveBoardTechnique,
   endBoardTurn,
   projectBoardUnits
 } from "../engine/board-engine-bridge.mjs";
