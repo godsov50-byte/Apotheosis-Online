@@ -16,7 +16,9 @@ A dependency-free browser/Node ESM reference engine. It is a prototype and is **
 - **Layer 12:** sourced encounters, deployment, objectives and delayed reinforcement records.
 - **Layer 13:** rewards with provenance, item refinement, skill/technique progress and tier advancement gates.
 
-The existing Chessboard UI continues to run its older local match rules. The Engine Console is an isolated sandbox; it does not yet replace the match's source of truth.
+The board now uses `board-engine-bridge.mjs` for movement transactions. It converts the existing portrait-token records into engine entities, accepts the board's chess-motion legal-cell set as the movement intent boundary, validates occupancy and active side, and appends local engine ledger events. The bridge deliberately preserves the current playtest rule that basic movement costs no AP and a unit may act more than once in a turn. The UI still owns the provisional movement-pattern display and supplies its candidate legal cells; the bridge is not yet a production Kernel authority.
+
+The Engine Console remains a separate isolated sandbox. Board combat, technique execution, drops, inventory, crafting, and progression have not yet been wired to the board match loop.
 
 Run tests locally with Node: `node --test tests/*.test.mjs`.
 
