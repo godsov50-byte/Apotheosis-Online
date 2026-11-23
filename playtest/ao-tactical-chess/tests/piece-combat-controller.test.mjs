@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   AO_CHESS_CLASSES,
+  getPieceAttackTargets,
   createPieceCombatMatch,
   getPieceLegalMoves,
   movePiece,
@@ -134,4 +135,27 @@ test("side turn handoff resets that side's technique action marker without inven
   assert.equal(next.field.entities.wolf.acted,undefined);
   assert.equal(next.field.entities.wolf.ap.current,6);
   assert.equal(next.field.entities.wolf.ea.current,6);
+});
+
+test("Pawn movement only advances forward and attacks diagonally",()=>{
+  const match=createPieceCombatMatch({pieces:[
+    unit("pawn","white",3,6,{pattern:"Pawn"}),
+    unit("wolf","black",4,5,{kind:"creature",creatureType:"beast",pattern:"King"})
+  ]});
+  const moves=getPieceLegalMoves(match,"pawn");
+  assert.ok(moves.some(p=>p.x===3&&p.y===5));
+  assert.ok(moves.some(p=>p.x===3&&p.y===4));
+  assert.ok(!moves.some(p=>p.x===4&&p.y===5));
+  const targets=getPieceAttackTargets(match,"pawn");
+  assert.deepEqual(targets,["wolf"]);
+});
+
+test("class technique definitions reject cross-class ownership",()=>{
+  assert.throws(()=>createPieceCombatMatch({
+    pieces:[unit("saber","white",1,1),unit("wolf","black",6,6,{kind:"creature",creatureType:"beast"})],
+    techniqueDefinitions:[{
+      id:"cross-class",name:"Cross Class",class:"Saber",
+      classRequirements:["Archer"],target:{type:"enemy"}
+    }]
+  }),/cannot be assigned to another class/);
 });
