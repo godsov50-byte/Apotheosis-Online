@@ -182,6 +182,37 @@ function move(u,x,y){
  finishAction(moved);
 }
 function attack(a,d,useTechnique=false){
+ if(!useTechnique){
+  const roll=rand(20),damageRoll=rand(a.dmg)+a.weaponBonus;
+  const request=new CustomEvent("ao-board-attack",{detail:{
+   attackerId:a.id,defenderId:d.id,roll,
+   damagePackets:[{type:"physical",amount:damageRoll}],
+   knockback:a.weaponEffect==="Knockback",
+   units:units.map(unit=>({...unit}))
+  }});
+  window.dispatchEvent(request);
+  const result=request.detail.result;
+  if(!result||!result.ok){$("dice").innerHTML="<b>Attack rejected by AO engine:</b> "+(result?.reason||"engine bridge unavailable");return;}
+  const from=[a.x,a.y],to=[d.x,d.y];
+  units=request.detail.units;
+  const attacker=units.find(unit=>unit.id===a.id);
+  const defender=units.find(unit=>unit.id===d.id);
+  let story=attacker.name+" attacked "+d.name+". The attack roll was "+roll+" + "+a.atk+" = "+result.total+" against AC "+d.ac+". ";
+  if(result.hit)story+="The strike hit for "+result.damage+" damage after the engine applied applicable defenses.";
+  else story+="The strike missed; the defender's defenses held.";
+  if(result.defeated)story+=" "+d.name+" fell from the board in this playtest encounter. "+attacker.name+" advanced into the vacated square.";
+  else if(result.positionEffect==="knockback")story+=" The heavy impact drove "+d.name+" back to "+coord(defender.x,defender.y)+".";
+  else if(result.hit)story+=" The attacker held position; the target remains in the square.";
+  $("dice").innerHTML="<b>Dice:</b> d20 = "+roll+" · attack bonus = "+a.atk+" · total = "+result.total+" · target AC = "+d.ac+" · "+(result.hit?"HIT · damage "+result.damage:"MISS");
+  lastMove={from,to};
+  narrate("Combat · "+attacker.name,story);
+  if(result.hit&&defender&&defender.trigger==="Guard Counter"&&Math.random()<.35){
+   const cr=rand(20)+defender.atk;
+   if(cr>=attacker.ac){const cd=rand(defender.dmg);attacker.hp=Math.max(0,attacker.hp-cd);narrate("Trigger · Guard Counter",defender.name+" turned the block into a counterattack, rolling "+cr+" against AC "+attacker.ac+" and dealing "+cd+" damage.");}
+  }
+  finishAction(attacker);
+  return;
+ }
  const techniqueCost=a.techniqueCost||2,eaCost=3;
  if(useTechnique&&(a.techniqueDormant||(a.special&&a.pattern!=="Knight"))){$("dice").innerHTML="<b>Technique unavailable:</b> "+a.technique+" requires the Knight movement pattern.";return;}
  if(useTechnique&&(a.ap<techniqueCost||a.ea<eaCost||a.uses<1)){$("dice").innerHTML="<b>Technique unavailable:</b> insufficient AP, EA or daily uses.";return;}
@@ -249,6 +280,20 @@ window.addEventListener('ao-board-move',event=>{
   }
   const result=BoardBridge.resolveBoardMove(boardField,event.detail);
   event.detail.result={ok:result.ok,reason:result.reason};
+  if(result.ok){boardField=result.field;boardRoster=BoardBridge.projectBoardUnits(boardRoster,boardField);event.detail.units=boardRoster.map(u=>({...u}));}
+ }catch(error){event.detail.result={ok:false,reason:error.message};}
+});
+window.addEventListener('ao-board-attack',event=>{
+ try{
+  if(!boardField)throw new Error('board engine is not initialized');
+  if(Array.isArray(event.detail.units)){
+   const priorLedger=boardField.ledger,priorVersion=boardField.version,activeSide=boardField.activeSide,round=boardField.round;
+   boardRoster=event.detail.units.map(u=>({...u}));
+   boardField=BoardBridge.createBoardField(boardRoster,{turn:activeSide,round});
+   boardField={...boardField,ledger:priorLedger,version:priorVersion};
+  }
+  const result=BoardBridge.resolveBoardAttack(boardField,event.detail);
+  event.detail.result={ok:result.ok,reason:result.reason,hit:result.hit,roll:result.roll,total:result.total,damage:result.damage,defeated:result.defeated,positionEffect:result.positionEffect};
   if(result.ok){boardField=result.field;boardRoster=BoardBridge.projectBoardUnits(boardRoster,boardField);event.detail.units=boardRoster.map(u=>({...u}));}
  }catch(error){event.detail.result={ok:false,reason:error.message};}
 });
