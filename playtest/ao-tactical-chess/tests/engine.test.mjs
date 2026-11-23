@@ -25,4 +25,4 @@ import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
-test('Engine Console inline module parses',()=>{const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');const scripts=[...html.matchAll(/<script type="module">([\s\S]*?)<\/script>/g)];assert.ok(scripts.length>=1);const dir=mkdtempSync(join(tmpdir(),'ao-chess-ui-'));try{const file=join(dir,'console.mjs');writeFileSync(file,scripts.at(-1)[1]);execFileSync(process.execPath,['--check',file]);}finally{rmSync(dir,{recursive:true,force:true});}});
+test('Engine Console inline module parses',()=>{const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');const start=html.lastIndexOf('<script type="module">');const end=html.indexOf('</script>',start);assert.ok(start>=0&&end>start);const dir=mkdtempSync(join(tmpdir(),'ao-chess-ui-'));try{const file=join(dir,'console.mjs');writeFileSync(file,html.slice(start+('<script type="module">'.length),end));execFileSync(process.execPath,['--check',file]);}finally{rmSync(dir,{recursive:true,force:true});}});
