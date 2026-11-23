@@ -176,34 +176,78 @@ export function resolveBoardMove(field, { actorId, to, legalCells, eventId } = {
 }
 
 export function resolveBoardAttack(field, {
-  attackerId, defenderId, roll, damagePackets, eventId, chart = {}
+  attackerId, defenderId, roll, damagePackets, eventId, chart = {}, knockback = false
 } = {}) {
   const ready = beginBoardAction(field, attackerId);
   if (!ready.ok) return ready;
+  const attacker = ready.field.entities[attackerId];
+  const defenderBefore = ready.field.entities[defenderId];
+  if (!defenderBefore?.alive || defenderBefore.side === attacker.side) return { ok: false, reason: "invalid_target" };
+  if (!isBoardMotionLegal(ready.field, attacker, defenderBefore.position)) return { ok: false, reason: "illegal_attack_geometry" };
+  if (!Number.isInteger(roll) || roll < 1 || roll > 20) return { ok: false, reason: "invalid_attack_roll" };
+  if (!Array.isArray(damagePackets) || damagePackets.length === 0) return { ok: false, reason: "damage_packets_required" };
   const id = eventId || `board-attack-${ready.field.version}-${attackerId}-${defenderId}`;
-  // Core attack validation, hit resolution, damage defenses and ledger event
-  // are delegated to the shared engine resolver. Costs remain zero here to
-  // preserve the current board prototype's free basic-attack rule.
+  // Basic attacks preserve the prototype's free AP/EA rule while delegating
+  // hit, defense, damage and combat-ledger resolution to the shared engine.
   const resolved = resolveAttack(ready.field, {
     attackerId, defenderId, roll,
     apCost: 0, eaCost: 0, staminaCost: 0,
-    damagePackets: damagePackets || [],
+    damagePackets,
     eventId: id + ":commit",
     resolveEventId: id
   }, { roll, chart });
   if (resolved.ok === false) return resolved;
-  let next = finishBoardAction(resolved.field, attackerId);
-  const defender = next.entities[defenderId];
-  if (defender && !defender.alive) {
-    const cells = { ...next.cells };
+  let next = resolved.field;
+  const attackerNow = { ...next.entities[attackerId] };
+  const defenderNow = next.entities[defenderId];
+  const targetPosition = { ...defenderBefore.position };
+  const dx = targetPosition.x - attacker.position.x, dy = targetPosition.y - attacker.position.y;
+  attackerNow.facing = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "E" : "W") : dy ? (dy > 0 ? "S" : "N") : attacker.facing;
+  let cells = { ...next.cells };
+  let positionEffect = "held";
+  if (!defenderNow.alive) {
     for (const [key, cell] of Object.entries(cells)) {
       if ((cell.entities || []).includes(defenderId)) cells[key] = { ...cell, entities: cell.entities.filter(x => x !== defenderId) };
     }
-    next = { ...next, cells };
+    const oldKey = cellKey(attackerNow.position), oldCell = cells[oldKey] || { entities: [] };
+    cells[oldKey] = { ...oldCell, entities: (oldCell.entities || []).filter(x => x !== attackerId) };
+    const targetKey = cellKey(targetPosition), targetCell = cells[targetKey] || { blocked: false, opaque: false, entities: [], terrain: "plain", cover: 0 };
+    cells[targetKey] = { ...targetCell, entities: [...(targetCell.entities || []).filter(x => x !== defenderId), attackerId] };
+    attackerNow.position = targetPosition;
+    positionEffect = "capture_advance";
+  } else if (resolved.hit && knockback) {
+    const push = { x: targetPosition.x + Math.sign(dx), y: targetPosition.y + Math.sign(dy), z: targetPosition.z || 0 };
+    const occupied = Object.values(next.entities).some(e => e.alive && e.id !== defenderId && e.position.x === push.x && e.position.y === push.y);
+    if (push.x >= 0 && push.y >= 0 && push.x < next.width && push.y < next.height && !occupied && canOccupy(next, defenderNow, push).ok) {
+      const oldKey = cellKey(defenderNow.position), oldCell = cells[oldKey] || { entities: [] };
+      cells[oldKey] = { ...oldCell, entities: (oldCell.entities || []).filter(x => x !== defenderId) };
+      const pushKey = cellKey(push), pushCell = cells[pushKey] || { blocked: false, opaque: false, entities: [], terrain: "plain", cover: 0 };
+      cells[pushKey] = { ...pushCell, entities: [...(pushCell.entities || []), defenderId] };
+      next = { ...next, entities: { ...next.entities, [defenderId]: { ...defenderNow, position: push } } };
+      positionEffect = "knockback";
+    }
   }
-  return { ...resolved, field: next, entity: clone(next.entities[attackerId]), defeated: !next.entities[defenderId]?.alive };
+  next = {
+    ...next,
+    cells,
+    entities: { ...next.entities, [attackerId]: attackerNow }
+  };
+  if (positionEffect !== "held") {
+    next = emitEvent(next, {
+      id: id + ":position",
+      type: positionEffect === "capture_advance" ? "board_capture_advance" : "board_knockback_resolved",
+      attackerId, defenderId, position: positionEffect === "capture_advance" ? targetPosition : next.entities[defenderId].position
+    });
+  }
+  next = finishBoardAction(next, attackerId);
+  return {
+    ...resolved,
+    field: next,
+    entity: clone(next.entities[attackerId]),
+    defeated: !next.entities[defenderId]?.alive,
+    positionEffect
+  };
 }
-
 
 export function endBoardTurn(field, nextSide) {
   if (!["white", "black"].includes(nextSide)) throw new Error("invalid next side");
