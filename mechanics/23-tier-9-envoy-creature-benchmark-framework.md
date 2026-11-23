@@ -43,20 +43,29 @@ Suggested record shape (field names are provisional until aligned with the autho
 benchmark:
   id: <stable_benchmark_id>
   status: proposed
+  version: <profile_version>
   tier: 9
   envoy:
     id: <envoy_id>
     identity:
       name: <name>
+      title: <title_or_null>
       race: <race_id>
       ancestry: <ancestry_id>
       sub_ancestry: <sub_ancestry_id_or_null>
-      being_type: <being_type_id>
+      sex: <sourced_value_or_unknown>
+      age: <sourced_value_or_unknown>
+      origin: <origin_record_or_unknown>
+      affiliation: <affiliation_record_or_unknown>
+    classification:
+      tier: 9
+      class: <envoy_class_id>
+      archetype: <archetype_or_unknown>
+      nature_type: <being_type_id>
       subtype: <subtype_id_or_null>
       scale: <scale_id_or_value>
-    combat:
-      class: <envoy_class_id>
-      attributes:
+    attributes:
+      base:
         STR: <sourced_value>
         DEX: <sourced_value>
         CON: <sourced_value>
@@ -64,17 +73,40 @@ benchmark:
         WIS: <sourced_value>
         CHA: <sourced_value>
         ATT: <sourced_value>
+      inherited_modifiers: []
+      equipment_modifiers: []
+      temporary_modifiers: []
+      effective: <derived_by_authoritative_rules>
+    combat_values:
+      HP: <sourced_or_derived_value>
+      AP: <sourced_or_derived_value>
+      EA_reserves: []
+      AC: <sourced_or_derived_value>
+      DR: <sourced_or_derived_value>
+      damage_resistance: []
+      penetration: []
+      Break: <sourced_or_derived_value>
+    capabilities:
+      skills: []
+      techniques: []
       affinities:
         owned: []
         accessible: []
         active_for_test: []
         composite: []
-      skills: []
-      techniques: []
-      equipment:
+      proficiencies:
         weapons: []
         armor: []
         shields: []
+      movement_pattern: <declared_pattern>
+      reactions: []
+    equipment:
+      weapons: []
+      armor: []
+      shields: []
+      other: []
+    possessions: []
+    chess:
       piece_mode: <declared_mode>
       facing: <declared_facing>
   coverage:
@@ -83,6 +115,7 @@ benchmark:
     compatibility_evidence: []
   paired_counter_creature_id: <creature_id>
   test_scenarios: []
+  chronicle_reference: <record_or_unknown>
   unresolved_fields: []
 ```
 
