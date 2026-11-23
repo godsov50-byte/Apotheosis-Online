@@ -55,3 +55,8 @@ The test resolver is `engine/elemental-break.js`. Elemental techniques are selec
 ### Racial elemental synergy prototype
 
 The separate module `engine/racial-elemental-synergy.js` models racial alignment as an advantage rather than a restriction: aligned elemental techniques gain 50% more technique XP (10 base + 5 aligned bonus) and +10% damage in this playtest, rounded down. Non-aligned elements remain usable and earn baseline XP. Elemental technique XP is tracked per element; mastery is derived from accumulated XP using a placeholder quadratic threshold. The White King test profile demonstrates Fire alignment only and is **test-only, not a canon race**. Values are provisional and should be balanced before canon approval. Run the tests with `node engine/racial-elemental-synergy.test.js`.
+
+
+### Heirloom technique damage axes prototype
+
+Technique damage can be enhanced independently through three Heirloom axes: elemental alignment (+10% when the Heirloom element matches the technique and the target has negative resistance), compatible weapon type (+5%), and quality (+2% per quality level above level 1, capped at level 5). These values are provisional demonstration settings, not AO canon. A test-only Emberbound Greatsword profile on Askar demonstrates the integration. The resolver tests can be run with `node engine/heirloom-technique-damage.test.js` from this directory.
