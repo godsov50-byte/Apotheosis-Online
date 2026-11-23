@@ -29,6 +29,8 @@ test('First Haven module script parses as browser JavaScript', () => {
   const html = fs.readFileSync(new URL('../first-haven.html', import.meta.url), 'utf8');
   const match = html.match(/<script type="module">([\s\S]*?)<\/script>/);
   assert.ok(match, 'First Haven module script exists');
+  assert.doesNotMatch(html, /innerHTML\\s*=\\s*["'][^"']+["']/,
+    'dynamic entity and inventory text must never be parsed as HTML');
   const checked = spawnSync(process.execPath, ['--check', '--input-type=module'], {
     input: match[1], encoding: 'utf8'
   });
