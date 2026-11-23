@@ -33,7 +33,8 @@ jobs:
           mkdir -p site
           cp geography/ao-city-console.html site/index.html
           mkdir -p site/tactical-chess
-          cp playtest/ao-tactical-chess/index.html site/tactical-chess/board.html\n          cp playtest/ao-tactical-chess/site-shell.html site/tactical-chess/index.html
+          cp playtest/ao-tactical-chess/index.html site/tactical-chess/board.html
+          cp playtest/ao-tactical-chess/site-shell.html site/tactical-chess/index.html
           mkdir -p site/first-haven
           cp playtest/ao-tactical-chess/first-haven.html site/first-haven/index.html
           cp -R playtest/ao-tactical-chess/engine site/first-haven/engine
