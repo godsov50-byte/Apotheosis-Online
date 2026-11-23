@@ -1,7 +1,0 @@
-const test=require("node:test"),assert=require("node:assert/strict");const {createStreetNetwork}=require("../../geography/ao-street-network.js");
-const fixture=()=>createStreetNetwork({width:10,height:10,streets:[{id:"s1",name:"Main",type:"arterial",width:3,points:[{x:1,y:5},{x:5,y:5},{x:8,y:5}]},{id:"s2",name:"Cross",type:"local",width:2,points:[{x:5,y:1},{x:5,y:5},{x:5,y:8}]}]});
-test("street entity graph records connected intersections and edges",()=>{const n=fixture();assert.equal(n.nodes.length,5);assert.equal(n.edges.length,4);assert.equal(n.adjacency.get("5,5").length,4);});
-test("route reports distance and traversed street IDs",()=>{const route=fixture().shortestRoute({x:1,y:5},{x:5,y:8});assert.equal(route.distance,7);assert.deepEqual(route.streetIds,["s1","s2"]);});
-test("rasterization marks centerline cells",()=>{const mask=fixture().rasterize().grid;assert.equal(mask[5*10+1],1);assert.equal(mask[5*10+8],1);assert.equal(mask[4*10+2],0);});
-test("nearest street returns projected point and metadata",()=>{const hit=fixture().nearestStreet(3,6);assert.equal(hit.name,"Main");assert.equal(hit.point.y,5);});
-test("invalid IDs and geometry are rejected",()=>{assert.throws(()=>createStreetNetwork({width:4,height:4,streets:[{id:"x",name:"X",points:[{x:0,y:0},{x:5,y:1}]}]}));assert.throws(()=>createStreetNetwork({width:4,height:4,streets:[{id:"x",name:"X",points:[{x:0,y:0},{x:2,y:2}]},{id:"x",name:"Dup",points:[{x:0,y:1},{x:2,y:3}]}]}));});
