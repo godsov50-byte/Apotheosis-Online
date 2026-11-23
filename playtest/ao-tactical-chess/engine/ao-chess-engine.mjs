@@ -16,6 +16,7 @@ export function createEntity(x){
   position:{...x.position,z:x.position?.z||0},facing:x.facing||"N",footprint:x.footprint||{w:1,h:1},
   baseAttributes:cp(x.baseAttributes||stats),stats,
   racialAttributeModifiers:cp(x.racialAttributeModifiers||{}),rarityAttributeModifiers:cp(x.rarityAttributeModifiers||{}),
+  racialModifiers:cp(x.racialModifiers||{}),rarityModifiers:cp(x.rarityModifiers||{}),
   hp:{current:hp,max:x.maxHp||hp},ap:{current:n(x.ap,8),max:n(x.maxAp,8),reserved:0},
   ea:{current:n(x.ea,8),max:n(x.maxEa,8),reserved:0,affinities:x.affinities||(x.naturalAffinity?[x.naturalAffinity]:[])},
   stamina:{current:n(x.stamina,100),max:n(x.maxStamina,100),fatigue:0},
