@@ -24,4 +24,5 @@
     return {aligned,element:e,xpGained,totalXp,mastery:masteryLevel(totalXp),nextLevelXp:nextLevelXp(masteryLevel(totalXp)),damageBonus,finalDamage:baseDamage+damageBonus};
   }
   root.AORacialElementalSynergy={ELEMENTS,normalizeRaceProfile,masteryLevel,nextLevelXp,applyTechniqueUse,config:{xpPerUse:XP_PER_USE,alignedXpBonus:ALIGNED_XP_BONUS,alignedDamageBonus:ALIGNED_DAMAGE_BONUS}};
-})(window);
+})(typeof window!=="undefined"?window:globalThis);
+if(typeof module!=="undefined"&&module.exports) module.exports=globalThis.AORacialElementalSynergy;
