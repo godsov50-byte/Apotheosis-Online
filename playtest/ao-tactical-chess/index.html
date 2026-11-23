@@ -154,7 +154,7 @@ function attack(a,d,useTechnique=false){
  } else story=a.name+(useTechnique?" used "+a.technique+" against ":" lunged at ")+d.name+", but the attack roll of "+roll+" + "+a.atk+" = "+total+" failed to overcome AC "+d.ac+". The technique's resources were still spent.";
  if(d.hp<=0){story+=" "+d.name+" fell from the board. This is a playtest defeat, not a statement about their wider AO fate.";units=units.filter(u=>u!==d);}
  $("dice").innerHTML="<b>Dice:</b> d20 = "+roll+" · attack bonus = "+a.atk+" · total = "+total+" · target AC = "+d.ac+" · "+(hit?"HIT · damage "+damage:"MISS")+(useTechnique?" · technique cost "+techniqueCost+" AP / "+eaCost+" EA":"");
- lastMove={from,to};faceToward(a,to[0],to[1]);a.x=to[0];a.y=to[1];
+ lastMove={from,to};faceToward(a,to[0],to[1]);if(d.hp<=0){a.x=to[0];a.y=to[1];}else{story+=" The attacker held position; the target remains in the square."; }
  narrate("Combat · "+a.name,story);
  if(hit&&d.hp>0&&d.trigger==="Guard Counter"&&Math.random()<.35){let cr=rand(20)+d.atk;if(cr>=a.ac){let cd=rand(d.dmg);a.hp=Math.max(0,a.hp-cd);narrate("Trigger · Guard Counter",d.name+" turned the block into a counterattack, rolling "+cr+" against AC "+a.ac+" and dealing "+cd+" damage.");}}
  finishAction(a);
