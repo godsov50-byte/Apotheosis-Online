@@ -89,3 +89,10 @@ The generated Envoy uses a generic unclassified playtest shell, not an approved 
 - Side handoff resets the incoming side's technique action state but deliberately does not assume unapproved AP/EA recovery rules.
 
 The controller is a reusable engine layer, not yet the final multi-piece browser interface. The existing First Haven page remains its separate single-Envoy scenario while the controller receives regression coverage. Technique names, numerical costs, effect values, class balance, and creature data must come from approved encounter definitions; no new canon is seeded here.
+
+
+## Multi-piece AO Chess training arena
+
+Open `piece-arena.html` in a modern browser to play the multi-piece training scenario. It places all ten basic classes on one side against ten training creatures, with independent positions and chess-motion patterns. Select a piece, move to legal cells, attack reachable creatures, choose its class-owned practice technique, and equip/unequip its training weapon. End turn runs one creature action for each living creature before returning control to the Envoy side.
+
+The arena's class practice techniques, damage, costs, usage limits, weapon bonuses, creature stats, and movement assignments are temporary training fixtures only. They demonstrate the class-specific technique and equipment pipelines; they are not AO canon. The board is local/browser-only and does not connect to WorldHeart, Supabase, or production Kernel history.
