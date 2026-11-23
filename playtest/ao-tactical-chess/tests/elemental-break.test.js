@@ -2,7 +2,7 @@ const assert=require("node:assert/strict");
 const {resolveElementalHit,normalizeProfile}=require("../engine/elemental-break.js");
 const profile={raceId:"demo",label:"Test Profile",affinities:["fire","earth"],resistances:{fire:25,ice:-20},integrity:{fire:50,earth:100},breakThreshold:100};
 const h1=resolveElementalHit({element:"fire",rawDamage:100,targetProfile:profile,affinityDamage:1,breakBuildup:10});
-assert.equal(h1.appliedDamage,75);assert.equal(h1.affinityHit,true);assert.equal(h1.integrityDamage,75);assert.equal(h1.integrityAfter,0);assert.equal(h1.breakGenerated,85);assert.equal(h1.broken,false);
+assert.equal(h1.appliedDamage,75);assert.equal(h1.affinityHit,true);assert.equal(h1.integrityDamage,50);assert.equal(h1.integrityAfter,0);assert.equal(h1.breakGenerated,60);assert.equal(h1.broken,false);
 const h2=resolveElementalHit({element:"fire",rawDamage:40,targetProfile:h1.profile,breakBuildup:10});assert.equal(h2.integrityDamage,0);assert.equal(h2.breakGenerated,10);
 const h3=resolveElementalHit({element:"ice",rawDamage:100,targetProfile:h2.profile,breakBuildup:20});assert.equal(h3.appliedDamage,120);assert.equal(h3.breakGenerated,20);
 const h4=resolveElementalHit({element:"earth",rawDamage:20,targetProfile:h3.profile,breakBuildup:10});assert.equal(h4.broken,true);assert.equal(h4.justBroken,true);
