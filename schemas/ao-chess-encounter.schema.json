@@ -1,0 +1,25 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"AO Chess Encounter Prototype",
+  "type":"object",
+  "required":["id","origin","state","participants","objectives"],
+  "properties":{
+    "id":{"type":"string","minLength":1},
+    "state":{"enum":["dormant","candidate","evaluating","registered","preparing","active","escalating","paused","suspended","resolved","failed","terminated","persisting"]},
+    "origin":{"type":"object","required":["sourceRef"],"properties":{"sourceRef":{"type":"string"},"kind":{"type":"string"},"eventId":{"type":["string","null"]},"originId":{"type":["string","null"]},"trigger":{"type":["string","null"]},"observedBy":{"type":["string","null"]}},"additionalProperties":true},
+    "scale":{"type":"string"},
+    "participants":{"type":"array","items":{"type":"string"},"uniqueItems":true},
+    "deploymentZones":{"type":"object"},
+    "objectives":{"type":"array","items":{"type":"object","required":["id","state"],"properties":{"id":{"type":"string"},"state":{"enum":["hidden","unknown","available","discovered","active","contested","progressing","paused","completed","failed","destroyed","expired"]},"required":{"type":"boolean"}},"additionalProperties":true}},
+    "waves":{"type":"array"},
+    "reinforcementRules":{"type":"array"},
+    "reinforcements":{"type":"array"},
+    "environment":{"type":"object"},
+    "threatAssessment":{"type":"object"},
+    "persistence":{"type":"object"},
+    "rewardRules":{"type":"array"},
+    "resolution":{"type":["object","null"]},
+    "ledger":{"type":"array"}
+  },
+  "additionalProperties":true
+}

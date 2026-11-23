@@ -43,3 +43,11 @@ After the feature branch is merged, the Pages workflow publishes the board at:
 - Chess-pattern movement is the prototype's tactical movement model, not the full continuous-space AO spatial engine.
 
 All changes are isolated on the feature branch until reviewed and merged.
+
+
+## AO Chess engine sandbox — Layers 1–13
+
+The page includes an Engine Console sandbox for the new reference engine. It can initialize an independent field, launch/advance a projectile toward a blocking wall, run perception/AI, and advance a world tick. The core module lives at `engine/ao-chess-engine.mjs`; regression tests are in `tests/engine.test.mjs` and encounter records have a JSON schema at `../../schemas/ao-chess-encounter.schema.json`.
+
+
+**Important:** the existing board match still uses its original local rules. The sandbox does not yet replace that match loop or connect to WorldHeart/Supabase. The engine is a working prototype with incomplete advanced physics and rules; see its README for boundaries.

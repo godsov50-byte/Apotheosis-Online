@@ -68,3 +68,8 @@ See `mechanics/17-unresolved-decisions-register.md` for the full list.
 The separate `mechanics/20-chessboard-elemental-axes-proposal.md` captures a proposed eight-element counter cycle plus Light and Shadow on a special axis. It is not canon or a replacement for the creator-deferred affinity/weakness source records.
 
 The `mechanics/23-tier-9-envoy-creature-benchmark-framework.md` establishes the benchmark record shapes, class-counter pairings, ten provisional creature design briefs, coverage rules, test protocol, and explicit source blockers. It does not invent missing race, type, affinity, or composite-affinity rosters.
+
+
+## AO Chess Engine — Layers 1–13
+
+The tactical Chess playtest now contains a modular reference engine prototype covering entity/grid basics, skills and synergies, affinity/defense, action validation, techniques, projectiles, ranged/melee gates, resource handling, tactical AI perception, encounter objectives/reinforcement scheduling, item refinement, harvesting/crafting, rewards and influence. The implementation and limits are documented under `playtest/ao-tactical-chess/engine/README.md`. This remains isolated from production Kernel and WorldHeart persistence.

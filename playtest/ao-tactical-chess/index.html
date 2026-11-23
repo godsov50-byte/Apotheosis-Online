@@ -51,6 +51,16 @@ button,select{font:inherit;color:var(--ink);background:#233447;border:1px solid 
   <p class="sub" style="margin:10px 2px 0">Select a token, then a highlighted square to move. Select an opposing token on a legal attack square to resolve a d20 attack against AC. Facing follows movement; rotate it manually when needed.</p>
  </div>
  <div class="dicebox" id="dice"><b>Dice:</b> No roll yet. Attacks use d20 + attack bonus vs. AC; damage uses the weapon's damage die.</div>
+
+ <section class="panel" id="ao-engine-console" style="margin-top:14px">
+  <div class="panelhead"><h2>AO Chess Engine Console · Layers 1–13</h2><span class="sub">Sandbox engine</span></div>
+  <div style="padding:14px 16px">
+   <p class="sub" style="margin-top:0">This console runs the new reference engine in an isolated sandbox. It does not yet replace the chessboard's original match logic.</p>
+   <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0"><button class="small" id="aoEngineReset">Initialize sandbox</button><button class="small" id="aoProjectileStart">Launch projectile demo</button><button class="small" id="aoProjectileStep">Advance projectile</button><button class="small" id="aoAiObserve">AI perception & plan</button><button class="small" id="aoWorldTick">Advance world tick</button></div>
+   <div id="aoEngineStatus" style="border:1px solid var(--line);border-radius:9px;padding:10px;color:var(--muted);font-size:12px">Engine not initialized.</div>
+   <pre id="aoEngineLog" style="white-space:pre-wrap;overflow-wrap:anywhere;background:#080d13;border:1px solid var(--line);border-radius:9px;padding:10px;max-height:260px;overflow:auto;font-size:11px;margin-top:10px">No engine actions recorded.</pre>
+  </div>
+ </section>
 </section>
 <aside class="side">
  <section class="panel wide"><div class="panelhead"><h2>Character dossier</h2><span class="sub" id="squareLabel">Select a token</span></div><div class="section" id="profile"><div class="empty">Choose any character on the board to inspect their profile, combat statistics, equipment and techniques.</div></div></section>
@@ -169,5 +179,21 @@ $("endTurn").addEventListener("click",changeTurn);
 $("reset").addEventListener("click",setup);
 setup();
 })();
+</script>
+
+<script type="module">
+import * as AO from './engine/ao-chess-engine.mjs';
+let sandbox=null, activeProjectile='demo-arrow', logLines=[];
+const byId=id=>document.getElementById(id);
+function log(msg){logLines.unshift(msg);logLines=logLines.slice(0,16);byId('aoEngineLog').textContent=logLines.join('\n');}
+function render(){if(!sandbox)return;const f=sandbox.state;const p=f.projectiles[activeProjectile];byId('aoEngineStatus').innerHTML='<b>Engine status:</b> Initialized · '+Object.keys(AO.AO_LAYERS).length+' layers exposed · '+Object.keys(f.entities).length+' entities · tick '+f.tick+' · state version '+f.version+'<br><b>Projectile:</b> '+(p?p.state+' @ ('+p.position.x+','+p.position.y+','+(p.position.z??0)+')':'not launched')+' · <b>Event ledger:</b> '+f.ledger.length+' entries';}
+function reset(){let f=AO.createBattlefield({width:8,height:8,layers:1});f=AO.setCell(f,{x:4,y:2},{terrain:'stone wall',blocked:true,projectileBlocking:true,opaque:true});f=AO.placeEntity(f,AO.createEntity({id:'demo-archer',name:'Sandbox Archer',side:'white',class:'Archer',position:{x:1,y:2},hp:28,ap:8,ea:8,stats:{ATT:5},accuracy:{base:1},defense:{AC:12,DR:0,resistance:{},penetration:{}}}));f=AO.placeEntity(f,AO.createEntity({id:'demo-target',name:'Sandbox Target',side:'black',class:'Saber',position:{x:6,y:2},hp:20,ap:8,ea:6,stats:{ATT:4},defense:{AC:10,DR:1,resistance:{},penetration:{}}}));f=AO.placeEntity(f,AO.createEntity({id:'demo-scout',name:'Visible Scout',side:'black',class:'Assassin',position:{x:2,y:4},hp:15,ap:6,ea:4,stats:{ATT:3},defense:{AC:11,DR:0,resistance:{},penetration:{}}}));sandbox=AO.createAOChessEngine(f);activeProjectile='demo-arrow';logLines=[];byId('aoEngineLog').textContent='Sandbox initialized. Terrain at (4,2) is a projectile-blocking wall.';render();}
+function startProjectile(){if(!sandbox)reset();const f=sandbox.state;const p=AO.createProjectile({id:activeProjectile,sourceId:'demo-archer',classifications:['physical','ammunition'],position:{x:1,y:2},origin:{x:1,y:2},destination:{x:6,y:2},trajectory:'straight',movement:{speed:2,tracking:false,homing:false},combat:{damagePackets:[{type:'physical',amount:8}],break:1,penetration:{},integrity:1,special:[]},collisionRules:{collideEntities:true,collideTerrain:true,collideProjectiles:true,pierce:false,ricochet:false},rangeRemaining:8,lifetime:5});sandbox.launch(p);log('Projectile launched: demo-arrow from (1,2) toward (6,2), speed 2 cells/tick.');render();}
+byId('aoEngineReset').addEventListener('click',reset);
+byId('aoProjectileStart').addEventListener('click',startProjectile);
+byId('aoProjectileStep').addEventListener('click',()=>{if(!sandbox)reset();if(!sandbox.state.projectiles[activeProjectile])startProjectile();try{const step=sandbox.projectileTick(activeProjectile);log('Flight step: traversed '+JSON.stringify(step.path)+'; outcome '+step.outcome+'; collision '+JSON.stringify(step.collision));}catch(e){log('Projectile step rejected: '+e.message);}render();});
+byId('aoAiObserve').addEventListener('click',()=>{if(!sandbox)reset();const scan=sandbox.perceive('demo-archer',{range:8});const plan=sandbox.ai('demo-archer',{profile:'balanced'});log('AI perception: '+scan.visible.join(', ')+'; selected intent: '+JSON.stringify(plan.selectedIntent));render();});
+byId('aoWorldTick').addEventListener('click',()=>{if(!sandbox)reset();const tick=sandbox.tick();log('World simulation tick advanced to '+tick.tick+'; no combat outcome or reward was generated.');render();});
+reset();
 </script>
 </body></html>
