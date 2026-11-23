@@ -1,0 +1,36 @@
+name: Chessboard elemental Break tests
+on:
+  pull_request:
+    paths:
+      - 'playtest/ao-tactical-chess/**'
+  push:
+    branches:
+      - main
+      - 'feature/**'
+    paths:
+      - 'playtest/ao-tactical-chess/**'
+jobs:
+  elemental-break:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run elemental affinity and Break tests
+        working-directory: playtest/ao-tactical-chess
+        run: node tests/elemental-break.test.js
+      - name: Syntax-check embedded Chessboard script
+        run: |
+          python - <<'PY'
+          import re
+          from pathlib import Path
+          html = Path("playtest/ao-tactical-chess/index.html").read_text()
+          inline = re.findall(r'<script[^>]*>(.*?)</script>', html, re.S)
+          if not inline:
+              raise SystemExit("No inline script found")
+          Path("/tmp/chessboard-inline.js").write_text(inline[-1])
+          PY
+          node --check /tmp/chessboard-inline.js
+      - name: Check elemental engine syntax
+        run: node --check playtest/ao-tactical-chess/engine/elemental-break.js
