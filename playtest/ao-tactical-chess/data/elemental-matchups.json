@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "status": "proposed",
+  "cycle": [
+    "fire",
+    "wood",
+    "earth",
+    "lightning",
+    "water",
+    "ice",
+    "wind",
+    "metal"
+  ],
+  "advantageOffset": [
+    1,
+    2
+  ],
+  "disadvantageOffset": [
+    -1,
+    -2
+  ],
+  "lightShadowAxis": {
+    "members": [
+      "light",
+      "shadow"
+    ],
+    "relationship": "special_axis; no automatic matchup modifier"
+  }
+}
