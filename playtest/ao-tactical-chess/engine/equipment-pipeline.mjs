@@ -264,8 +264,10 @@ export function validateEquipmentAction(entity, item, { action = "equip", slot =
   if (action === "equip") {
     if (!slot || !item.equipmentSlot || slot !== item.equipmentSlot) return fail("equipment_slot_mismatch");
     if (item.state === "broken") return fail("equipment_broken");
-    if (item.compatibleClasses.length && !item.compatibleClasses.includes(entity.class)) return fail("class_incompatible");
-    if (item.compatibleRaces.length && !item.compatibleRaces.includes(entity.raceId || entity.race)) return fail("race_incompatible");
+    const compatibleClasses=item.compatibleClasses||[];
+    const compatibleRaces=item.compatibleRaces||[];
+    if (compatibleClasses.length && !compatibleClasses.includes(entity.class)) return fail("class_incompatible");
+    if (compatibleRaces.length && !compatibleRaces.includes(entity.raceId || entity.race)) return fail("race_incompatible");
     if (item.requiredTier != null && num(entity.tier, Infinity) > item.requiredTier) return fail("tier_requirement");
   }
   return { ok: true };
