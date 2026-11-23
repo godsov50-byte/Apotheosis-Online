@@ -86,7 +86,19 @@
           "maximum": 100
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "required": [
+        "fire",
+        "water",
+        "earth",
+        "wind",
+        "lightning",
+        "ice",
+        "wood",
+        "metal",
+        "light",
+        "shadow"
+      ]
     },
     "integrity": {
       "type": "object",
