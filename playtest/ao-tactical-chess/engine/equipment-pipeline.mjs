@@ -6,6 +6,7 @@
 const clone = value => structuredClone(value);
 const num = (v, d = 0) => Number.isFinite(v) ? v : d;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+import { resolveEffectBatch } from "./effect-pipeline.mjs";
 const ITEM_CATEGORIES = Object.freeze(["Regular Item", "Heirloom", "Conceptual Heirloom", "Cursed Conceptual Heirloom"]);
 const key = p => `${p.x},${p.y},${p.z || 0}`;
 const fail = (reason, extra = {}) => ({ ok: false, reason, ...extra });
@@ -37,6 +38,7 @@ export function createItemDefinition(definition) {
     compatibleRaces: [...(definition.compatibleRaces || [])],
     requiredTier: definition.requiredTier ?? null,
     properties: clone(definition.properties || {}),
+    effects: clone(definition.effects || []),
     modifiers: clone(definition.modifiers || {}),
     durability: definition.durability == null ? null : {
       current: num(definition.durability.current, definition.durability.max),
@@ -136,7 +138,8 @@ function validateRecipe(field, intent, registry) {
   if (recipe.raceRequirements.length && !recipe.raceRequirements.includes(actor.race)) return fail("race_requirement");
   if (recipe.tierRequirement != null && num(actor.tier, Infinity) > recipe.tierRequirement) return fail("tier_requirement");
   if (recipe.skill) {
-    const level = num(actor.skills?.[recipe.skill.id]?.level);
+    const level = num(actor.skills?.[recipe.skill.id]?.effectiveLevel,
+      num(actor.skills?.[recipe.skill.id]?.learnedLevel, num(actor.skills?.[recipe.skill.id]?.level)));
     if (level < num(recipe.skill.level)) return fail("crafting_skill_requirement", { required: recipe.skill.level, actual: level });
   }
   if (!hasStation(field, recipe.stationTags, actor)) return fail("required_station_missing");
@@ -281,14 +284,28 @@ export function equipEquipment(field, intent) {
     if (prior) actor.inventory.push(prior);
   }
   next.entities[actor.id] = actor;
-  return { ok: true, field: addEvent(next, { type: "equipment_equipped", actorId: actor.id, instanceId: item.instanceId, slot: intent.slot }) };
+  const committed = addEvent(next, { type: "equipment_equipped", actorId: actor.id, instanceId: item.instanceId, slot: intent.slot });
+  const passiveEffects = (equipped.effects || []).map((effect, index) => {
+    if (effect.type === "status") return { ...clone(effect), status: { ...clone(effect.status), id: `item:${equipped.instanceId}:${effect.status?.id || index}`, sourceItemId: equipped.instanceId } };
+    if (effect.type === "attribute_modifier") return { ...clone(effect), statusId: `item:${equipped.instanceId}:${effect.statusId || effect.stat || index}`, sourceItemId: equipped.instanceId };
+    return null;
+  }).filter(Boolean);
+  if (!passiveEffects.length) return { ok: true, field: committed };
+  const applied = resolveEffectBatch(committed, {
+    sourceId: actor.id, targetId: actor.id, effects: passiveEffects,
+    eventId: `equipment-passives:${equipped.instanceId}:${committed.version}`,
+    context: { source: "equipment", instanceId: equipped.instanceId }
+  });
+  return applied.ok ? { ok: true, field: applied.field } : { ...applied, field };
 }
 
 export function unequipEquipment(field, intent) {
   const entity = field.entities?.[intent.actorId], item = entity?.equipment?.[intent.slot];
   if (!entity || !item) return { ...fail("equipment_slot_empty"), field };
   const next = clone(field), actor = next.entities[entity.id], removed = actor.equipment[intent.slot];
-  delete actor.equipment[intent.slot]; actor.inventory = [...(actor.inventory || []), removed]; next.entities[actor.id] = actor;
+  delete actor.equipment[intent.slot]; actor.inventory = [...(actor.inventory || []), removed];
+  actor.statuses = (actor.statuses || []).filter(status => status.sourceItemId !== removed.instanceId);
+  next.entities[actor.id] = actor;
   return { ok: true, field: addEvent(next, { type: "equipment_unequipped", actorId: actor.id, instanceId: removed.instanceId, slot: intent.slot }) };
 }
 
