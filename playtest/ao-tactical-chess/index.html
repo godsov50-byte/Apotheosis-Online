@@ -81,7 +81,7 @@ function setup(){
  for(let x=0;x<8;x++){units.push(makeUnit("w"+w++,"white",x,7,back[x],x));units.push(makeUnit("wP"+x,"white",x,6,"Pawn",(x+4)%10));units.push(makeUnit("bP"+x,"black",x,1,"Pawn",(x+2)%10));}
  for(let x=0;x<8;x++){
   let u=makeUnit("b"+b++,"black",x,0,back[x],(x+3)%10);
-  if(x===1){u.name="Askar Venn";u.cls="Berserker";u.archetype="Anti-Divine";u.tier=5;u.pattern="Knight";u.technique="Divine Pursuit";u.techniquePattern="Knight";u.techniqueTier=5;u.techniqueCost=4;u.ap=8;u.ea=8;u.uses=3;u.affinity="None assigned";u.weapon="Greatsword";u.weaponEffect="Knockback";u.trigger="Divine Intercept";u.special=true;}
+  if(x===1){u.name="Askar Venn";u.cls="Berserker";u.archetype="Anti-Divine";u.tier=5;u.hp=38;u.maxHp=38;u.ac=12;u.atk=7;u.dmg=12;u.pattern="Knight";u.technique="Divine Pursuit";u.techniquePattern="Knight";u.techniqueTier=5;u.techniqueCost=4;u.ap=8;u.ea=8;u.uses=3;u.affinity="None assigned";u.weapon="Greatsword";u.weaponEffect="Knockback";u.trigger="Divine Intercept";u.special=true;}
   units.push(u);
  }
  const divineGuard=units.find(u=>u.side==="white"&&u.pattern==="King");if(divineGuard)divineGuard.nature="Divine Humanoid";
