@@ -6,7 +6,7 @@ This repository holds **proposed** game mechanics for *Apotheosis Online* (AO), 
 
 | Path | Contents |
 | --- | --- |
-| `mechanics/` | The numbered mechanics documents, including 19th (Azimah cross-system validation), 20th (Chessboard elemental axes proposal), and 21st (AO Chess creature class-counter archetypes proposal) |
+| `mechanics/` | The numbered mechanics documents, including 19th (Azimah cross-system validation), 20th (Chessboard elemental axes proposal), 21st (AO Chess creature class-counter archetypes proposal), and 22nd (AO Chess creature racial types proposal) |
 | `reference/formula-reference.md` | All 116 formulas, each with definitions, units, bounds, invalid cases and exact worked examples |
 | `site/index.html` | The whole package compiled into one self-contained, searchable page |
 
