@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "status": "proposed",
+  "elements": [
+    {
+      "id": "fire",
+      "name": "Fire",
+      "symbol": "🔥",
+      "axis": "elemental_cycle"
+    },
+    {
+      "id": "wood",
+      "name": "Wood",
+      "symbol": "🌿",
+      "axis": "elemental_cycle"
+    },
+    {
+      "id": "earth",
+      "name": "Earth",
+      "symbol": "🪨",
+      "axis": "elemental_cycle"
+    },
+    {
+      "id": "lightning",
+      "name": "Lightning",
+      "symbol": "⚡",
+      "axis": "elemental_cycle"
+    },
+    {
+      "id": "water",
+      "name": "Water",
+      "symbol": "💧",
+      "axis": "elemental_cycle"
+    },
+    {
+      "id": "ice",
+      "name": "Ice",
+      "symbol": "❄️",
+      "axis": "elemental_cycle"
+    },
+    {
+      "id": "wind",
+      "name": "Wind",
+      "symbol": "🌪️",
+      "axis": "elemental_cycle"
+    },
+    {
+      "id": "metal",
+      "name": "Metal",
+      "symbol": "⚙️",
+      "axis": "elemental_cycle"
+    },
+    {
+      "id": "light",
+      "name": "Light",
+      "symbol": "☀️",
+      "axis": "special_duality"
+    },
+    {
+      "id": "shadow",
+      "name": "Shadow",
+      "symbol": "🌑",
+      "axis": "special_duality"
+    }
+  ]
+}
