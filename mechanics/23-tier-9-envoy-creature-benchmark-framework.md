@@ -193,7 +193,26 @@ counter_creature:
 - Creature death/drop resolution must preserve AO Chess's material-drop rules. Some materials are collected from drops; some resource cells spawn; some resources are collected manually; some are inside special containers. Do not collapse these into one automatic loot event.
 - Creature species exist beyond the paired encounter where the world ecology requires it. Defeat in a simulated AO Chess encounter must follow the defined simulation/persistence rules and must not silently imply world death.
 
-## 6. Existing class-counter pairings
+## 6. Initial class benchmark register
+
+These ten records establish the first required class-coverage slots. IDs are stable proposal identifiers; names and all other profile values remain to be filled from approved Envoy dossier data. Each slot is Tier 9 and is paired to its own counter-creature design brief below.
+
+| Benchmark ID | Required Envoy class | Tier | Paired counter-creature ID | Counter archetype |
+|---|---|---:|---|---|
+| AO9-ENV-SABER-001 | Saber | 9 | AO9-CRT-BREAKER-001 | Breaker |
+| AO9-ENV-ARCHER-001 | Archer | 9 | AO9-CRT-PURSUER-001 | Pursuer |
+| AO9-ENV-LANCER-001 | Lancer | 9 | AO9-CRT-SNARE-001 | Snare |
+| AO9-ENV-RIDER-001 | Rider | 9 | AO9-CRT-ANCHOR-001 | Anchor |
+| AO9-ENV-CASTER-001 | Caster | 9 | AO9-CRT-DEVOURER-001 | Devourer |
+| AO9-ENV-ASSASSIN-001 | Assassin | 9 | AO9-CRT-WATCHER-001 | Watcher |
+| AO9-ENV-BERSERKER-001 | Berserker | 9 | AO9-CRT-SUPPRESSOR-001 | Suppressor |
+| AO9-ENV-SHIELDER-001 | Shielder | 9 | AO9-CRT-SIEGE-001 | Siege Beast |
+| AO9-ENV-AVENGER-001 | Avenger | 9 | AO9-CRT-PURGER-001 | Purger |
+| AO9-ENV-RULER-001 | Ruler | 9 | AO9-CRT-DISRUPTOR-001 | Disruptor |
+
+These are class coverage slots, not completed Envoy dossiers. A slot becomes a populated benchmark only when its identity, race hierarchy, being type, attributes, affinities, skills, techniques, equipment, and test configuration are sourced and recorded. Additional records will be added for every verified race, ancestry, sub-ancestry, type, affinity, composite affinity, and compatible combination; they are not collapsed into these ten class slots.
+
+## 7. Existing class-counter pairings
 
 The following ten pairings reuse the existing creature class-counter archetype proposal. They are tactical design targets, not final species assignments:
 
@@ -210,7 +229,7 @@ The following ten pairings reuse the existing creature class-counter archetype p
 | Avenger | Purger | Retaliation and escalation, only through defined interactions |
 | Ruler | Disruptor | Command, coordination, restrictions, and authority effects |
 
-## 7. First ten Tier 9 counter-creature design briefs
+## 8. First ten Tier 9 counter-creature design briefs
 
 These are provisional encounter-design briefs, not approved species canon or completed creature records. Their names and anatomy are creative test proposals. No affinity, creature racial type, exact attributes, technique Tier, drop table, or species lineage is assigned here; those require the corresponding verified inventories and profile work.
 
@@ -229,7 +248,7 @@ These are provisional encounter-design briefs, not approved species canon or com
 
 These ten briefs provide one initial class-counter specimen concept per Envoy class. They do **not** complete race, ancestry, being-type, affinity, composite-affinity, or combination coverage. Each brief must be expanded into a full creature profile before it can count as a completed Tier 9 benchmark.
 
-## 8. Required test protocol
+## 9. Required test protocol
 
 Every Envoy/creature pair must be tested with the same declared scenario inputs and an auditable outcome record.
 
@@ -246,7 +265,7 @@ Every Envoy/creature pair must be tested with the same declared scenario inputs 
 
 Each pair should be tested in more than one scenario where the system supports it: favorable terrain, unfavorable terrain, neutral terrain, information advantage/disadvantage, and alternate legal equipment/technique configurations. These are scenario variants of the same benchmark, not additional Envoy identities.
 
-## 9. Completion gates
+## 10. Completion gates
 
 The benchmark program is not complete until all of the following are satisfied:
 
@@ -266,7 +285,7 @@ The benchmark program is not complete until all of the following are satisfied:
 - [ ] All required combat and resource-resolution regression scenarios pass.
 - [ ] No proposal is treated as canon without creator approval.
 
-## 10. Known blockers — do not fill by invention
+## 11. Known blockers — do not fill by invention
 
 1. The repository's affinity document explicitly records the canonical affinity roster and directed weakness/resistance relationships as UNKNOWN and creator-deferred. The eight-element cycle plus Light/Shadow is a separate Chessboard proposal, not permission to overwrite that UNKNOWN.
 2. The complete Envoy race/ancestry/sub-ancestry inventory is not present in the current main-branch mechanics files. The accepted hierarchy is known; the exact roster and modifiers are not.
@@ -277,7 +296,7 @@ The benchmark program is not complete until all of the following are satisfied:
 
 The benchmark registry should keep these fields UNKNOWN and mark dependent records blocked until their authoritative inputs are available. This prevents a large but fabricated roster from appearing complete.
 
-## 11. Relationship to existing AO Chess proposals
+## 12. Relationship to existing AO Chess proposals
 
 This framework reuses rather than replaces:
 
