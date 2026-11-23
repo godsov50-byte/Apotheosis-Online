@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {createRacialRegistry,createEnvoyFromCreation,resolveRacialRarity} from "../engine/character-creation-pipeline.mjs";
+import {createRacialRegistry,createEnvoyFromCreation,resolveRacialRarity,resolveStartingAttributePackage} from "../engine/character-creation-pipeline.mjs";
 const registry=createRacialRegistry([{id:"test-lineage",name:"Test Lineage",naturalAffinity:"Fire",attributeModifiers:{STR:2,CON:1},hpFlat:3,modifiers:{defense:{DR:1,resistance:{fire:0.1}}},traits:["night-vision"],racialTechniques:["racial-spark"],rarityProfiles:[{rarityId:"common",attributeModifiers:{DEX:1},hpFlat:2},{rarityId:"rare",attributeModifiers:{ATT:3},hpFlat:5,modifiers:{defense:{DR:2}},traits:["rare-sense"]}]}]);
 const base={STR:10,DEX:10,CON:10,INT:10,WIS:10,CHA:10,ATT:10};
 test("racial and rarity modifiers remain separate and produce HP from explicit vitality rule",()=>{
@@ -83,4 +83,16 @@ test("existence, lineage, form, species classification and player access remain 
  assert.equal(created.creationContext.accessibility.stage,"Discoverable");
  assert.equal(created.creationContext.acquisitionGovernance.allowedRoutes[0],"invitation");
  assert.equal(created.creationContext.accessDecision.grantId,"grant-1");
+});
+
+test("starting attributes come from a validated, versioned entry package without a point-buy pool",()=>{
+ const pkg=resolveStartingAttributePackage({id:"entry-package-a",name:"Entry Package A",baseAttributes:base,sourceRef:"approved-entry-source",ruleVersion:"entry-v2"});
+ assert.equal(pkg.ok,true);assert.equal(pkg.id,"entry-package-a");assert.equal(pkg.baseAttributes.CON,10);
+ assert.equal(resolveStartingAttributePackage({id:"incomplete",baseAttributes:{STR:10}}).reason,"complete_base_attributes_required");
+ const created=createEnvoyFromCreation({id:"package-envoy",name:"Package Envoy",side:"white",raceId:"test-lineage",rarityId:"common",characterTier:9,
+  startingAttributePackage:{id:"entry-package-a",baseAttributes:base,sourceRef:"approved-entry-source",ruleVersion:"entry-v2"},
+  vitality:{base:10,perConstitution:2}},registry);
+ assert.equal(created.ok,true);assert.equal(created.entity.creation.startingAttributePackageId,"entry-package-a");
+ assert.equal(created.entity.creation.baseAttributeSource,"approved-entry-source");
+ assert.equal(created.entity.creation.startingAttributeRuleVersion,"entry-v2");
 });
