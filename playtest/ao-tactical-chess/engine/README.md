@@ -107,3 +107,21 @@ Resource nodes have finite quantities and independent source quality. Extraction
 Quality is a separate score/grade record from quantity. The score is a playtest comparison value (0–100), with configurable grade thresholds; it is not an AO rarity ladder or canon stat. All drop chances, quantity ranges, weights, yields, skill contributions, quality modifiers, and thresholds are supplied by data. No global numerical drop rates or canonical resource quantities are established by this module.
 
 The balance preview runs seeded trials and reports expected material units, equipment-drop rate, item distribution, and average quality for a supplied profile. It is an authoring/test aid, not an adaptive difficulty system: it does not change rewards based on player success or silently alter committed outcomes.
+
+
+## Creature technique fragments and progression
+
+Creature defeat profiles may include `techniqueFragmentDrops` alongside ordinary materials and equipment. Fragment drops have independent chance and quantity ranges, consume the same optional source reward budget, retain creature/event provenance, and remain physical battlefield drops until collected. Their inventory type is `technique_fragment`, distinct from ordinary materials and equipment.
+
+A fragment represents both condensed creature essence and accumulated technique knowledge. Its definition can carry traits such as affinity, creature lineage, or conceptual aspect. A fragment is not itself a learned technique and does not grant an automatic unlock.
+
+`technique-fragment-pipeline.mjs` provides two validated transactions:
+- Learning a new technique consumes its configured `progression.learningCosts` after class, archetype, affinity, prerequisite, skill, fragment identity, quantity, quality, and trait checks.
+- Advancing an already learned technique consumes the costs configured for its current Tier in `progression.advancementCostsByCurrentTier`.
+
+Technique Tier is separate from Envoy/character Tier. This pipeline uses the existing direction where technique Tier 9 is lowest and Tier 0 is highest; each advancement moves one step (9 to 8, through to 0), never skipping a Tier. Tier 0 cannot advance further. Exact fragment costs and requirements are supplied by technique data; no universal fragment recipe or advancement price is established.
+
+Both transactions consume fragment stacks atomically, update the Envoy's learned-technique or per-technique Tier state, and append a progression ledger event. This is a playtest module, not yet connected to the live Kernel, persistent WorldHeart ledger, or board interaction UI.
+
+
+Each technique fragment definition has two distinct payloads: `essence` (the creature's inherent nature, affinities, lineage, or conceptual qualities) and `knowledge` (the patterns, principles, and technique understanding embodied by that creature). These are preserved separately when collected and are both considered during technique learning and advancement checks. A technique's fragment costs can require matching essence traits, knowledge traits, minimum essence potency, and minimum knowledge potency independently. This prevents a powerful creature essence from automatically satisfying an unrelated technique's knowledge requirement, or vice versa.
