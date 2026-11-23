@@ -6,7 +6,7 @@ This repository holds **proposed** game mechanics for *Apotheosis Online* (AO), 
 
 | Path | Contents |
 | --- | --- |
-| `mechanics/` | The 18 numbered mechanics documents plus a supporting 19th (Azimah cross-system validation) |
+| `mechanics/` | The 18 numbered mechanics documents, supporting 19th (Azimah cross-system validation), and 20th (Chessboard elemental axes proposal) |
 | `reference/formula-reference.md` | All 116 formulas, each with definitions, units, bounds, invalid cases and exact worked examples |
 | `site/index.html` | The whole package compiled into one self-contained, searchable page |
 
@@ -31,6 +31,7 @@ This repository holds **proposed** game mechanics for *Apotheosis Online* (AO), 
 17. Unresolved Decisions Register
 18. Final Cross-System Consistency Report
 19. Azimah Cross-System Validation (supporting)
+20. AO Chessboard Elemental Axes — Proposal (eight-element cycle + Light/Shadow special axis)
 
 ## Core design rule
 
@@ -56,3 +57,5 @@ Passing synthetic tests show the proposals are internally consistent; they do no
 - Links in the documents that point to `../sources/`, `../data/` or checkpoint files refer to the private working package and are not included here.
 
 See `mechanics/17-unresolved-decisions-register.md` for the full list.
+
+The separate `mechanics/20-chessboard-elemental-axes-proposal.md` captures the newly discussed eight-element counter cycle plus Light and Shadow on a special axis. It is a proposed Chessboard design layer, not canon or a replacement for the creator-deferred affinity/weakness source records.
