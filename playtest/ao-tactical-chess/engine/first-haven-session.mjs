@@ -468,8 +468,8 @@ export function endFirstHavenTurn(state) {
     const dx=envoy.position.x-creature.position.x,dy=envoy.position.y-creature.position.y;
     if(Math.max(Math.abs(dx),Math.abs(dy))<=1) {
       const attack=resolveBoardAttack(field,{
-        attackerId:creature.id,defenderId:envoy.id,roll:10,
-        damagePackets:[{type:"physical",amount:4}],
+        attackerId:creature.id,defenderId:envoy.id,roll:Math.floor(Math.random()*20)+1,
+        damagePackets:[{type:"physical",amount:Math.floor(Math.random()*4)+1}],
         eventId:"first-haven-creature-turn-"+field.version
       });
       if(attack.ok)field=attack.field;
