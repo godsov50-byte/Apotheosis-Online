@@ -282,6 +282,7 @@ export function collectBalancedDrop(field, intent, registry) {
     a.inventory = [...(a.inventory || []), {
       kind: "technique_fragment", fragmentId: d.fragmentId, quantity: d.quantity,
       quality: clone(d.quality), fragmentTraits: clone(template.traits || []),
+      essence: clone(template.essence || {}), knowledge: clone(template.knowledge || {}),
       provenance: { sourceId: d.sourceId, ...clone(d.provenance || {}) }
     }];
   } else if (d.kind === "equipment_drop") {
