@@ -232,7 +232,7 @@ test("board technique profile enforces learned skill and applies its data-driven
 });
 
 test("racially created Envoy can enter AO Chess with derived HP, ancestry, rarity, affinities and passive effects",()=>{
- const registry=createRacialRegistry([{id:"race-a",name:"Race A",attributeModifiers:{STR:2},modifiers:{defense:{DR:1}},naturalAffinity:"Fire",effects:[{type:"status",target:"self",status:{id:"innate-guard",stackRule:"replace",modifiers:{STR:1,DR:1},tags:["racial-passive"]}}],
+ const registry=createRacialRegistry([{id:"race-a",name:"Race A",lineageId:"lineage-a",existence:{beingTypeId:"being-a"},originLineage:{lineageId:"lineage-a"},formNature:{formId:"form-a"},speciesClassification:{speciesId:"species-a"},attributeModifiers:{STR:2},modifiers:{defense:{DR:1}},naturalAffinity:"Fire",effects:[{type:"status",target:"self",status:{id:"innate-guard",stackRule:"replace",modifiers:{STR:1,DR:1},tags:["racial-passive"]}}],
   ancestries:[{id:"ancestry-a",name:"Ancestry A",attributeModifiers:{DEX:1}}],
   rarityProfiles:[{rarityId:"rarity-a",attributeModifiers:{ATT:2},modifiers:{defense:{DR:2}},traits:["rare-trait"]}]
  }]);
@@ -250,6 +250,11 @@ test("racially created Envoy can enter AO Chess with derived HP, ancestry, rarit
  assert.equal(projected.stats.ATT,12);
  assert.equal(projected.defense.DR,4);
  assert.equal(projected.raceId,"race-a");
+ assert.equal(projected.lineageId,"lineage-a");
+ assert.equal(projected.existence.beingTypeId,"being-a");
+ assert.equal(projected.originLineage.race.lineageId,"lineage-a");
+ assert.equal(projected.formNature.race.formId,"form-a");
+ assert.equal(projected.speciesClassification.speciesId,"species-a");
  assert.equal(projected.ancestryId,"ancestry-a");
  assert.equal(projected.racialRarityId,"rarity-a");
  assert.deepEqual(field.entities["born-envoy"].ea.affinities,["Water","Fire"]);
