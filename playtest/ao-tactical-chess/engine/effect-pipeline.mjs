@@ -9,6 +9,7 @@ const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 const key=p=>`${p.x},${p.y},${p.z||0}`;
 const fail=(reason,field)=>({ok:false,reason,field});
 export const EFFECT_TYPES=Object.freeze(["damage","heal","status","remove_status","resource","attribute_modifier","displace","summon","terrain"]);
+const MODIFIABLE_STATS=Object.freeze(["STR","DEX","CON","INT","WIS","CHA","ATT","AC","DR","armor"]);
 export function createEffect(definition){
  if(!definition?.id||!EFFECT_TYPES.includes(definition.type))throw new Error("effect id and supported type required");
  return {id:definition.id,type:definition.type,tags:[...(definition.tags||[])],target:definition.target||"target",...clone(definition)};
@@ -74,7 +75,7 @@ export function resolveEffectBatch(field,{sourceId,targetId,effects=[],eventId,c
    outcomes.push({type:"resource",targetId:recipient.id,pool:effect.pool,amount});
   }else if(effect.type==="attribute_modifier"){
    if(!recipient)return fail("modifier_target_missing",field);
-   const stat=effect.stat;if(!["STR","DEX","CON","INT","WIS","CHA","ATT"].includes(stat)||!Number.isFinite(effect.amount))return fail("invalid_attribute_modifier",field);
+   const stat=effect.stat;if(!MODIFIABLE_STATS.includes(stat)||!Number.isFinite(effect.amount))return fail("invalid_attribute_modifier",field);
    const statusId=effect.statusId||`modifier-${eventId}-${stat}`;
    const statuses=applyStatus(recipient.statuses||[],{id:statusId,duration:effect.duration??null,remaining:effect.duration??null,stackRule:effect.stackRule||"replace",modifiers:{[stat]:effect.amount},sourceItemId:effect.sourceItemId||null,tags:effect.tags||["attribute-modifier"]});
    if(!statuses)return fail("modifier_status_invalid",field);
@@ -144,5 +145,5 @@ export function tickEntityEffects(entity,{phase="end_turn"}={}){
   if(value<=0)expired.push(status.id);else kept.push({...status,remaining:value});
  }
  next.statuses=kept;
- return {entity:next,expired,effectiveAttributes:resolveEffectiveAttributes(next)};
+ return {entity:next,expired,effectiveAttributes:resolveEffectiveAttributes(next),effectiveDefense:resolveEffectiveDefense(next)};
 }
