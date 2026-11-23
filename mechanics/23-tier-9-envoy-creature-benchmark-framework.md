@@ -24,9 +24,9 @@ The following inventories are available as working inputs, with their current st
 | Envoy class | Saber, Archer, Lancer, Rider, Caster, Assassin, Berserker, Shielder, Avenger, Ruler | Existing ten-class roster |
 | Creature class-counter archetype | Breaker, Pursuer, Snare, Anchor, Devourer, Watcher, Suppressor, Siege Beast, Purger, Disruptor | Existing proposal; one-to-one class pressure patterns, not hard counters |
 | Creature racial type | Beast, Arthropod, Draconic, Elemental, Spirit, Undead, Plantborn, Aberrant, Construct, Humanoid | Existing proposal; creature taxonomy only, not the Envoy race roster |
-| Envoy race / ancestry / sub-ancestry | Hierarchy: Race → Ancestry → Sub-ancestry | Hierarchy accepted; complete exact inventory is not established in this repository |
-| Envoy being type / subtype / scale | Dossier classification fields previously outlined | Exact value lists and definitions require source verification |
-| Foundational affinity | Chessboard proposal lists Fire, Wood, Earth, Lightning, Water, Ice, Wind, Metal, plus Light and Shadow on a separate axis | Working proposal only; canonical affinity roster and matchup rules remain creator-deferred UNKNOWN |
+| Envoy race / ancestry / sub-ancestry | Hierarchy: Race → Ancestry → Sub-ancestry; working lineage inventory in [24 — Envoy Identity and Tier 9 Coverage Register](24-envoy-identity-and-tier9-coverage-register.md) | Prior lineage candidates consolidated for coverage; exact AO ancestry relationships and source validation remain open |
+| Envoy being type / subtype / scale | Fifteen working being types, Divine subtype examples, and seven scale values in document 24 | Working values recovered; final definitions, applicability, and approval remain open |
+| Foundational affinity | Chessboard proposal lists Fire, Wood, Earth, Lightning, Water, Ice, Wind, Metal, plus Light and Shadow on a separate axis; see document 24 for provisional coverage slots | Working proposal only; canonical affinity roster and matchup rules remain creator-deferred UNKNOWN |
 | Composite affinity | Composite/derived expressions are acknowledged as possible | Exact roster, recipes, eligibility, and rules are UNKNOWN |
 | Attributes | STR, DEX, CON, INT, WIS, CHA, ATT are a current working direction | Baselines and growth rules must follow the current attribute source; do not invent a fixed point-buy pool |
 | Combat systems | AP, EA, DR, resistance, penetration, Break, movement, facing, technique geometry, equipment | Keep independent; this benchmark document does not redefine them |
@@ -43,20 +43,29 @@ Suggested record shape (field names are provisional until aligned with the autho
 benchmark:
   id: <stable_benchmark_id>
   status: proposed
+  version: <profile_version>
   tier: 9
   envoy:
     id: <envoy_id>
     identity:
       name: <name>
+      title: <title_or_null>
       race: <race_id>
       ancestry: <ancestry_id>
       sub_ancestry: <sub_ancestry_id_or_null>
-      being_type: <being_type_id>
+      sex: <sourced_value_or_unknown>
+      age: <sourced_value_or_unknown>
+      origin: <origin_record_or_unknown>
+      affiliation: <affiliation_record_or_unknown>
+    classification:
+      tier: 9
+      class: <envoy_class_id>
+      archetype: <archetype_or_unknown>
+      nature_type: <being_type_id>
       subtype: <subtype_id_or_null>
       scale: <scale_id_or_value>
-    combat:
-      class: <envoy_class_id>
-      attributes:
+    attributes:
+      base:
         STR: <sourced_value>
         DEX: <sourced_value>
         CON: <sourced_value>
@@ -64,17 +73,40 @@ benchmark:
         WIS: <sourced_value>
         CHA: <sourced_value>
         ATT: <sourced_value>
+      inherited_modifiers: []
+      equipment_modifiers: []
+      temporary_modifiers: []
+      effective: <derived_by_authoritative_rules>
+    combat_values:
+      HP: <sourced_or_derived_value>
+      AP: <sourced_or_derived_value>
+      EA_reserves: []
+      AC: <sourced_or_derived_value>
+      DR: <sourced_or_derived_value>
+      damage_resistance: []
+      penetration: []
+      Break: <sourced_or_derived_value>
+    capabilities:
+      skills: []
+      techniques: []
       affinities:
         owned: []
         accessible: []
         active_for_test: []
         composite: []
-      skills: []
-      techniques: []
-      equipment:
+      proficiencies:
         weapons: []
         armor: []
         shields: []
+      movement_pattern: <declared_pattern>
+      reactions: []
+    equipment:
+      weapons: []
+      armor: []
+      shields: []
+      other: []
+    possessions: []
+    chess:
       piece_mode: <declared_mode>
       facing: <declared_facing>
   coverage:
@@ -83,6 +115,7 @@ benchmark:
     compatibility_evidence: []
   paired_counter_creature_id: <creature_id>
   test_scenarios: []
+  chronicle_reference: <record_or_unknown>
   unresolved_fields: []
 ```
 
@@ -288,7 +321,7 @@ The benchmark program is not complete until all of the following are satisfied:
 ## 11. Known blockers — do not fill by invention
 
 1. The repository's affinity document explicitly records the canonical affinity roster and directed weakness/resistance relationships as UNKNOWN and creator-deferred. The eight-element cycle plus Light/Shadow is a separate Chessboard proposal, not permission to overwrite that UNKNOWN.
-2. The complete Envoy race/ancestry/sub-ancestry inventory is not present in the current main-branch mechanics files. The accepted hierarchy is known; the exact roster and modifiers are not.
+2. The working Envoy lineage inventory is consolidated in document 24. Exact AO ancestry relationships, source validation, and modifiers remain unresolved.
 3. The creature racial-type proposal is not an Envoy race schema and does not supply Envoy being types.
 4. The exact Envoy being-type, subtype, and scale value lists are not established in the inspected mechanics files.
 5. Composite-affinity recipes, compatibility, and matchup rules remain undefined.

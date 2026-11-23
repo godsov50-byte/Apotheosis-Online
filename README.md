@@ -6,7 +6,7 @@ This repository holds **proposed** game mechanics for *Apotheosis Online* (AO), 
 
 | Path | Contents |
 | --- | --- |
-| `mechanics/` | The numbered mechanics documents, including 19th (Azimah cross-system validation), 20th (Chessboard elemental axes), 21st (creature class-counter archetypes), 22nd (creature racial types), and 23rd (Tier 9 Envoy / counter-creature benchmark framework) |
+| `mechanics/` | The numbered mechanics documents, including 19th (Azimah cross-system validation), 20th (Chessboard elemental axes), 21st (creature class-counter archetypes), 22nd (creature racial types), and 23rd (Tier 9 Envoy / counter-creature benchmark framework), and 24th (Envoy identity / Tier 9 coverage register) |
 | `reference/formula-reference.md` | All 116 formulas, each with definitions, units, bounds, invalid cases and exact worked examples |
 | `site/index.html` | The whole package compiled into one self-contained, searchable page |
 
@@ -35,6 +35,7 @@ This repository holds **proposed** game mechanics for *Apotheosis Online* (AO), 
 21. AO Chess Creature Class-Counter Archetypes — Proposal (ten natural enemy counterparts to Envoy classes)
 22. AO Chess Creature Racial Types — Proposal (ten broad creature nature categories)
 23. AO Chess Tier 9 Envoy and Counter-Creature Benchmark Framework
+24. AO Chess Envoy Identity and Tier 9 Coverage Register
 
 ## Core design rule
 
@@ -64,3 +65,5 @@ See `mechanics/17-unresolved-decisions-register.md` for the full list.
 The separate `mechanics/20-chessboard-elemental-axes-proposal.md` captures a proposed eight-element counter cycle plus Light and Shadow on a special axis. It is not canon or a replacement for the creator-deferred affinity/weakness source records.
 
 The `mechanics/23-tier-9-envoy-creature-benchmark-framework.md` establishes the benchmark record shapes, class-counter pairings, ten provisional creature design briefs, coverage rules, test protocol, and explicit source blockers. It does not invent missing race, type, affinity, or composite-affinity rosters.
+
+The `mechanics/24-envoy-identity-and-tier9-coverage-register.md` consolidates the working Envoy lineage list, the accepted Race → Ancestry → Sub-ancestry hierarchy, fifteen previously discussed being-type values, Divine subtype examples, seven scale values, and provisional Chessboard affinity coverage. It preserves uncertain lineage relationships and the creator-deferred affinity UNKNOWN state. It is a working register, not a canonized roster.
