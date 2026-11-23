@@ -65,9 +65,55 @@ export function createBoardField(units, { width = 8, height = 8, turn = "white",
       },
       sourceRef: unit.sourceRef || null
     });
+    entity.boardMotion = unit.pattern;
     next = placeEntity(next, entity);
   }
   return next;
+}
+
+function isBoardMotionLegal(field, actor, destination) {
+  const motion = actor.boardMotion;
+  if (!["King", "Queen", "Rook", "Bishop", "Knight", "Pawn"].includes(motion)) return false;
+  const x = actor.position.x, y = actor.position.y;
+  const targetAt = (tx, ty) => Object.values(field.entities).find(e =>
+    e.alive && e.id !== actor.id && e.position.x === tx && e.position.y === ty
+  ) || null;
+  const canLand = (tx, ty) => {
+    if (tx < 0 || ty < 0 || tx >= field.width || ty >= field.height) return false;
+    return targetAt(tx, ty)?.side !== actor.side;
+  };
+  const rays = (directions) => {
+    for (const [dx, dy] of directions) {
+      for (let step = 1; step < Math.max(field.width, field.height); step++) {
+        const tx = x + dx * step, ty = y + dy * step;
+        if (tx < 0 || ty < 0 || tx >= field.width || ty >= field.height) break;
+        const occupant = targetAt(tx, ty);
+        const ownOccupant = Object.values(field.entities).some(e =>
+          e.alive && e.id !== actor.id && e.side === actor.side && e.position.x === tx && e.position.y === ty
+        );
+        if (ownOccupant) break;
+        if (occupant) { if (occupant.side !== actor.side) return destination.x === tx && destination.y === ty; break; }
+        if (destination.x === tx && destination.y === ty) return true;
+      }
+    }
+    return false;
+  };
+  const dx = destination.x - x, dy = destination.y - y;
+  if (motion === "King") return Math.max(Math.abs(dx), Math.abs(dy)) === 1 && canLand(destination.x, destination.y);
+  if (motion === "Knight") return Math.abs(dx) * Math.abs(dy) === 2 && canLand(destination.x, destination.y);
+  if (motion === "Rook") return (dx === 0 || dy === 0) && (dx !== 0 || dy !== 0) && rays([[1,0],[-1,0],[0,1],[0,-1]]);
+  if (motion === "Bishop") return Math.abs(dx) === Math.abs(dy) && dx !== 0 && rays([[1,1],[-1,1],[1,-1],[-1,-1]]);
+  if (motion === "Queen") return ((dx === 0 || dy === 0 || Math.abs(dx) === Math.abs(dy)) && (dx !== 0 || dy !== 0)) &&
+    rays([[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]]);
+  if (motion === "Pawn") {
+    const direction = actor.side === "white" ? -1 : 1;
+    if (dx === 0 && dy === direction) return !targetAt(destination.x, destination.y);
+    if (dx === 0 && dy === 2 * direction && y === (actor.side === "white" ? field.height - 2 : 1)) {
+      return !targetAt(x, y + direction) && !targetAt(destination.x, destination.y);
+    }
+    if (Math.abs(dx) === 1 && dy === direction) return targetAt(destination.x, destination.y)?.side === (actor.side === "white" ? "black" : "white");
+  }
+  return false;
 }
 
 function beginBoardAction(field, actorId) {
@@ -91,10 +137,11 @@ export function resolveBoardMove(field, { actorId, to, legalCells, eventId } = {
   const ready = beginBoardAction(field, actorId);
   if (!ready.ok) return ready;
   if (!to || !Number.isInteger(to.x) || !Number.isInteger(to.y)) return { ok: false, reason: "invalid_destination" };
-  if (!Array.isArray(legalCells) || !legalCells.some(p => p.x === to.x && p.y === to.y)) {
-    return { ok: false, reason: "illegal_chess_motion" };
-  }
   const actor = ready.field.entities[actorId];
+  if (!isBoardMotionLegal(ready.field, actor, to)) return { ok: false, reason: "illegal_chess_motion" };
+  if (Array.isArray(legalCells) && !legalCells.some(p => p.x === to.x && p.y === to.y)) {
+    return { ok: false, reason: "ui_candidate_mismatch" };
+  }
   const destination = { x: to.x, y: to.y, z: 0 };
   if (Object.values(ready.field.entities).some(e => e.alive && e.id !== actorId && cellKey(e.position) === cellKey(destination))) {
     return { ok: false, reason: "destination_occupied" };
