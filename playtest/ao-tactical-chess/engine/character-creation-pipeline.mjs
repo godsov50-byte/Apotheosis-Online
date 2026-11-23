@@ -155,7 +155,7 @@ export function createEnvoyFromCreation(input, registry) {
   const racialModifiers=mergeModifierMaps(race.modifiers,ancestry?.modifiers,subAncestry?.modifiers);
   const traits=[...new Set([...race.traits,...(ancestry?.traits||[]),...(subAncestry?.traits||[]),...rarity.traits,...(input.traits||[])])];
   const racialTechniques=[...new Set([...race.racialTechniques,...(ancestry?.racialTechniques||[]),...(subAncestry?.racialTechniques||[]),...rarity.racialTechniques])];
-  const racialEffects=[...race.effects,...(ancestry?.effects||[]),...(subAncestry?.effects||[])].map(clone);
+  const racialEffects=[...race.effects,...(ancestry?.effects||[]),...(subAncestry?.effects||[]),...rarity.effects].map(effect=>clone(effect));
   const envoy = {
     id: input.id, name: input.name, side: input.side,
     raceId: race.id, raceName: race.name, lineageId: race.lineageId,
