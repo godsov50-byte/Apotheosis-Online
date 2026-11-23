@@ -176,6 +176,9 @@ export function craftEquipment(field, intent, registry) {
   const sequence = num(next.equipmentSequence) + 1;
   next.equipmentSequence = sequence;
   const template = registry.items[recipe.output.itemId], created = [];
+  if (template.category === "Conceptual Heirloom" || template.category === "Cursed Conceptual Heirloom") {
+    return { ...fail("conceptual_heirloom_requires_agent_origin"), field };
+  }
   for (let i = 0; i < recipe.output.quantity; i++) {
     const instanceId = `item-${sequence}-${i + 1}`;
     const provenance = {
@@ -300,8 +303,15 @@ export function damageEquipmentInstance(item, { damage = 0, penetration = 0, bre
 export function repairEquipment(field, intent, registry) {
   const actor = field.entities?.[intent.actorId], recipe = registry.recipes?.[intent.recipeId];
   if (!actor || !recipe || recipe.kind !== "repair") return { ...fail("repair_recipe_required"), field };
+  if (!recipeKnown(actor, recipe)) return { ...fail("recipe_not_known"), field };
+  if (actor.acted || field.acted?.[actor.id]) return { ...fail("already_acted"), field };
+  if (recipe.skill && num(actor.skills?.[recipe.skill.id]?.level) < num(recipe.skill.level)) return { ...fail("crafting_skill_requirement"), field };
+  if (!hasStation(field, recipe.stationTags, actor)) return { ...fail("required_station_missing"), field };
+  if (!ownsTool(actor, recipe.toolTags)) return { ...fail("required_tool_missing"), field };
+  if (recipe.ingredients.some(x => !registry.materials[x.materialId])) return { ...fail("unknown_recipe_material"), field };
   const item = itemByInstance(actor, intent.instanceId) || Object.values(actor.equipment || {}).find(x => x?.instanceId === intent.instanceId);
   if (!item || !item.durability || item.state === "destroyed") return { ...fail("repair_item_unavailable"), field };
+  if (recipe.output.itemId !== item.id) return { ...fail("repair_output_mismatch"), field };
   const next = clone(field), a = next.entities[actor.id], remaining = consumeMaterials(a, recipe.ingredients);
   if (!remaining) return { ...fail("insufficient_material"), field };
   a.inventory = remaining;
@@ -309,6 +319,17 @@ export function repairEquipment(field, intent, registry) {
   target.durability = { ...target.durability, current: target.durability.max, integrity: 100 };
   target.state = "intact"; a.acted = true; next.entities[a.id] = a;
   return { ok: true, field: addEvent(next, { type: "equipment_repaired", actorId: a.id, instanceId: target.instanceId, recipeId: recipe.id }) };
+}
+
+export function aggregateEquipmentModifiers(entity) {
+  const totals = {};
+  for (const item of Object.values(entity.equipment || {})) {
+    if (!item || item.state === "broken" || item.state === "destroyed") continue;
+    for (const [key, value] of Object.entries(item.modifiers || {})) {
+      if (typeof value === "number" && Number.isFinite(value)) totals[key] = (totals[key] || 0) + value;
+    }
+  }
+  return totals;
 }
 
 export function transferEquipment(field, intent) {
