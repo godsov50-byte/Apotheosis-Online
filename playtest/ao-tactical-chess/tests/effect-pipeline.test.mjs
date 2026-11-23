@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {createEffectRegistry,resolveEffectBatch,tickEntityEffects} from "../engine/effect-pipeline.mjs";
+import {createEffectRegistry,resolveEffectBatch,tickEntityEffects,resolveEffectiveAttributes,resolveEffectiveDefense} from "../engine/effect-pipeline.mjs";
 test("effect registry rejects duplicate ids and unknown effect types",()=>{
  assert.throws(()=>createEffectRegistry([{id:"x",type:"mystery"}]));
 });
@@ -22,4 +22,18 @@ test("failed effect batch leaves source field untouched",()=>{
  const field={entities:{a:{id:"a",alive:true}},ledger:[],version:0};
  const r=resolveEffectBatch(field,{sourceId:"a",targetId:"missing",eventId:"bad",effects:[{type:"heal",amount:2}]});
  assert.equal(r.ok,false);assert.equal(field.ledger.length,0);
+});
+
+test("temporary attribute and defense effects are derived and expire cleanly",()=>{
+ const entity={baseAttributes:{STR:10,DEX:10,CON:10,INT:10,WIS:10,CHA:10,ATT:10},baseDefense:{DR:1},equipment:{},statuses:[]};
+ const applied=resolveEffectBatch({entities:{a:entity},ledger:[],version:0},{sourceId:"a",targetId:"a",eventId:"temp-mod",effects:[
+  {type:"attribute_modifier",stat:"STR",amount:3,duration:1,statusId:"boost"},
+  {type:"attribute_modifier",stat:"DR",amount:2,duration:1,statusId:"guard"}
+ ]});
+ assert.equal(applied.ok,true);
+ assert.equal(resolveEffectiveAttributes(applied.field.entities.a).STR,13);
+ assert.equal(resolveEffectiveDefense(applied.field.entities.a).DR,3);
+ const ticked=tickEntityEffects(applied.field.entities.a);
+ assert.equal(resolveEffectiveAttributes(ticked.entity).STR,10);
+ assert.equal(resolveEffectiveDefense(ticked.entity).DR,1);
 });
