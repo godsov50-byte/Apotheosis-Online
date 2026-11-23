@@ -87,6 +87,8 @@ export function createBoardField(units, { width = 8, height = 8, turn = "white",
     entity.racialRarityId = unit.racialRarityId || null;
     entity.racialAttributeModifiers = clone(unit.racialAttributeModifiers || {});
     entity.rarityAttributeModifiers = clone(unit.rarityAttributeModifiers || {});
+    entity.racialModifiers = clone(unit.racialModifiers || {});
+    entity.rarityModifiers = clone(unit.rarityModifiers || {});
     entity.naturalAffinity = unit.naturalAffinity || unit.affinity || null;
     entity.traits = clone(unit.traits || []);
     entity.racialTechniques = clone(unit.racialTechniques || []);
@@ -382,6 +384,8 @@ export function projectBoardUnits(boardUnits, field, { includeDefeated = false }
       equipment: clone(entity.equipment),
       raceId: entity.raceId,
       racialRarityId: entity.racialRarityId,
+      racialModifiers: clone(entity.racialModifiers || {}),
+      rarityModifiers: clone(entity.rarityModifiers || {}),
       traits: clone(entity.traits || []),
       naturalAffinity: entity.naturalAffinity,
       uses: entity.boardTechniqueId
