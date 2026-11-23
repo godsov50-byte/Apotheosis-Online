@@ -70,6 +70,7 @@ button,select{font:inherit;color:var(--ink);background:#233447;border:1px solid 
 <aside class="side">
  <section class="panel wide"><div class="panelhead"><h2>Character dossier</h2><span class="sub" id="squareLabel">Select a token</span></div><div class="section" id="profile"><div class="empty">Choose any character on the board to inspect their profile, combat statistics, equipment and techniques.</div></div></section>
  <section class="panel wide"><div class="panelhead"><h2>T1 Chronicle</h2><span class="sub">After each resolved transaction</span></div><div class="log" id="chronicle"><div class="entry"><div class="tag">Opening scene</div><p>The two formations hold their ground. Steel catches the pale light; across the board, the Conversion Host waits.</p></div></div></section>
+ <section class="panel wide"><div class="panelhead"><h2>Field Drops</h2><span class="sub">Physical rewards · manual collection</span></div><div class="section" id="fieldDrops"><div class="empty">No field drops yet.</div></div></section>
 </aside>
 </main>
 <script>
@@ -115,7 +116,7 @@ function setup(){
   units.push(u);
  }
  const divineGuard=units.find(u=>u.side==="white"&&u.pattern==="King");if(divineGuard)divineGuard.nature="Divine Humanoid";
- selected=null;legal=[];turn="white";round=1;lastMove=null;history=[];techniqueMode=false;
+ selected=null;window.aoSelectedUnitId=null;legal=[];turn="white";round=1;lastMove=null;history=[];techniqueMode=false;
  history=[{tag:"Opening scene",story:"The two formations hold their ground. Steel catches the pale light; across the board, the Conversion Host waits. Askar Venn stands at b8, his greatsword angled toward the opposing ranks."}];resetBoardEngineBridge();renderChronicle();
  $("dice").innerHTML="<b>Dice:</b> No roll yet. d20 + attack bonus vs. AC; weapon damage die on a hit.";
  render();renderProfile();
@@ -132,7 +133,7 @@ function patternMoves(u){
  if(p==="Pawn"){let d=u.side==="white"?-1:1;if(!at(x,y+d)){add(x,y+d);if((u.side==="white"&&y===6)||(u.side==="black"&&y===1)){if(!at(x,y+2*d))add(x,y+2*d);}}[-1,1].forEach(dx=>{let t=at(x+dx,y+d);if(t&&t.side!==u.side)add(x+dx,y+d);});}
  return out.filter(([a,b])=>{let target=at(a,b);if(!target)return true;if(target.side===u.side)return false;if(p==="Pawn")return a!==x;return true;});
 }
-function select(u){selected=u;legal=patternMoves(u);render();renderProfile();}
+function select(u){selected=u;window.aoSelectedUnitId=u.id;legal=patternMoves(u);render();renderProfile();}
 function render(){
  const board=$("board");board.innerHTML="";
  for(let y=0;y<8;y++)for(let x=0;x<8;x++){
@@ -161,7 +162,7 @@ function render(){
 function clickSquare(x,y){
  const target=at(x,y);
  if(!selected){if(target&&target.side===turn)select(target);return;}
- if(target===selected){selected=null;legal=[];render();renderProfile();return;}
+ if(target===selected){selected=null;window.aoSelectedUnitId=null;legal=[];render();renderProfile();return;}
  const ok=legal.some(v=>v[0]===x&&v[1]===y);
  if(ok){if(target&&target.side!==selected.side)attack(selected,target,techniqueMode);else move(selected,x,y);return;}
  if(target&&target.side===turn)select(target);
@@ -191,6 +192,7 @@ function attack(a,d,useTechnique=false){
    actorId:a.id,defenderId:d.id,roll,attackBonus:2,
    damagePackets:[{type:"physical",amount:damageRoll}],
    knockback:a.weaponEffect==="Knockback",
+   dropContext:d.dropContext||null,
    units:units.map(unit=>({...unit}))
   }});
   window.dispatchEvent(request);
@@ -222,6 +224,7 @@ function attack(a,d,useTechnique=false){
   attackerId:a.id,defenderId:d.id,roll,
   damagePackets:[{type:"physical",amount:damageRoll}],
   knockback:a.weaponEffect==="Knockback",
+  dropContext:d.dropContext||null,
   units:units.map(unit=>({...unit}))
  }});
  window.dispatchEvent(request);
@@ -246,7 +249,7 @@ function attack(a,d,useTechnique=false){
  }
  finishAction(attacker);
 }
-function finishAction(u){selected=null;legal=[];techniqueMode=false;$("techMode").textContent="Technique: Off";render();renderProfile();if(!units.some(x=>x.side!==turn)){narrate("Match result",turn+" side has no opposing combatants remaining.");}}
+function finishAction(u){selected=null;window.aoSelectedUnitId=null;legal=[];techniqueMode=false;$("techMode").textContent="Technique: Off";render();renderProfile();if(!units.some(x=>x.side!==turn)){narrate("Match result",turn+" side has no opposing combatants remaining.");}}
 function changeTurn(){turn=turn==="white"?"black":"white";if(turn==="white")round++;window.dispatchEvent(new CustomEvent("ao-board-turn",{detail:{nextSide:turn}}));selected=null;legal=[];render();renderProfile();narrate("Turn · "+turn,turn==="white"?"The Silver Hollow Wardens take their turn.":"The Conversion Host advances. Its fighters read the shifting lines.");}
 function renderProfile(){
  const box=$("profile");if(!selected){box.innerHTML='<div class="empty">Select a token to inspect their dossier.</div>';$("squareLabel").textContent="No selection";return;}
@@ -260,6 +263,8 @@ function renderProfile(){
 }
 function slot(a,b){return '<div class="slot"><span>'+a+'</span><b>'+b+'</b></div>'}
 function resetBoardEngineBridge(){window.aoBoardSnapshot={units:units.map(u=>({...u})),turn,round};window.dispatchEvent(new CustomEvent("ao-board-reset",{detail:window.aoBoardSnapshot}));}
+window.aoApplyBoardUnits=next=>{units=next;selected=selected?units.find(u=>u.id===selected.id)||null:null;render();renderProfile();};
+window.aoSelectedUnitId=null;
 $("rotate").addEventListener("click",()=>{if(!selected)return;selected.facing=dirs[(dirs.indexOf(selected.facing)+1)%4];narrate("Facing · "+selected.name,selected.name+" pivots to face "+selected.facing+". Their position and movement pattern remain unchanged.");render();renderProfile();});
 $("pattern").addEventListener("click",()=>{if(!selected)return;let old=selected.pattern,i=patterns.indexOf(old);selected.pattern=patterns[(i+1)%patterns.length];selected.techniqueDormant=selected.special&&selected.pattern!=="Knight";narrate("Configuration · "+selected.name,selected.name+" changes movement pattern from "+old+" to "+selected.pattern+". "+(selected.techniqueDormant?"Divine Pursuit remains learned but is dormant until the Knight pattern is restored.":"Their movement options update to the "+selected.pattern+" pattern."));render();renderProfile();});
 $("techMode").addEventListener("click",()=>{if(!selected)return;techniqueMode=!techniqueMode;$("techMode").textContent=techniqueMode?"Technique: ON":"Technique: Off";});
@@ -274,11 +279,41 @@ setup();
 <script type="module">
 import * as AO from './engine/ao-chess-engine.mjs';
 import * as BoardBridge from './engine/board-engine-bridge.mjs';
-let boardField=null, boardRoster=[];
+let boardField=null, boardRoster=[], boardDropRegistry=null;
+function renderFieldDrops(){
+ const box=document.getElementById('fieldDrops');if(!box)return;box.innerHTML='';
+ const drops=Object.values(boardField?.drops||{});
+ if(!drops.length){box.innerHTML='<div class="empty">No field drops yet.</div>';return;}
+ for(const drop of drops){
+  const row=document.createElement('div');row.className='tech';
+  const title=document.createElement('b');
+  const itemName=drop.materialId||drop.itemId||drop.fragmentId||drop.id;
+  title.textContent=(drop.kind||'drop').replaceAll('_',' ')+' · '+itemName+' × '+drop.quantity;
+  const detail=document.createElement('small');
+  detail.textContent='Quality: '+(drop.quality?.grade||'ungraded')+' · Position: ('+drop.position.x+','+drop.position.y+') · '+(drop.collected?'Collected':'On battlefield');
+  row.append(title,detail);
+  if(!drop.collected){
+   const button=document.createElement('button');button.className='small';button.textContent='Collect';
+   button.disabled=!boardDropRegistry;
+   button.addEventListener('click',()=>{
+    const actorId=window.aoSelectedUnitId;
+    if(!actorId){detail.textContent='Select an Envoy on the active side before collecting.';return;}
+    const request=new CustomEvent('ao-board-collect-drop',{detail:{actorId,dropId:drop.id,registry:boardDropRegistry,confirm:true}});
+    window.dispatchEvent(request);
+    if(!request.detail.result?.ok)detail.textContent='Collection rejected: '+(request.detail.result?.reason||'unknown error');
+   });
+   row.append(button);
+  }
+  box.append(row);
+ }
+}
+
 function resetBoardBridge(snapshot){
  if(!snapshot||!Array.isArray(snapshot.units))return;
  boardRoster=snapshot.units.map(u=>({...u}));
+ boardDropRegistry=boardRoster.find(u=>u.dropContext?.registry)?.dropContext.registry||null;
  boardField=BoardBridge.createBoardField(boardRoster,{turn:snapshot.turn,round:snapshot.round});
+ renderFieldDrops();
  const status=document.getElementById('aoBoardBridgeStatus');
  if(status)status.textContent='Board engine bridge: active · '+Object.keys(boardField.entities).length+' entities · '+boardField.ledger.length+' setup events · movement commits enabled.';
 }
@@ -308,7 +343,7 @@ window.addEventListener('ao-board-attack',event=>{
   }
   const result=BoardBridge.resolveBoardAttack(boardField,event.detail);
   event.detail.result={ok:result.ok,reason:result.reason,hit:result.hit,roll:result.roll,total:result.total,damage:result.damage,defeated:result.defeated,positionEffect:result.positionEffect};
-  if(result.ok){boardField=result.field;boardRoster=BoardBridge.projectBoardUnits(boardRoster,boardField);event.detail.units=boardRoster.map(u=>({...u}));}
+  if(result.ok){if(event.detail.dropContext?.registry)boardDropRegistry=event.detail.dropContext.registry;boardField=result.field;boardRoster=BoardBridge.projectBoardUnits(boardRoster,boardField);event.detail.units=boardRoster.map(u=>({...u}));renderFieldDrops();}
  }catch(error){event.detail.result={ok:false,reason:error.message};}
 });
 window.addEventListener('ao-board-technique',event=>{
@@ -322,7 +357,15 @@ window.addEventListener('ao-board-technique',event=>{
   }
   const result=BoardBridge.resolveBoardTechnique(boardField,event.detail);
   event.detail.result={ok:result.ok,reason:result.reason,hit:result.hit,roll:result.roll,total:result.total,damage:result.damage,defeated:result.defeated,positionEffect:result.positionEffect,techniqueCosts:result.techniqueCosts};
-  if(result.ok){boardField=result.field;boardRoster=BoardBridge.projectBoardUnits(boardRoster,boardField);event.detail.units=boardRoster.map(u=>({...u}));}
+  if(result.ok){if(event.detail.dropContext?.registry)boardDropRegistry=event.detail.dropContext.registry;boardField=result.field;boardRoster=BoardBridge.projectBoardUnits(boardRoster,boardField);event.detail.units=boardRoster.map(u=>({...u}));renderFieldDrops();}
+ }catch(error){event.detail.result={ok:false,reason:error.message};}
+});
+window.addEventListener('ao-board-collect-drop',event=>{
+ try{
+  if(!boardField||!boardDropRegistry)throw new Error('drop registry is not configured');
+  const result=BoardBridge.collectBoardDrop(boardField,event.detail);
+  event.detail.result={ok:result.ok,reason:result.reason};
+  if(result.ok){boardField=result.field;boardRoster=BoardBridge.projectBoardUnits(boardRoster,boardField);if(window.aoApplyBoardUnits)window.aoApplyBoardUnits(boardRoster.map(u=>({...u})));renderFieldDrops();}
  }catch(error){event.detail.result={ok:false,reason:error.message};}
 });
 window.addEventListener('ao-board-turn',event=>{if(boardField)boardField=BoardBridge.endBoardTurn(boardField,event.detail.nextSide);});
