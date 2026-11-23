@@ -47,7 +47,7 @@ button,select{font:inherit;color:var(--ink);background:#233447;border:1px solid 
  <div class="arena">
   <div class="teams"><div class="team"><b>Silver Hollow Wardens</b>Silver side</div><div class="team" style="text-align:right"><b>Veyr Ka'desh Conversion Host</b>Obsidian side</div></div>
   <div class="boardwrap"><div class="board" id="board" role="grid" aria-label="Tactical chessboard"></div></div>
-  <div class="boardcontrols"><div><button class="small" id="rotate" title="Rotate selected token clockwise">↻ Face</button> <button class="small" id="pattern" title="Cycle selected character's movement pattern">⇄ Pattern</button></div><div><button class="small" id="reset">Reset match</button> <button class="small goldbtn" id="endTurn">End turn</button></div></div>
+  <div class="boardcontrols"><div><button class="small" id="rotate" title="Rotate selected token clockwise">↻ Face</button> <button class="small" id="pattern" title="Cycle selected character's movement pattern">⇄ Pattern</button> <button class="small" id="techMode" title="Toggle technique attack mode">Technique: Off</button></div><div><button class="small" id="reset">Reset match</button> <button class="small goldbtn" id="endTurn">End turn</button></div></div>
   <p class="sub" style="margin:10px 2px 0">Select a token, then a highlighted square to move. Select an opposing token on a legal attack square to resolve a d20 attack against AC. Facing follows movement; rotate it manually when needed.</p>
  </div>
  <div class="dicebox" id="dice"><b>Dice:</b> No roll yet. Attacks use d20 + attack bonus vs. AC; damage uses the weapon's damage die.</div>
@@ -66,13 +66,13 @@ const base={Saber:[30,15,5,6],Archer:[25,13,4,8],Lancer:[32,15,5,8],Rider:[32,14
 const patterns=["King","Queen","Rook","Bishop","Knight","Pawn"];
 const glyph={King:"K",Queen:"Q",Rook:"R",Bishop:"B",Knight:"N",Pawn:"P"};
 const dirs=["N","E","S","W"],arrows={N:"↑",E:"→",S:"↓",W:"←"};
-let units=[],selected=null,legal=[],turn="white",round=1,lastMove=null,history=[];
+let units=[],selected=null,legal=[],turn="white",round=1,lastMove=null,history=[],techniqueMode=false;
 const $=id=>document.getElementById(id);
 const coord=(x,y)=>files[x]+(8-y);
 const at=(x,y)=>units.find(u=>u.x===x&&u.y===y&&u.hp>0);
 const rand=n=>Math.floor(Math.random()*n)+1;
 function makeUnit(id,side,x,y,pattern,index){
- const classIndex=side==="black"?(index+1)%10:index%10;const cls=classNames[classIndex],b=base[cls];
+ const classIndex=side==="black"?(index+2)%10:index%10;const cls=classNames[classIndex],b=base[cls];
  return {id,side,x,y,pattern,cls,tier:5,archetype:cls==="Berserker"?"Anti-Unit":cls==="Shielder"?"Anti-Fortress":"Anti-Unit",hp:b[0],maxHp:b[0],ac:b[1],atk:b[2],dmg:b[3],facing:side==="white"?"N":"S",ap:8,apMax:8,ea:8,eaMax:8,affinity:"Unassigned",weapon:pattern==="Archer"?"Recurve bow":pattern==="Lancer"?"War spear":pattern==="Rook"?"War hammer":"Steel weapon",weaponBonus:0,weaponEffect:pattern==="Rook"?"Knockback":pattern==="Knight"?"Pursuit":"None",armor:"Field armor",head:"Travel helm",offhand:pattern==="Rook"?"Tower shield":"Empty",accessory1:"Warding ring",accessory2:"Empty",boots:"Marching boots",artifact:"Empty",uses:3,technique:cls==="Berserker"?"Heavy Breaker":cls==="Archer"?"Piercing Shot":"Class Strike",techniquePattern:pattern,techniqueTier:5,techniqueCost:2,trigger:cls==="Shielder"?"Guard Counter":cls==="Berserker"?"Impact Trigger":"Opportunity Strike",name:side==="black"&&coord(x,y)==="b8"?"Askar Venn":(side==="white"?"Silver":"Host")+" "+cls+" "+String(index+1).padStart(2,"0"),special:side==="black"&&coord(x,y)==="b8"};
 }
 function setup(){
@@ -84,7 +84,8 @@ function setup(){
   if(x===1){u.name="Askar Venn";u.cls="Berserker";u.archetype="Anti-Divine";u.tier=5;u.pattern="Knight";u.technique="Divine Pursuit";u.techniquePattern="Knight";u.techniqueTier=5;u.techniqueCost=4;u.ap=8;u.ea=8;u.uses=3;u.affinity="None assigned";u.weapon="Greatsword";u.weaponEffect="Knockback";u.trigger="Divine Intercept";u.special=true;}
   units.push(u);
  }
- selected=null;legal=[];turn="white";round=1;lastMove=null;history=[];
+ const divineGuard=units.find(u=>u.side==="white"&&u.pattern==="King");if(divineGuard)divineGuard.nature="Divine Humanoid";
+ selected=null;legal=[];turn="white";round=1;lastMove=null;history=[];techniqueMode=false;
  $("chronicle").innerHTML='<div class="entry"><div class="tag">Opening scene</div><p>The two formations hold their ground. Steel catches the pale light; across the board, the Conversion Host waits. Askar Venn stands at b8, his greatsword angled toward the opposing ranks.</p></div>';
  $("dice").innerHTML="<b>Dice:</b> No roll yet. d20 + attack bonus vs. AC; weapon damage die on a hit.";
  render();renderProfile();
@@ -122,25 +123,33 @@ function clickSquare(x,y){
  if(!selected){if(target&&target.side===turn)select(target);return;}
  if(target===selected){selected=null;legal=[];render();renderProfile();return;}
  const ok=legal.some(v=>v[0]===x&&v[1]===y);
- if(ok){if(target&&target.side!==selected.side)attack(selected,target);else move(selected,x,y);return;}
+ if(ok){if(target&&target.side!==selected.side)attack(selected,target,techniqueMode);else move(selected,x,y);return;}
  if(target&&target.side===turn)select(target);
 }
 function narrate(tag,story){const el=document.createElement("div");el.className="entry";el.innerHTML='<div class="tag">'+tag+'</div><p>'+story+'</p>';$("chronicle").prepend(el);}
 function faceToward(u,x,y){let dx=x-u.x,dy=y-u.y;if(Math.abs(dx)>Math.abs(dy))u.facing=dx>0?"E":"W";else if(dy!==0)u.facing=dy>0?"S":"N";}
 function move(u,x,y){let from=[u.x,u.y];faceToward(u,x,y);u.x=x;u.y=y;lastMove={from,to:[x,y]};narrate("Movement · "+u.name,u.name+" moved from "+coord(from[0],from[1])+" to "+coord(x,y)+", turning "+u.facing+". The formation shifts to meet the new position.");finishAction(u);}
-function attack(a,d){
- const from=[a.x,a.y],to=[d.x,d.y],roll=rand(20),total=roll+a.atk,hit=total>=d.ac;
+function attack(a,d,useTechnique=false){
+ const techniqueCost=a.techniqueCost||2,eaCost=3;
+ if(useTechnique&&(a.techniqueDormant||(a.special&&a.pattern!=="Knight"))){$("dice").innerHTML="<b>Technique unavailable:</b> "+a.technique+" requires the Knight movement pattern.";return;}
+ if(useTechnique&&(a.ap<techniqueCost||a.ea<eaCost||a.uses<1)){$("dice").innerHTML="<b>Technique unavailable:</b> insufficient AP, EA or daily uses.";return;}
+ if(useTechnique){a.ap-=techniqueCost;a.ea-=eaCost;a.uses--;}
+ const from=[a.x,a.y],to=[d.x,d.y],roll=rand(20),total=roll+a.atk+(useTechnique?2:0),hit=total>=d.ac;
  let damage=0,story="";
- if(hit){damage=rand(a.dmg)+a.weaponBonus;d.hp=Math.max(0,d.hp-damage);story=a.name+" attacked "+d.name+". The attack roll was "+roll+" + "+a.atk+" = "+total against AC "+d.ac+". The strike hit for "+damage+" damage.";if(a.weaponEffect==="Knockback"&&d.hp>0){let dx=Math.sign(d.x-a.x),dy=Math.sign(d.y-a.y),nx=d.x+dx,ny=d.y+dy;if(nx>=0&&nx<8&&ny>=0&&ny<8&&!at(nx,ny)){d.x=nx;d.y=ny;story+=" The heavy impact drove the defender back to "+coord(nx,ny)+".";}}}
- else story=a.name+" lunged at "+d.name+", but the attack roll of "+roll+" + "+a.atk+" = "+total failed to overcome AC "+d.ac+".";
+ if(hit){
+  damage=rand(a.dmg)+a.weaponBonus+(useTechnique?4:0)+(useTechnique&&a.archetype==="Anti-Divine"&&d.nature==="Divine Humanoid"?2:0);
+  d.hp=Math.max(0,d.hp-damage);
+  story=a.name+(useTechnique?" used "+a.technique+" against ":" attacked ")+d.name+". The attack roll was "+roll+" + "+a.atk+(useTechnique?" + 2 technique":"")+" = "+total+" against AC "+d.ac+". The strike hit for "+damage+" damage."+(useTechnique&&a.archetype==="Anti-Divine"&&d.nature==="Divine Humanoid"?" The Anti-Divine specialization found its mark.":"");
+  if(a.weaponEffect==="Knockback"&&d.hp>0){let dx=Math.sign(d.x-a.x),dy=Math.sign(d.y-a.y),nx=d.x+dx,ny=d.y+dy;if(nx>=0&&nx<8&&ny>=0&&ny<8&&!at(nx,ny)){d.x=nx;d.y=ny;story+=" The heavy impact drove the defender back to "+coord(nx,ny)+".";}}
+ } else story=a.name+(useTechnique?" used "+a.technique+" against ":" lunged at ")+d.name+", but the attack roll of "+roll+" + "+a.atk+" = "+total+" failed to overcome AC "+d.ac+". The technique's resources were still spent.";
  if(d.hp<=0){story+=" "+d.name+" fell from the board. This is a playtest defeat, not a statement about their wider AO fate.";units=units.filter(u=>u!==d);}
- $("dice").innerHTML="<b>Dice:</b> d20 = "+roll+" · attack bonus = "+a.atk+" · total = "+total+" · target AC = "+d.ac+" · "+(hit?"HIT · damage "+damage:"MISS");
+ $("dice").innerHTML="<b>Dice:</b> d20 = "+roll+" · attack bonus = "+a.atk+" · total = "+total+" · target AC = "+d.ac+" · "+(hit?"HIT · damage "+damage:"MISS")+(useTechnique?" · technique cost "+techniqueCost+" AP / "+eaCost+" EA":"");
  lastMove={from,to};faceToward(a,to[0],to[1]);a.x=to[0];a.y=to[1];
  narrate("Combat · "+a.name,story);
  if(hit&&d.hp>0&&d.trigger==="Guard Counter"&&Math.random()<.35){let cr=rand(20)+d.atk;if(cr>=a.ac){let cd=rand(d.dmg);a.hp=Math.max(0,a.hp-cd);narrate("Trigger · Guard Counter",d.name+" turned the block into a counterattack, rolling "+cr+" against AC "+a.ac+" and dealing "+cd+" damage.");}}
  finishAction(a);
 }
-function finishAction(u){selected=null;legal=[];render();renderProfile();if(!units.some(x=>x.side!==turn)){narrate("Match result",turn+" side has no opposing combatants remaining.");}}
+function finishAction(u){selected=null;legal=[];techniqueMode=false;$("techMode").textContent="Technique: Off";render();renderProfile();if(!units.some(x=>x.side!==turn)){narrate("Match result",turn+" side has no opposing combatants remaining.");}}
 function changeTurn(){turn=turn==="white"?"black":"white";if(turn==="white")round++;selected=null;legal=[];render();renderProfile();narrate("Turn · "+turn,turn==="white"?"The Silver Hollow Wardens take their turn.":"The Conversion Host advances. Its fighters read the shifting lines.");}
 function renderProfile(){
  const box=$("profile");if(!selected){box.innerHTML='<div class="empty">Select a token to inspect their dossier.</div>';$("squareLabel").textContent="No selection";return;}
@@ -155,6 +164,7 @@ function renderProfile(){
 function slot(a,b){return '<div class="slot"><span>'+a+'</span><b>'+b+'</b></div>'}
 $("rotate").addEventListener("click",()=>{if(!selected)return;selected.facing=dirs[(dirs.indexOf(selected.facing)+1)%4];narrate("Facing · "+selected.name,selected.name+" pivots to face "+selected.facing+". Their position and movement pattern remain unchanged.");render();renderProfile();});
 $("pattern").addEventListener("click",()=>{if(!selected)return;let old=selected.pattern,i=patterns.indexOf(old);selected.pattern=patterns[(i+1)%patterns.length];selected.techniqueDormant=selected.special&&selected.pattern!=="Knight";narrate("Configuration · "+selected.name,selected.name+" changes movement pattern from "+old+" to "+selected.pattern+". "+(selected.techniqueDormant?"Divine Pursuit remains learned but is dormant until the Knight pattern is restored.":"Their movement options update to the "+selected.pattern+" pattern."));render();renderProfile();});
+$("techMode").addEventListener("click",()=>{if(!selected)return;techniqueMode=!techniqueMode;$("techMode").textContent=techniqueMode?"Technique: ON":"Technique: Off";});
 $("endTurn").addEventListener("click",changeTurn);
 $("reset").addEventListener("click",setup);
 setup();
