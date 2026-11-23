@@ -9,6 +9,16 @@ const ZERO_ATTRIBUTES = Object.freeze(Object.fromEntries(CORE_ATTRIBUTES.map(key
 const clone = value => structuredClone(value);
 const finite = (value, fallback = null) => Number.isFinite(value) ? value : fallback;
 const fail = reason => ({ ok:false, reason });
+export const RACIAL_ACCESS_GRANT_TYPES=Object.freeze(["individual_unlock","route_discovery","conditional_availability","global_starting_availability"]);
+export function validateRacialStartingAccess(race,decision,{ancestryId=null,subAncestryId=null}={}){
+  const governed=Object.keys(race?.accessibility||{}).length||Object.keys(race?.acquisitionGovernance||{}).length;
+  if(!governed)return {ok:true,governanceRequired:false};
+  if(!decision||decision.allowed!==true||decision.validated!==true)return fail("racial_starting_access_not_validated");
+  if(decision.raceId!==race.id)return fail("racial_access_scope_mismatch");
+  if(!RACIAL_ACCESS_GRANT_TYPES.includes(decision.grantType)||!decision.grantId)return fail("racial_access_grant_invalid");
+  if((decision.ancestryId??null)!==ancestryId||(decision.subAncestryId??null)!==subAncestryId)return fail("racial_access_scope_mismatch");
+  return {ok:true,governanceRequired:true,grantId:decision.grantId,grantType:decision.grantType};
+}
 function modifiers(source = {}) {
   const result = {};
   for (const key of CORE_ATTRIBUTES) {
@@ -144,6 +154,8 @@ export function createEnvoyFromCreation(input, registry) {
     subAncestry=ancestry.subAncestries[input.subAncestryId];
     if(!subAncestry)return fail("unknown_sub_ancestry");
   }
+  const access=validateRacialStartingAccess(race,input.accessDecision,{ancestryId:ancestry?.id||null,subAncestryId:subAncestry?.id||null});
+  if(!access.ok)return access;
   const base = {};
   for (const key of CORE_ATTRIBUTES) {
     const value = input.baseAttributes?.[key];
@@ -180,10 +192,6 @@ export function createEnvoyFromCreation(input, registry) {
       subAncestry:clone(subAncestry?.originLineage||{}),ancestryPath:[race.id,...(ancestry?[ancestry.id]:[]),...(subAncestry?[subAncestry.id]:[])]},
     formNature:{race:clone(race.formNature),ancestry:clone(ancestry?.formNature||{}),subAncestry:clone(subAncestry?.formNature||{})},
     speciesClassification:clone(race.speciesClassification),
-    inhabitantUnderstanding:clone(race.inhabitantUnderstanding),
-    population:clone(race.population),
-    accessibility:clone(race.accessibility),
-    acquisitionGovernance:clone(race.acquisitionGovernance),
     naturalAffinity: race.naturalAffinity,
     baseAttributes: base,
     raceAttributeModifiers:clone(raceAttrs),ancestryAttributeModifiers:clone(ancestryAttrs),
@@ -201,9 +209,17 @@ export function createEnvoyFromCreation(input, registry) {
     statuses: [], injuries: [], alive: true,
     creation: { ruleVersion: input.ruleVersion || "ao-racial-creation-v2", vitality: clone(input.vitality),
       baseAttributeSource:input.baseAttributeSource||"approved-entry-package",
+      accessDecision:clone(input.accessDecision||null),
       racialLayerIds:{raceId:race.id,ancestryId:ancestry?.id||null,subAncestryId:subAncestry?.id||null,rarityId:input.rarityId}}
   };
-  return { ok:true, entity:envoy, breakdown:{
+  const creationContext={
+    inhabitantUnderstanding:clone(race.inhabitantUnderstanding),
+    population:clone(race.population),
+    accessibility:clone(race.accessibility),
+    acquisitionGovernance:clone(race.acquisitionGovernance),
+    accessDecision:clone(input.accessDecision||null)
+  };
+  return { ok:true, entity:envoy, creationContext, breakdown:{
     baseAttributes:base,raceModifiers:raceAttrs,ancestryModifiers:ancestryAttrs,
     subAncestryModifiers:subAttrs,rarityModifiers:rarityAttrs,
     racialModifiers:addStats({...ZERO_ATTRIBUTES},raceAttrs,ancestryAttrs,subAttrs),effectiveAttributes:stats,
