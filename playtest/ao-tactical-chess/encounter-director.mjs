@@ -56,7 +56,7 @@ export function createEncounterRecord(input) {
   if (!ENCOUNTER_STATES.includes(input.state)) throw new TypeError("Invalid encounter state");
   if (!Array.isArray(input.composition?.participants)) throw new TypeError("participants must be an array");
   const ids = input.composition.participants.map((p) => p.entityId);
-  if (ids.some((id) => typeof id !== "string" || !id.trim())) throw new TypeTypeError("Participant entityId is required");
+  if (ids.some((id) => typeof id !== "string" || !id.trim())) throw new TypeError("Participant entityId is required");
   if (new Set(ids).size !== ids.length) throw new Error("Participant entityIds must be unique");
   return {
     ...clone(input),
@@ -140,8 +140,8 @@ export function scheduleReinforcements(encounter, event, currentTick, rules = []
     if (prior.some((entry) => entry.id === id)) continue;
     schedules.push({
       id, ruleId: rule.id, sourceRef: rule.sourceRef, trigger: { eventType: event.type, eventId },
-      state: delay === 0 ? "arrived" : "traveling", travelTicks: delay, arrivalTick: currentTick + delay,
-      routeRef: rule.routeRef ?? null, entityRefs: clone(rule.entityRefs ?? [])
+      state: "pending", travelTicks: delay, arrivalTick: currentTick + delay,
+      routeRef: rule.routeRef ?? null, entityRefs: clone(rule.entityRefs ?? []), deployment: clone(rule.deployment ?? {})
     });
   }
   if (!schedules.length) return encounter;
@@ -157,7 +157,7 @@ export function advanceReinforcements(encounter, currentTick, grid, deploymentZo
   const pending = encounter.reinforcement?.pending ?? [];
   const newlyArrived = [];
   const nextPending = pending.map((item) => {
-    if (item.state !== "traveling" || item.arrivalTick > currentTick) return item;
+    if (!["pending", "mobilizing", "traveling"].includes(item.state) || item.arrivalTick > currentTick) return item;
     newlyArrived.push(item);
     return { ...item, state: "arrived" };
   });
