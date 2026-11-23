@@ -406,11 +406,10 @@ export function projectBoardUnits(boardUnits, field, { includeDefeated = false }
       ancestryId:entity.ancestryId,
       subAncestryId:entity.subAncestryId,
       racialRarityId: entity.racialRarityId,
-      traits:clone(entity.traits||[]),
-      racialTechniques:clone(entity.racialTechniques||[]),
+      traits: clone(entity.traits || []),
+      racialTechniques: clone(entity.racialTechniques || []),
       racialModifiers: clone(entity.racialModifiers || {}),
       rarityModifiers: clone(entity.rarityModifiers || {}),
-      traits: clone(entity.traits || []),
       naturalAffinity: entity.naturalAffinity,
       uses: entity.boardTechniqueId
         ? Math.max(0, entity.boardTechniqueUsesMax - finite(entity.techniqueState?.[entity.boardTechniqueId]?.used))
