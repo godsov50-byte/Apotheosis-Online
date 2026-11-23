@@ -115,11 +115,11 @@ export function createRacialProfile(definition) {
   };
 }
 export function resolveStartingAttributePackage(entryPackage) {
-  if(!entryPackage?.id||!entryPackage.baseAttributes)return fail("starting_attribute_package_required");
+  if(!entryPackage?.id||!entryPackage.baseAttributes)return fail("complete_base_attributes_required");
   const baseAttributes={};
   for(const key of CORE_ATTRIBUTES){
     const value=entryPackage.baseAttributes[key];
-    if(!Number.isInteger(value)||value<1)return fail("starting_attribute_package_invalid");
+    if(!Number.isInteger(value)||value<1)return fail("complete_base_attributes_required");
     baseAttributes[key]=value;
   }
   return {ok:true,id:entryPackage.id,name:entryPackage.name||entryPackage.id,
