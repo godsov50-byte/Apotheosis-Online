@@ -73,7 +73,7 @@ export function createBalancedMaterialDrop({
  */
 export function resolveDefeatDrops(field, {
   source, profile, registry, position, seed,
-  quality = {}, materialBudget = Infinity, equipmentDropCap = 1
+  quality = {}, materialBudget = Infinity, rewardBudget = profile?.rewardBudget ?? Infinity, equipmentDropCap = 1
 }) {
   if (!validateSource(source)) return { ...fail("reward_source_required"), field };
   if (!profile || !registry?.materials || !registry?.items) return { ...fail("reward_profile_or_registry_missing"), field };
@@ -81,12 +81,17 @@ export function resolveDefeatDrops(field, {
   const next = clone(field), created = [];
   next.drops = { ...(next.drops || {}) };
   let materialsRemaining = Math.max(0, num(materialBudget, Infinity));
+  let rewardBudgetRemaining = Math.max(0, num(rewardBudget, Infinity));
+  let rewardBudgetSpent = 0;
   for (const entry of profile.materialDrops || []) {
     if (!registry.materials[entry.materialId]) return { ...fail("unknown_drop_material", { materialId: entry.materialId }), field };
     if (random() > clamp(num(entry.chance, 1), 0, 1)) continue;
     if (materialsRemaining <= 0) break;
     const rolled = intBetween(random, Math.max(1, num(entry.min, 1)), Math.max(1, num(entry.max, 1)));
-    const quantity = Math.min(rolled, materialsRemaining);
+    const unitCost = Math.max(0, num(entry.budgetCostPerUnit, 1));
+    const affordable = unitCost > 0 ? Math.floor(rewardBudgetRemaining / unitCost) : rolled;
+    const quantity = Math.min(rolled, materialsRemaining, affordable);
+    if (quantity <= 0) break;
     const q = qualityRecord(random, {
       base: num(entry.qualityBase, 50), source: num(source.materialQuality),
       variance: num(entry.qualityVariance, quality.variance ?? 0),
@@ -100,6 +105,8 @@ export function resolveDefeatDrops(field, {
       provenance: { originType: source.type || "defeat", profileId: profile.id || null, seed: String(seed ?? ""), sourceEventId: source.eventId || null }
     });
     next.drops[id] = drop; created.push(drop); materialsRemaining -= quantity;
+    const materialCost = quantity * unitCost;
+    rewardBudgetRemaining -= materialCost; rewardBudgetSpent += materialCost;
   }
 
   const equipment = profile.equipmentDrops || {};
@@ -126,15 +133,16 @@ export function resolveDefeatDrops(field, {
         provenance: { originType: source.type || "defeat", profileId: profile.id || null, sourceEventId: source.eventId || null, seed: String(seed ?? "") }
       };
       next.drops[id] = drop; equipmentCreated.push(drop);
+      rewardBudgetRemaining -= equipmentCost; rewardBudgetSpent += equipmentCost;
     }
   }
   let committed = addLedger(next, {
     type: "defeat_drops_resolved", sourceId: source.id, sourceType: source.type || "defeat",
     materialDropIds: created.map(x => x.id), equipmentDropIds: equipmentCreated.map(x => x.id),
     materialQuantity: created.reduce((sum, x) => sum + x.quantity, 0),
-    equipmentCount: equipmentCreated.length, profileId: profile.id || null
+    equipmentCount: equipmentCreated.length, rewardBudgetSpent, rewardBudgetRemaining, profileId: profile.id || null
   });
-  return { ok: true, field: committed, materialDrops: created, equipmentDrops: equipmentCreated };
+  return { ok: true, field: committed, materialDrops: created, equipmentDrops: equipmentCreated, rewardBudgetSpent, rewardBudgetRemaining };
 }
 
 /** A resource node is a finite spatial source; it is not itself an inventory stack. */
