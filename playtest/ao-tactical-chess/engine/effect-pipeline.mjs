@@ -8,7 +8,7 @@ const num=(v,d=0)=>Number.isFinite(v)?v:d;
 const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 const key=p=>`${p.x},${p.y},${p.z||0}`;
 const fail=(reason,field)=>({ok:false,reason,field});
-export const EFFECT_TYPES=Object.freeze(["damage","heal","status","remove_status","resource","attribute_modifier","displace","terrain"]);
+export const EFFECT_TYPES=Object.freeze(["damage","heal","status","remove_status","resource","attribute_modifier","displace","summon","terrain"]);
 export function createEffect(definition){
  if(!definition?.id||!EFFECT_TYPES.includes(definition.type))throw new Error("effect id and supported type required");
  return {id:definition.id,type:definition.type,tags:[...(definition.tags||[])],target:definition.target||"target",...clone(definition)};
@@ -23,7 +23,7 @@ function applyStatus(statuses,status){
  else if(status.stackRule==="refresh")list[i]={...list[i],duration:Math.max(num(list[i].duration),num(status.duration)),remaining:Math.max(num(list[i].remaining,list[i].duration),num(status.duration))};
  else if(status.stackRule==="stack")list[i]={...list[i],stacks:num(list[i].stacks,1)+num(status.stacks,1)};
  else if(status.stackRule==="replace")list[i]=clone(status);
- else return null;
+ else if(status.stackRule==="ignore")return list;\n else return null;
  return list;
 }
 function damage(target,packet){
@@ -74,14 +74,27 @@ export function resolveEffectBatch(field,{sourceId,targetId,effects=[],eventId,c
   }else if(effect.type==="attribute_modifier"){
    if(!recipient)return fail("modifier_target_missing",field);
    const stat=effect.stat;if(!["STR","DEX","CON","INT","WIS","CHA","ATT"].includes(stat)||!Number.isFinite(effect.amount))return fail("invalid_attribute_modifier",field);
-   const mods={...(recipient.temporaryModifiers||{})};mods[stat]=num(mods[stat])+effect.amount;recipient.temporaryModifiers=mods;
+   const statusId=effect.statusId||`modifier-${eventId}-${stat}`;
+   const statuses=applyStatus(recipient.statuses||[],{id:statusId,duration:effect.duration??null,remaining:effect.duration??null,stackRule:effect.stackRule||"replace",modifiers:{[stat]:effect.amount},tags:effect.tags||["attribute-modifier"]});
+   if(!statuses)return fail("modifier_status_invalid",field);
+   recipient.statuses=statuses;
    outcomes.push({type:"attribute_modifier",targetId:recipient.id,stat,amount:effect.amount,duration:effect.duration??null});
   }else if(effect.type==="displace"){
    if(!recipient||!effect.to)return fail("displacement_target_missing",field);
    const to=clone(effect.to),occupied=Object.values(next.entities||{}).some(e=>e.id!==recipient.id&&e.alive!==false&&key(e.position)===key(to));
    const cell=next.cells?.[key(to)];
    if(occupied||cell?.blocked||to.x<0||to.y<0||to.x>=next.width||to.y>=next.height)return fail("displacement_blocked",field);
+   const oldKey=key(recipient.position),newKey=key(to);
+   if(next.cells?.[oldKey])next.cells={...next.cells,[oldKey]:{...next.cells[oldKey],entities:(next.cells[oldKey].entities||[]).filter(id=>id!==recipient.id)}};
+   const newCell=next.cells?.[newKey]||{entities:[]};
+   next.cells={...(next.cells||{}),[newKey]:{...newCell,entities:[...(newCell.entities||[]),recipient.id]}};
    recipient.position=to;outcomes.push({type:"displace",targetId:recipient.id,to});
+  }else if(effect.type==="summon"){
+   const entity=clone(effect.entity||{});if(!entity.id||next.entities[entity.id])return fail("invalid_summon_entity",field);
+   entity.position=clone(effect.position||target?.position||source?.position||{x:0,y:0,z:0});
+   entity.alive=entity.alive!==false;entity.statuses=entity.statuses||[];next.entities[entity.id]=entity;
+   const k=key(entity.position),cell=next.cells?.[k]||{entities:[]};next.cells={...(next.cells||{}),[k]:{...cell,entities:[...(cell.entities||[]),entity.id]}};
+   outcomes.push({type:"summon",entityId:entity.id});
   }else if(effect.type==="terrain"){
    if(!effect.position)return fail("terrain_position_missing",field);
    const k=key(effect.position),cell=next.cells?.[k]||{entities:[]};next.cells={...(next.cells||{}),[k]:{...cell,...clone(effect.patch||{})}};
@@ -93,6 +106,19 @@ export function resolveEffectBatch(field,{sourceId,targetId,effects=[],eventId,c
  next.version=(next.version||0)+1;
  return {ok:true,field:next,outcomes};
 }
+export function resolveEffectiveAttributes(entity){
+ const keys=["STR","DEX","CON","INT","WIS","CHA","ATT"],out={};
+ const base=entity.baseAttributes||entity.stats||{};
+ const equipment=entity.equipment||{};
+ for(const stat of keys){
+  let value=num(base[stat]);
+  value+=num(entity.racialAttributeModifiers?.[stat])+num(entity.rarityAttributeModifiers?.[stat])+num(entity.temporaryModifiers?.[stat]);
+  for(const item of Object.values(equipment))if(item&&item.state!=="broken"&&item.state!=="destroyed")value+=num(item.modifiers?.[stat]);
+  for(const status of entity.statuses||[])value+=num(status.modifiers?.[stat])*Math.max(1,num(status.stacks,1));
+  out[stat]=Math.max(1,value);
+ }
+ return out;
+}
 export function tickEntityEffects(entity,{phase="end_turn"}={}){
  const next=clone(entity),kept=[],expired=[];
  for(const status of next.statuses||[]){
@@ -103,8 +129,5 @@ export function tickEntityEffects(entity,{phase="end_turn"}={}){
   if(value<=0)expired.push(status.id);else kept.push({...status,remaining:value});
  }
  next.statuses=kept;
- const modifiers={...(next.temporaryModifiers||{})};
- for(const status of expired){delete modifiers[status];}
- next.temporaryModifiers=modifiers;
- return {entity:next,expired};
+ return {entity:next,expired,effectiveAttributes:resolveEffectiveAttributes(next)};
 }
