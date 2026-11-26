@@ -135,7 +135,7 @@ export function createBoardField(units, { width = 8, height = 8, turn = "white",
   return next;
 }
 
-function isBoardMotionLegal(field, actor, destination) {
+export function isBoardMotionLegal(field, actor, destination) {
   const motion = actor.boardMotion;
   if (!["King", "Queen", "Rook", "Bishop", "Knight", "Pawn"].includes(motion)) return false;
   const x = actor.position.x, y = actor.position.y;
@@ -242,7 +242,7 @@ export function resolveBoardMove(field, { actorId, to, legalCells, eventId } = {
 }
 
 export function resolveBoardAttack(field, {
-  attackerId, defenderId, roll, damagePackets, eventId, chart = {}, knockback = false, attackBonus = 0, breakAmount = 0
+  attackerId, defenderId, roll, damagePackets, eventId, chart = {}, knockback = false, attackBonus = 0, breakAmount = 0, captureAdvance = true
 } = {}) {
   const ready = beginBoardAction(field, attackerId);
   if (!ready.ok) return ready;
@@ -279,12 +279,14 @@ export function resolveBoardAttack(field, {
     for (const [key, cell] of Object.entries(cells)) {
       if ((cell.entities || []).includes(defenderId)) cells[key] = { ...cell, entities: cell.entities.filter(x => x !== defenderId) };
     }
+    if (captureAdvance) {
     const oldKey = cellKey(attackerNow.position), oldCell = cells[oldKey] || { entities: [] };
     cells[oldKey] = { ...oldCell, entities: (oldCell.entities || []).filter(x => x !== attackerId) };
     const targetKey = cellKey(targetPosition), targetCell = cells[targetKey] || { blocked: false, opaque: false, entities: [], terrain: "plain", cover: 0 };
     cells[targetKey] = { ...targetCell, entities: [...(targetCell.entities || []).filter(x => x !== defenderId), attackerId] };
     attackerNow.position = targetPosition;
     positionEffect = "capture_advance";
+    }
   } else if (resolved.hit && knockback) {
     const push = { x: targetPosition.x + Math.sign(dx), y: targetPosition.y + Math.sign(dy), z: targetPosition.z || 0 };
     const occupied = Object.values(next.entities).some(e => e.alive && e.id !== defenderId && e.position.x === push.x && e.position.y === push.y);
@@ -321,7 +323,7 @@ export function resolveBoardAttack(field, {
 
 export function resolveBoardTechnique(field, {
   actorId, defenderId, roll, damagePackets, eventId, chart = {},
-  knockback = false, attackBonus = 2
+  knockback = false, attackBonus = 2, captureAdvance = true
 } = {}) {
   const ready = beginBoardAction(field, actorId);
   if (!ready.ok) return ready;
@@ -359,6 +361,7 @@ export function resolveBoardTechnique(field, {
     chart,
     knockback,
     attackBonus,
+    captureAdvance,
     breakAmount: (profile.effects || []).filter(effect=>effect.type==="damage").reduce((sum,effect)=>sum+finite(effect.break),0)
   });
   if (!attack.ok) return { ...attack, field };
