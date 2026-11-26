@@ -5,6 +5,7 @@
  */
 import {resolveBoardAttack,resolveBoardTechnique,resolveBoardMove,isBoardMotionLegal} from "./board-engine-bridge.mjs";
 import {lineOfSight,traceLine,getCell,reaction,emitEvent} from "./ao-chess-engine.mjs";
+import {validateObjectTechnique,resolveObjectTechnique} from "./object-technique-bridge.mjs";
 const clone=structuredClone;
 const fail=reason=>({ok:false,reason});
 const validRoll=r=>Number.isInteger(r)&&r>=1&&r<=20;
@@ -22,6 +23,7 @@ function validate(field,i,profiles,canPerceive){
   if(Object.values(field.entities).some(e=>e.alive&&e.id!==a.id&&e.position.x===b.x&&e.position.y===b.y))return "occupied_cell";
   return null;
  }
+ if(i.type==="object_technique"){const v=validateObjectTechnique(field,i,profiles,canPerceive);return v.ok?null:v.reason;}
  if(!["attack","technique"].includes(i.type))return "unsupported_intent";
  const d=field.entities[i.targetId];
  if(!d?.alive||a.id===d.id||a.side===d.side)return "invalid_target";
@@ -67,7 +69,7 @@ export function resolveCombatTick({field,revision,plan,responses,profiles,canPer
   decisions.set(w.id,r.choice);
  }
  if(now<plan.responseDeadline&&plan.windows.some(w=>!decisions.has(w.id)))return fail("response_pending");
- let next=clone(field);const results=[...plan.rejected],defeats=[];
+ let next=clone(field);const results=plan.rejected.map(r=>({...r,status:"rejected"})),defeats=[];
  for(const i of plan.accepted){
   const reason=validate(next,i,profiles,canPerceive);
   if(reason){results.push({actorId:i.actorId,status:"rejected",reason});continue}
@@ -77,6 +79,11 @@ export function resolveCombatTick({field,revision,plan,responses,profiles,canPer
    const r=resolveBoardMove(fresh(next,actor),{actorId:actor.id,to:toCell(i.destination),eventId});
    if(r.ok){next=r.field;results.push({actorId:actor.id,status:"committed"})}else results.push({actorId:actor.id,status:"rejected",reason:r.reason});
    continue;
+  }
+  if(i.type==="object_technique"){
+   const r=resolveObjectTechnique(next,i,{profiles,canPerceive,eventId:eventId+":object",chart});
+   if(!r.ok){results.push({actorId:actor.id,status:"rejected",reason:r.reason});continue}
+   next=r.field;results.push({actorId:actor.id,status:"committed",objectId:i.targetId,damage:r.damage,condition:r.object.condition});continue;
   }
   const d=next.entities[i.targetId],w=plan.windows.find(w=>w.actorId===d.id&&w.sourceId===actor.id),roll=rollFor(eventId);
   if(!validRoll(roll))return fail("server_roll_required");
